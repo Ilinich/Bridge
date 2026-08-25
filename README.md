@@ -1,31 +1,59 @@
-This is a Kotlin Multiplatform project targeting Android, iOS.
+# Bridge
 
-* [/iosApp](./iosApp/iosApp) contains an iOS application. Even if you’re sharing your UI with Compose Multiplatform,
-  you need this entry point for your iOS app. This is also where you should add SwiftUI code for your project.
+[![CI](https://github.com/Ilinich/Bridge/actions/workflows/ci.yml/badge.svg)](https://github.com/Ilinich/Bridge/actions/workflows/ci.yml)
 
-* [/shared](./shared/src) is for code that will be shared across your Compose Multiplatform applications.
-  It contains several subfolders:
-  - [commonMain](./shared/src/commonMain/kotlin) is for code that’s common for all targets.
-  - Other folders are for Kotlin code that will be compiled for only the platform indicated in the folder name.
-    For example, if you want to use Apple’s CoreCrypto for the iOS part of your Kotlin app,
-    the [iosMain](./shared/src/iosMain/kotlin) folder would be the right place for such calls.
-    Similarly, if you want to edit the Desktop (JVM) specific part, the [jvmMain](./shared/src/jvmMain/kotlin)
-    folder is the appropriate location.
+A football supporter app for Android and iOS, built with Kotlin Multiplatform and Compose
+Multiplatform. Clone it and run it — there is no API key to obtain and no account to create.
 
-### Running the apps
+> Unofficial fan project. Not affiliated with, endorsed by, or connected to Chelsea Football Club.
+> No club artwork is stored in this repository; every image is loaded at runtime from the data
+> sources listed below.
 
-Use the run configurations provided by the run widget in your IDE's toolbar. You can also use these commands and options:
+## Status
 
-- Android app: `./gradlew :androidApp:assembleDebug`
-- iOS app: open the [/iosApp](./iosApp) directory in Xcode and run it from there.
+Under construction. The module graph, build conventions and CI are in place; screens land phase
+by phase.
 
-### Running tests
+## Data sources
 
-Use the run button in your IDE's editor gutter, or run tests using Gradle tasks:
+| Source | Used for | Access |
+|---|---|---|
+| [TheSportsDB](https://www.thesportsdb.com/free_sports_api) | club profile, squad, next and last match | free test key, no registration |
+| [openfootball/football.json](https://github.com/openfootball/football.json) | full Premier League season fixtures | public JSON on GitHub, no key |
 
-- Android tests: `./gradlew :shared:testAndroidHostTest`
-- iOS tests: `./gradlew :shared:iosSimulatorArm64Test`
+Both tiers are limited, and the app treats those limits as content rather than as errors — a
+truncated squad renders as a squad, not as a retry screen. The limits are documented per screen
+as the screens land.
 
----
+## Modules
 
-Learn more about [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-multiplatform-dev/get-started.html)…
+| Module | Contains |
+|---|---|
+| `foundation:tessera` | state-holder framework: composable state, actions, composition |
+| `foundation:cache` | in-memory cache with soft and hard TTL |
+| `core:data` | HTTP clients, DTOs, domain models, repositories |
+| `uikit` | theme, glass surfaces, runtime-shader brushes, shared components |
+| `navigation` | Navigation 3 routes and swipe-to-dismiss |
+| `feature:matches` | matchday, season calendar, match detail |
+| `feature:squad` | squad grid, player pager |
+| `shared` | dependency graph, navigation host, iOS framework |
+| `androidApp` / `iosApp` | platform shells |
+
+Feature modules never depend on each other.
+
+## Building
+
+Requires JDK 21 and an Android SDK; Gradle provisions its own toolchain.
+
+```bash
+./gradlew :androidApp:assembleDebug                      # Android
+./gradlew :shared:linkDebugFrameworkIosSimulatorArm64    # iOS framework
+./gradlew detekt                                         # static analysis, every module
+./gradlew allTests                                       # unit tests, every module
+```
+
+For iOS, open `iosApp/iosApp.xcodeproj` in Xcode and run.
+
+## License
+
+[MIT](LICENSE).
