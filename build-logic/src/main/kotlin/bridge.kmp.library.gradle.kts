@@ -42,6 +42,10 @@ kotlin {
     }
 }
 
+dependencies {
+    detektPlugins(project(":detekt-rules"))
+}
+
 detekt {
     parallel = true
     buildUponDefaultConfig = true

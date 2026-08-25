@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.composeCompiler) apply false
     alias(libs.plugins.composeMultiplatform) apply false
     alias(libs.plugins.detekt) apply false
+    alias(libs.plugins.kotlinJvm) apply false
     alias(libs.plugins.kotlinMultiplatform) apply false
     alias(libs.plugins.kotlinSerialization) apply false
 }
@@ -11,5 +12,9 @@ plugins {
 tasks.register("detekt") {
     group = "verification"
     description = "Runs detekt in every module that has a build file."
-    dependsOn(subprojects.filter { it.buildFile.exists() }.map { "${it.path}:detektAll" })
+    dependsOn(
+        subprojects
+            .filter { it.buildFile.exists() && it.path != ":detekt-rules" }
+            .map { "${it.path}:detektAll" },
+    )
 }

@@ -30,6 +30,7 @@ dependencyResolutionManagement {
     }
 }
 
+include(":detekt-rules")
 include(":androidApp")
 include(":shared")
 
