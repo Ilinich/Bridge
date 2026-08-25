@@ -24,7 +24,7 @@ class TabbedBackStack internal constructor(
     roots: List<Route>,
     initialTab: Int = 0,
     initialStacks: List<List<Route>>? = null,
-) {
+) : Navigator {
 
     private val stacks: List<SnapshotStateList<Route>> =
         roots.mapIndexed { index, root ->
@@ -39,11 +39,11 @@ class TabbedBackStack internal constructor(
 
     val canPop: Boolean get() = current.size > 1
 
-    fun push(route: Route) {
+    override fun push(route: Route) {
         if (current.lastOrNull() != route) current.add(route)
     }
 
-    fun pop() {
+    override fun pop() {
         if (canPop) current.removeAt(current.lastIndex)
     }
 
@@ -56,41 +56,21 @@ class TabbedBackStack internal constructor(
         }
     }
 
-    internal fun snapshot(): List<List<String>> = stacks.map { stack -> stack.map(Route::encode) }
+    internal fun snapshot(): List<List<String>> = stacks.map { stack -> stack.map { it.key } }
 }
 
-/**
- * Routes are encoded as text rather than serialized.
- *
- * A bundle can only carry primitives, and the alternative — making every route `@Serializable` and
- * threading a format through — buys nothing for five destinations.
- */
-private fun Route.encode(): String = when (this) {
-    Route.Matchday -> "matchday"
-    Route.Season -> "season"
-    Route.Squad -> "squad"
-    Route.Club -> "club"
-    is Route.MatchDetail -> "match:$matchId"
-    is Route.PlayerDetail -> "player:$playerId"
-}
-
-private fun decodeRoute(raw: String): Route? = when {
-    raw == "matchday" -> Route.Matchday
-    raw == "season" -> Route.Season
-    raw == "squad" -> Route.Squad
-    raw == "club" -> Route.Club
-    raw.startsWith("match:") -> Route.MatchDetail(raw.removePrefix("match:"))
-    raw.startsWith("player:") -> Route.PlayerDetail(raw.removePrefix("player:"))
-    else -> null
-}
-
-private fun tabbedBackStackSaver(roots: List<Route>): Saver<TabbedBackStack, Any> =
+private fun tabbedBackStackSaver(
+    roots: List<Route>,
+    codecs: List<RouteCodec>,
+): Saver<TabbedBackStack, Any> =
     listSaver(
         save = { stack -> listOf(stack.selectedTab) + stack.snapshot() },
         restore = { saved ->
             @Suppress("UNCHECKED_CAST")
             val stacks = saved.drop(1).map { raw ->
-                (raw as List<String>).mapNotNull(::decodeRoute)
+                (raw as List<String>).mapNotNull { key ->
+                    codecs.firstNotNullOfOrNull { codec -> codec.decode(key) }
+                }
             }
             TabbedBackStack(
                 roots = roots,
@@ -101,5 +81,8 @@ private fun tabbedBackStackSaver(roots: List<Route>): Saver<TabbedBackStack, Any
     )
 
 @Composable
-fun rememberTabbedBackStack(roots: List<Route> = TabRoots): TabbedBackStack =
-    rememberSaveable(saver = tabbedBackStackSaver(roots)) { TabbedBackStack(roots) }
+fun rememberTabbedBackStack(
+    roots: List<Route>,
+    codecs: List<RouteCodec>,
+): TabbedBackStack =
+    rememberSaveable(saver = tabbedBackStackSaver(roots, codecs)) { TabbedBackStack(roots) }

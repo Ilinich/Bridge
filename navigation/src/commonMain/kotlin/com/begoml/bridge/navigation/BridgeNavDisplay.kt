@@ -8,8 +8,8 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
+import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
 import com.begoml.bridge.navigation.swipe.SwipeToDismissSceneStrategy
 
@@ -30,9 +30,13 @@ private const val ExitOffsetFraction = 0.06f
 fun BridgeNavDisplay(
     backStack: List<Route>,
     onBack: () -> Unit,
+    entries: List<FeatureNavigationEntry>,
     modifier: Modifier = Modifier,
-    entryProvider: (NavKey) -> NavEntry<NavKey>,
 ) {
+    val entryProvider = entryProvider<NavKey> {
+        entries.forEach { entry -> entry.register(this) }
+    }
+
     NavDisplay(
         backStack = backStack,
         modifier = modifier,

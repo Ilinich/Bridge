@@ -91,16 +91,25 @@ everywhere else.
 | `foundation:cache` | in-memory cache with soft and hard TTL |
 | `core:data` | HTTP clients, DTOs, domain models, repositories |
 | `uikit` | theme, glass surfaces, runtime-shader brushes, components |
-| `navigation` | Navigation 3 routes and swipe-to-dismiss ([readme](navigation/README.md)) |
-| `feature:club` | club profile and its ground |
-| `feature:matches` | matchday, season calendar, match detail |
-| `feature:squad` | squad grid, player pager |
+| `navigation` | the routing contract, per-tab stacks, swipe-to-dismiss ([readme](navigation/README.md)) |
+| `feature:club:api` / `:impl` | club profile and its ground |
+| `feature:matches:api` / `:impl` | matchday, season calendar, match detail |
+| `feature:squad:api` / `:impl` | squad grid, player pager |
 | `detekt-rules` | the custom static-analysis rule |
 | `shared` | dependency graph, navigation host, iOS framework |
 | `androidApp` / `iosApp` | platform shells |
 
-Feature modules never depend on each other. Shared configuration lives in three convention plugins
-under `build-logic`, so a module's build file is a plugin id and its dependencies.
+Feature modules never depend on each other. Each is split in two: `api` holds the destinations it
+owns, `impl` holds its screens, state holders and wiring. Only the composition root may depend on
+an `impl`, and it does so from one file — the DI graph.
+
+**Features contribute their own destinations.** Each `impl` binds a `FeatureNavigationEntry` that
+registers its routes, and the host collects them from the graph. There is no `when` in the
+composition root naming every screen, and adding a feature means adding a binding rather than
+editing the host.
+
+Shared configuration lives in three convention plugins under `build-logic`, so a module's build
+file is a plugin id and its dependencies.
 
 ## Building
 
