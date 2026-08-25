@@ -7,9 +7,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import coil3.compose.AsyncImage
 import com.begoml.bridge.uikit.theme.BridgeColors
+import com.begoml.bridge.uikit.video.VideoSurface
 
 /**
  * A full-bleed photograph with the scrim that makes text on top of it readable.
@@ -19,7 +21,7 @@ import com.begoml.bridge.uikit.theme.BridgeColors
  */
 @Composable
 fun BackdropImage(url: String?, modifier: Modifier = Modifier) {
-    Box(modifier = modifier.fillMaxSize().background(BridgeColors.Ground)) {
+    Backdrop(modifier = modifier) {
         if (url != null) {
             AsyncImage(
                 model = url,
@@ -28,6 +30,44 @@ fun BackdropImage(url: String?, modifier: Modifier = Modifier) {
                 modifier = Modifier.fillMaxSize(),
             )
         }
+    }
+}
+
+/**
+ * A full-bleed clip blended over a still, sharing one scrim.
+ *
+ * The clip is drawn at [ClipAlpha] rather than opaquely, and the reason is visible on device: a
+ * generic clip has dark passages, and at full opacity those plus the scrim turn the whole backdrop
+ * black — the club's own photograph was doing the work. Blended, the photograph stays legible and
+ * the clip only contributes movement.
+ *
+ * The photograph is also what the screen shows while the clip buffers, and what it keeps showing
+ * if the clip never arrives.
+ */
+@Composable
+fun BackdropVideo(videoUrl: String, posterUrl: String?, modifier: Modifier = Modifier) {
+    Backdrop(modifier = modifier) {
+        if (posterUrl != null) {
+            AsyncImage(
+                model = posterUrl,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
+        VideoSurface(
+            url = videoUrl,
+            modifier = Modifier.fillMaxSize().graphicsLayer { alpha = ClipAlpha },
+        )
+    }
+}
+
+private const val ClipAlpha = 0.4f
+
+@Composable
+private fun Backdrop(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+    Box(modifier = modifier.fillMaxSize().background(BridgeColors.Ground)) {
+        content()
         Box(
             modifier = Modifier.fillMaxSize().background(
                 Brush.verticalGradient(

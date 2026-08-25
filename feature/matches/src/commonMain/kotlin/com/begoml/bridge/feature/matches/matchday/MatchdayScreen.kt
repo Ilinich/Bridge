@@ -45,6 +45,7 @@ import com.begoml.bridge.feature.matches.groupedThousands
 import com.begoml.bridge.foundation.tessera.collectState
 import com.begoml.bridge.uikit.LocalScreenPadding
 import com.begoml.bridge.uikit.component.BackdropImage
+import com.begoml.bridge.uikit.component.BackdropVideo
 import com.begoml.bridge.uikit.component.BadgeImage
 import com.begoml.bridge.uikit.component.GlassPanel
 import com.begoml.bridge.uikit.component.LoadableContent
@@ -89,9 +90,27 @@ fun MatchdayScreen(feature: MatchdayFeature, modifier: Modifier = Modifier) {
     }
 }
 
+/**
+ * The clip that plays behind this screen, or null for the photograph alone.
+ *
+ * Null today, and the reason was found by looking rather than guessing: the feed carries no video,
+ * and every keyless stock clip is narrative footage. Tried on device, a film clip stays
+ * recognisable at any opacity — a character's face ends up behind the fixture — while the club's
+ * own photograph was carrying the screen. Point this at a football loop and the backdrop becomes
+ * video; nothing else has to change.
+ */
+private val AmbientClipUrl: String? = null
+
 @Composable
 private fun StadiumBackdrop(club: Club?) {
-    BackdropImage(url = club?.media?.fanartUrls?.firstOrNull())
+    val poster = club?.media?.fanartUrls?.firstOrNull()
+    val clip = AmbientClipUrl
+
+    if (clip == null) {
+        BackdropImage(url = poster)
+    } else {
+        BackdropVideo(videoUrl = clip, posterUrl = poster)
+    }
 }
 
 @Composable

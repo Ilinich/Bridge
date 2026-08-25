@@ -14,5 +14,9 @@ kotlin {
             implementation(libs.haze)
             implementation(libs.haze.blur)
         }
+        androidMain.dependencies {
+            implementation(libs.media3.exoplayer)
+            implementation(libs.media3.ui)
+        }
     }
 }
