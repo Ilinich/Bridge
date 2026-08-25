@@ -1,6 +1,5 @@
 package com.begoml.bridge.uikit.component
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -23,6 +22,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -37,6 +38,7 @@ private val BarBottomInset = 12.dp
 
 /** Bars sit over moving content, so they carry far less tint than a panel does. */
 private const val BarTintAlpha = 0.26f
+private val TabIconSize = 21.dp
 
 /**
  * The floating tab capsule.
@@ -100,16 +102,14 @@ private fun TabItem(
             .height(BarHeight - 8.dp)
             .clip(CircleShape)
             .background(background)
-            .clickable(onClick = onClick),
+            // The label is gone from the screen but not from the tab: it stays the accessible
+            // name, so a screen reader still announces which tab this is.
+            .clickable(onClickLabel = tab.label, onClick = onClick)
+            .semantics { contentDescription = tab.label },
         horizontalArrangement = Arrangement.spacedBy(5.dp, Alignment.CenterHorizontally),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        BridgeIconGlyph(icon = tab.icon, tint = tint)
-        // Only the selected tab is named. With four of them a row of labels does not fit a phone,
-        // and the icon plus the filled pill already say which one is active.
-        AnimatedVisibility(visible = selected) {
-            Text(text = tab.label, style = LabelStyle, color = tint)
-        }
+        BridgeIconGlyph(icon = tab.icon, tint = tint, glyphSize = TabIconSize)
     }
 }
 

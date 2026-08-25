@@ -10,6 +10,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.foundation.layout.size
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 /**
@@ -18,11 +19,19 @@ import androidx.compose.ui.unit.dp
  * Three shapes do not justify an icon dependency, and drawing them keeps the stroke weight
  * consistent with the rest of the kit.
  */
+private val DefaultGlyphSize = 16.dp
+
 enum class BridgeIcon { Matchday, Season, Squad, Club }
 
 @Composable
-fun BridgeIconGlyph(icon: BridgeIcon, tint: Color, modifier: Modifier = Modifier) {
-    Canvas(modifier = modifier.size(16.dp)) {
+fun BridgeIconGlyph(
+    icon: BridgeIcon,
+    tint: Color,
+    modifier: Modifier = Modifier,
+    glyphSize: Dp = DefaultGlyphSize,
+) {
+    // Named glyphSize, not size: inside Canvas the DrawScope already owns `size`.
+    Canvas(modifier = modifier.size(glyphSize)) {
         val stroke = Stroke(width = size.minDimension * 0.09f)
         when (icon) {
             BridgeIcon.Matchday -> drawShield(tint, stroke)
