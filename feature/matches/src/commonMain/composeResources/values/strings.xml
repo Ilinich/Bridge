@@ -1,0 +1,27 @@
+<resources>
+    <string name="matchday_title">Matchday</string>
+    <string name="matchday_next_match">Next match</string>
+    <string name="matchday_kickoff_local">in your local time</string>
+    <string name="matchday_recent">Recent matches</string>
+    <string name="matchday_stadium">Stadium</string>
+    <string name="matchday_arena">Arena</string>
+    <string name="matchday_capacity">Capacity</string>
+    <string name="matchday_founded">Founded</string>
+    <string name="matchday_kickoff_now">Kick-off</string>
+    <string name="matchday_no_fixture">No fixture scheduled</string>
+    <string name="matchday_days">d</string>
+    <string name="matchday_hours">h</string>
+    <string name="matchday_minutes">m</string>
+    <string name="matchday_seconds">s</string>
+    <string name="season_title">Season</string>
+    <string name="season_round">Round %1$d</string>
+    <string name="season_free_tier_note">One past match is all the free tier returns.</string>
+    <string name="match_title">Match</string>
+    <string name="match_venue">Venue</string>
+    <string name="match_competition">Competition</string>
+    <string name="match_kickoff">Kick-off</string>
+    <string name="match_not_found">This match is no longer loaded.</string>
+    <string name="fixture_teams">%1$s — %2$s</string>
+    <string name="fixture_score">%1$d : %2$d</string>
+    <string name="fixture_versus">—</string>
+</resources>

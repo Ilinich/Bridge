@@ -25,6 +25,7 @@ data class Match(
 )
 
 data class SeasonMatch(
+    val id: String,
     val round: Int,
     val kickoff: Instant,
     val home: TeamRef,

@@ -5,7 +5,9 @@ import com.begoml.bridge.core.data.model.Loadable
 import com.begoml.bridge.core.data.model.map
 import com.begoml.bridge.core.data.model.Match
 import com.begoml.bridge.core.data.model.Season
+import com.begoml.bridge.core.data.model.SeasonMatch
 import com.begoml.bridge.core.data.model.SeasonRound
+import com.begoml.bridge.core.data.model.roundAt
 import com.begoml.bridge.core.data.model.toMatch
 import com.begoml.bridge.core.data.model.toSeason
 import com.begoml.bridge.core.data.openfootball.SeasonApi
@@ -79,12 +81,13 @@ class MatchRepository internal constructor(
     fun isOurs(homeName: String, awayName: String): Boolean =
         TeamNames.matches(homeName, clubName) || TeamNames.matches(awayName, clubName)
 
-    fun currentRound(season: Season, nowMillis: Long): SeasonRound? {
-        val upcoming = season.rounds.firstOrNull { round ->
-            round.matches.any { it.kickoff.toEpochMilliseconds() >= nowMillis }
+    /** Looks a fixture up in the season already held; returns null once the cache has been dropped. */
+    fun findSeasonMatch(id: String): SeasonMatch? =
+        seasonCache.peek(SeasonKey)?.rounds?.firstNotNullOfOrNull { round ->
+            round.matches.firstOrNull { it.id == id }
         }
-        return upcoming ?: season.rounds.lastOrNull()
-    }
+
+    fun currentRound(season: Season, nowMillis: Long): SeasonRound? = season.roundAt(nowMillis)
 
     private companion object {
         const val SeasonKey = "en.1"
