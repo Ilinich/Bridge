@@ -1,12 +1,17 @@
 package com.begoml.bridge.core.data.db
 
 import com.begoml.bridge.core.data.model.Club
+import com.begoml.bridge.core.data.model.ClubColours
+import com.begoml.bridge.core.data.model.ClubDetails
+import com.begoml.bridge.core.data.model.ClubLinks
+import com.begoml.bridge.core.data.model.ClubMedia
 import com.begoml.bridge.core.data.model.MatchScore
 import com.begoml.bridge.core.data.model.Player
 import com.begoml.bridge.core.data.model.Season
 import com.begoml.bridge.core.data.model.SeasonMatch
 import com.begoml.bridge.core.data.model.SeasonRound
 import com.begoml.bridge.core.data.model.TeamRef
+import com.begoml.bridge.core.data.model.Venue
 import kotlin.time.Instant
 
 private const val FanartSeparator = "\n"
@@ -20,8 +25,19 @@ internal fun Club.toEntity() = ClubEntity(
     stadiumCapacity = stadiumCapacity,
     location = location,
     description = description,
-    badgeUrl = badgeUrl,
-    fanartUrls = fanartUrls.joinToString(FanartSeparator),
+    badgeUrl = media.badgeUrl,
+    logoUrl = media.logoUrl,
+    bannerUrl = media.bannerUrl,
+    fanartUrls = media.fanartUrls.joinToString(FanartSeparator),
+    nicknames = details.nicknames.joinToString(FanartSeparator),
+    colourPrimary = details.colours.primary,
+    colourSecondary = details.colours.secondary,
+    colourTertiary = details.colours.tertiary,
+    website = details.links.website,
+    youtube = details.links.youtube,
+    twitter = details.links.twitter,
+    instagram = details.links.instagram,
+    venueId = details.venueId,
 )
 
 internal fun ClubEntity.toClub() = Club(
@@ -33,8 +49,44 @@ internal fun ClubEntity.toClub() = Club(
     stadiumCapacity = stadiumCapacity,
     location = location,
     description = description,
-    badgeUrl = badgeUrl,
-    fanartUrls = fanartUrls.split(FanartSeparator).filter { it.isNotBlank() },
+    media = ClubMedia(
+        badgeUrl = badgeUrl,
+        logoUrl = logoUrl,
+        bannerUrl = bannerUrl,
+        fanartUrls = fanartUrls.split(FanartSeparator).filter { it.isNotBlank() },
+    ),
+    details = ClubDetails(
+        nicknames = nicknames.split(FanartSeparator).filter { it.isNotBlank() },
+        colours = ClubColours(colourPrimary, colourSecondary, colourTertiary),
+        links = ClubLinks(website, youtube, twitter, instagram),
+        venueId = venueId,
+    ),
+)
+
+internal fun Venue.toEntity() = VenueEntity(
+    id = id,
+    name = name,
+    description = description,
+    capacity = capacity,
+    openedYear = openedYear,
+    location = location,
+    thumbUrl = thumbUrl,
+    fanartUrl = fanartUrl,
+    map = map,
+    website = website,
+)
+
+internal fun VenueEntity.toVenue() = Venue(
+    id = id,
+    name = name,
+    description = description,
+    capacity = capacity,
+    openedYear = openedYear,
+    location = location,
+    thumbUrl = thumbUrl,
+    fanartUrl = fanartUrl,
+    map = map,
+    website = website,
 )
 
 internal fun Player.toEntity(ordinal: Int) = PlayerEntity(

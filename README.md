@@ -13,9 +13,9 @@ Multiplatform. Clone it and run it — there is no API key to obtain and no acco
 |---|---|---|
 | ![Matchday](docs/screenshots/android-matchday.png) | ![Season](docs/screenshots/android-season.png) | ![Squad](docs/screenshots/android-squad.png) |
 
-| Player | Match | Swipe back, mid-gesture |
+| Player | Club | Swipe back, mid-gesture |
 |---|---|---|
-| ![Player](docs/screenshots/android-player.png) | ![Match](docs/screenshots/android-match.png) | ![Swipe](docs/screenshots/android-swipe-back.png) |
+| ![Player](docs/screenshots/android-player.png) | ![Club](docs/screenshots/android-club.png) | ![Swipe](docs/screenshots/android-swipe-back.png) |
 
 The same shared code on iOS:
 
@@ -44,6 +44,17 @@ the background, expired makes the caller wait. One mutex is the only serialisati
 nothing is awaited while it is held. Concurrent callers of a key share one load, and a response
 that lands after `invalidate` reaches its caller without being written back.
 
+**Storage sized to how fast the data actually changes.** A finished season is 380 fixtures that
+can never change again, so Room fetches it exactly once in the lifetime of an install; the season
+in progress refreshes a few times a day, the squad every four hours, the club weekly. The next
+match and the last result never touch disk, because a countdown built on a stale kick-off is the
+defect rather than the optimisation. Freshness stamps live in the database, not in memory — an
+in-memory stamp would be gone after a process death and every cold start would re-fetch.
+
+**The season comes from the calendar, not from a constant.** English seasons run August to May, so
+the id is derived from the date and the app will not go stale next August; while a new season is
+still unpublished it falls back to the previous one.
+
 **A lint rule that keeps a decision true.** English is the only language today, but every string
 lives in `strings.xml` from the first commit. A custom detekt rule reports user-visible text
 written straight into a composable — including the `%s — %s` separators, which is the first thing
@@ -64,7 +75,8 @@ The free tier truncates silently, with HTTP 200:
 - **one** past match instead of a run of them;
 - five season fixtures — which is why the calendar comes from openfootball instead, where all 380
   arrive in one 108 KB response and paging between rounds costs no network at all;
-- five league-table rows out of twenty, which is why there is no table screen.
+- five league-table rows out of twenty, which is why there is no table screen;
+- two kit images, both from 2019, which is why there is no kit section.
 
 The app treats all of this as content rather than as error: a short list renders as a list, and
 only a genuine failure shows a retry. There is no full badge map on the free tier either, so a
@@ -80,6 +92,7 @@ everywhere else.
 | `core:data` | HTTP clients, DTOs, domain models, repositories |
 | `uikit` | theme, glass surfaces, runtime-shader brushes, components |
 | `navigation` | Navigation 3 routes and swipe-to-dismiss ([readme](navigation/README.md)) |
+| `feature:club` | club profile and its ground |
 | `feature:matches` | matchday, season calendar, match detail |
 | `feature:squad` | squad grid, player pager |
 | `detekt-rules` | the custom static-analysis rule |

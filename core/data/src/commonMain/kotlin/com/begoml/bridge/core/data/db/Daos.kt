@@ -18,6 +18,16 @@ interface ClubDao {
 }
 
 @Dao
+interface VenueDao {
+
+    @Query("SELECT * FROM venue WHERE id = :id")
+    fun observe(id: String): Flow<VenueEntity?>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(venue: VenueEntity)
+}
+
+@Dao
 interface PlayerDao {
 
     @Query("SELECT * FROM player ORDER BY ordinal")

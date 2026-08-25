@@ -69,6 +69,7 @@ private fun Route.encode(): String = when (this) {
     Route.Matchday -> "matchday"
     Route.Season -> "season"
     Route.Squad -> "squad"
+    Route.Club -> "club"
     is Route.MatchDetail -> "match:$matchId"
     is Route.PlayerDetail -> "player:$playerId"
 }
@@ -77,6 +78,7 @@ private fun decodeRoute(raw: String): Route? = when {
     raw == "matchday" -> Route.Matchday
     raw == "season" -> Route.Season
     raw == "squad" -> Route.Squad
+    raw == "club" -> Route.Club
     raw.startsWith("match:") -> Route.MatchDetail(raw.removePrefix("match:"))
     raw.startsWith("player:") -> Route.PlayerDetail(raw.removePrefix("player:"))
     else -> null

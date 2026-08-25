@@ -26,8 +26,11 @@ import androidx.navigation3.runtime.NavKey
 import bridge.shared.generated.resources.Res
 import bridge.shared.generated.resources.tab_matchday
 import bridge.shared.generated.resources.tab_season
+import bridge.shared.generated.resources.tab_club
 import bridge.shared.generated.resources.tab_squad
 import com.begoml.bridge.core.data.repository.MatchRepository
+import com.begoml.bridge.feature.club.ClubDelegate
+import com.begoml.bridge.feature.club.ClubScreen
 import com.begoml.bridge.feature.matches.detail.MatchDetailScreen
 import com.begoml.bridge.feature.matches.matchday.MatchdayFeature
 import com.begoml.bridge.feature.matches.matchday.MatchdayScreen
@@ -74,6 +77,7 @@ fun App() {
         val matchday: MatchdayFeature = koinInject { parametersOf(scope) }
         val season: SeasonFeature = koinInject { parametersOf(scope) }
         val squad: SquadDelegate = koinInject { parametersOf(scope) }
+        val club: ClubDelegate = koinInject { parametersOf(scope) }
         val matchRepository: MatchRepository = koinInject()
 
         LaunchedEffect(squad) {
@@ -102,6 +106,7 @@ fun App() {
                             matchday = matchday,
                             season = season,
                             squad = squad,
+                            club = club,
                             matchRepository = matchRepository,
                             onOpenMatch = { backStack.push(Route.MatchDetail(it)) },
                             onBack = backStack::pop,
@@ -137,6 +142,7 @@ private fun rememberTabs(): List<BridgeTab> = listOf(
     BridgeTab(BridgeIcon.Matchday, stringResource(Res.string.tab_matchday)),
     BridgeTab(BridgeIcon.Season, stringResource(Res.string.tab_season)),
     BridgeTab(BridgeIcon.Squad, stringResource(Res.string.tab_squad)),
+    BridgeTab(BridgeIcon.Club, stringResource(Res.string.tab_club)),
 )
 
 @Suppress("LongParameterList")
@@ -145,6 +151,7 @@ private fun entryFor(
     matchday: MatchdayFeature,
     season: SeasonFeature,
     squad: SquadDelegate,
+    club: ClubDelegate,
     matchRepository: MatchRepository,
     onOpenMatch: (String) -> Unit,
     onBack: () -> Unit,
@@ -160,6 +167,8 @@ private fun entryFor(
     is Route.Squad -> NavEntry(key) {
         SquadScreen(delegate = squad)
     }
+
+    is Route.Club -> NavEntry(key) { ClubScreen(delegate = club) }
 
     is Route.MatchDetail -> NavEntry(key, metadata = swipeBackMetadata()) {
         MatchDetailScreen(matchId = key.matchId, repository = matchRepository, onBack = onBack)

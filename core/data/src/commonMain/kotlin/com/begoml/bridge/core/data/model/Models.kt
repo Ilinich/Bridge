@@ -52,8 +52,8 @@ data class Club(
     val stadiumCapacity: Int?,
     val location: String?,
     val description: String?,
-    val badgeUrl: String?,
-    val fanartUrls: List<String>,
+    val media: ClubMedia,
+    val details: ClubDetails,
 )
 
 data class Player(

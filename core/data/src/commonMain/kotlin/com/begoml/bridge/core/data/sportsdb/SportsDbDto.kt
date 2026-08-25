@@ -37,6 +37,34 @@ internal class TeamDto(
     @SerialName("strFanart2") val fanart2: String? = null,
     @SerialName("strFanart3") val fanart3: String? = null,
     @SerialName("strFanart4") val fanart4: String? = null,
+    @SerialName("strLogo") val logo: String? = null,
+    @SerialName("strBanner") val banner: String? = null,
+    @SerialName("strKeywords") val keywords: String? = null,
+    @SerialName("strColour1") val colour1: String? = null,
+    @SerialName("strColour2") val colour2: String? = null,
+    @SerialName("strColour3") val colour3: String? = null,
+    @SerialName("strWebsite") val website: String? = null,
+    @SerialName("strYoutube") val youtube: String? = null,
+    @SerialName("strTwitter") val twitter: String? = null,
+    @SerialName("strInstagram") val instagram: String? = null,
+    @SerialName("idVenue") val venueId: String? = null,
+)
+
+@Serializable
+internal class VenuesEnvelope(@SerialName("venues") val venues: List<VenueDto>? = null)
+
+@Serializable
+internal class VenueDto(
+    @SerialName("idVenue") val id: String? = null,
+    @SerialName("strVenue") val name: String? = null,
+    @SerialName("strDescriptionEN") val description: String? = null,
+    @SerialName("intCapacity") val capacity: String? = null,
+    @SerialName("intFormedYear") val openedYear: String? = null,
+    @SerialName("strLocation") val location: String? = null,
+    @SerialName("strThumb") val thumb: String? = null,
+    @SerialName("strFanart1") val fanart1: String? = null,
+    @SerialName("strMap") val map: String? = null,
+    @SerialName("strWebsite") val website: String? = null,
 )
 
 @Serializable

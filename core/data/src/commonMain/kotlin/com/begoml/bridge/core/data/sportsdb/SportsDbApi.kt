@@ -24,6 +24,9 @@ internal class SportsDbApi(private val client: HttpClient) {
     suspend fun lastEvents(teamId: String): List<EventDto> =
         client.get("$BaseUrl/eventslast.php?id=$teamId").body<LastEventsEnvelope>().results.orEmpty()
 
+    suspend fun venue(venueId: String): VenueDto? =
+        client.get("$BaseUrl/lookupvenue.php?id=$venueId").body<VenuesEnvelope>().venues?.firstOrNull()
+
     suspend fun squad(teamId: String): List<PlayerDto> =
         client.get("$BaseUrl/lookup_all_players.php?id=$teamId").body<PlayersEnvelope>().players.orEmpty()
 }

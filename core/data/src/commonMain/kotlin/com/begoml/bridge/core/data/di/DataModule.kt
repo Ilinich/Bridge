@@ -6,6 +6,7 @@ import com.begoml.bridge.core.data.db.DatabaseFactory
 import com.begoml.bridge.core.data.db.FreshnessDao
 import com.begoml.bridge.core.data.db.PlayerDao
 import com.begoml.bridge.core.data.db.SeasonDao
+import com.begoml.bridge.core.data.db.VenueDao
 import com.begoml.bridge.core.data.db.Syncer
 import com.begoml.bridge.core.data.db.platformDatabaseModule
 import com.begoml.bridge.core.data.network.createHttpClient
@@ -47,6 +48,7 @@ private fun dataModule(ioDispatcher: CoroutineDispatcher) = module {
 
     single<BridgeDatabase> { get<DatabaseFactory>().create() }
     single<ClubDao> { get<BridgeDatabase>().clubDao() }
+    single<VenueDao> { get<BridgeDatabase>().venueDao() }
     single<PlayerDao> { get<BridgeDatabase>().playerDao() }
     single<SeasonDao> { get<BridgeDatabase>().seasonDao() }
     single<FreshnessDao> { get<BridgeDatabase>().freshnessDao() }
@@ -58,7 +60,15 @@ private fun dataModule(ioDispatcher: CoroutineDispatcher) = module {
         )
     }
 
-    single { ClubRepository(teamId = TeamId, api = get(), dao = get(), syncer = get()) }
+    single {
+        ClubRepository(
+            teamId = TeamId,
+            api = get(),
+            dao = get(),
+            venueDao = get(),
+            syncer = get(),
+        )
+    }
     single { SquadRepository(teamId = TeamId, api = get(), dao = get(), syncer = get()) }
     single {
         MatchRepository(

@@ -91,7 +91,7 @@ fun MatchdayScreen(feature: MatchdayFeature, modifier: Modifier = Modifier) {
 
 @Composable
 private fun StadiumBackdrop(club: Club?) {
-    BackdropImage(url = club?.fanartUrls?.firstOrNull())
+    BackdropImage(url = club?.media?.fanartUrls?.firstOrNull())
 }
 
 @Composable

@@ -18,6 +18,7 @@ kotlin {
             implementation(projects.core.data)
             implementation(libs.coil.compose)
             implementation(libs.coil.networkKtor)
+            implementation(projects.feature.club)
             implementation(projects.feature.matches)
             implementation(projects.feature.squad)
             implementation(projects.navigation)

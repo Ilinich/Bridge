@@ -1,0 +1,15 @@
+<resources>
+    <string name="club_title">Club</string>
+    <string name="club_about">About</string>
+    <string name="club_ground">Ground</string>
+    <string name="club_capacity">Capacity</string>
+    <string name="club_opened">Opened</string>
+    <string name="club_location">Location</string>
+    <string name="club_founded">Founded</string>
+    <string name="club_colours">Colours</string>
+    <string name="club_links">Links</string>
+    <string name="club_website">Website</string>
+    <string name="club_youtube">YouTube</string>
+    <string name="club_twitter">X</string>
+    <string name="club_instagram">Instagram</string>
+</resources>

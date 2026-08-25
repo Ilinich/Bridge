@@ -1,5 +1,6 @@
 package com.begoml.bridge.uikit.component
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -104,7 +105,11 @@ private fun TabItem(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         BridgeIconGlyph(icon = tab.icon, tint = tint)
-        Text(text = tab.label, style = LabelStyle, color = tint)
+        // Only the selected tab is named. With four of them a row of labels does not fit a phone,
+        // and the icon plus the filled pill already say which one is active.
+        AnimatedVisibility(visible = selected) {
+            Text(text = tab.label, style = LabelStyle, color = tint)
+        }
     }
 }
 

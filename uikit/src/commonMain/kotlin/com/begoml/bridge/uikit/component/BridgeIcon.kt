@@ -18,7 +18,7 @@ import androidx.compose.ui.unit.dp
  * Three shapes do not justify an icon dependency, and drawing them keeps the stroke weight
  * consistent with the rest of the kit.
  */
-enum class BridgeIcon { Matchday, Season, Squad }
+enum class BridgeIcon { Matchday, Season, Squad, Club }
 
 @Composable
 fun BridgeIconGlyph(icon: BridgeIcon, tint: Color, modifier: Modifier = Modifier) {
@@ -28,6 +28,7 @@ fun BridgeIconGlyph(icon: BridgeIcon, tint: Color, modifier: Modifier = Modifier
             BridgeIcon.Matchday -> drawShield(tint, stroke)
             BridgeIcon.Season -> drawCalendar(tint, stroke)
             BridgeIcon.Squad -> drawPeople(tint, stroke)
+            BridgeIcon.Club -> drawGround(tint, stroke)
         }
     }
 }
@@ -78,6 +79,30 @@ private fun DrawScope.drawCalendar(tint: Color, stroke: Stroke) {
             strokeWidth = stroke.width,
         )
     }
+}
+
+/** A pitch seen from above: centre circle and halfway line. */
+private fun DrawScope.drawGround(tint: Color, stroke: Stroke) {
+    val inset = size.width * 0.10f
+    drawRoundRect(
+        color = tint,
+        topLeft = Offset(inset, inset),
+        size = Size(size.width - inset * 2, size.height - inset * 2),
+        cornerRadius = androidx.compose.ui.geometry.CornerRadius(size.width * 0.10f),
+        style = stroke,
+    )
+    drawLine(
+        color = tint,
+        start = Offset(size.width * 0.5f, inset),
+        end = Offset(size.width * 0.5f, size.height - inset),
+        strokeWidth = stroke.width,
+    )
+    drawCircle(
+        color = tint,
+        radius = size.width * 0.16f,
+        center = Offset(size.width * 0.5f, size.height * 0.5f),
+        style = stroke,
+    )
 }
 
 private fun DrawScope.drawPeople(tint: Color, stroke: Stroke) {

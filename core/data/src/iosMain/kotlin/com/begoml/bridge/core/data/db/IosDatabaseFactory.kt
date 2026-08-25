@@ -16,6 +16,9 @@ internal class IosDatabaseFactory(private val queryDispatcher: CoroutineDispatch
     override fun create(): BridgeDatabase =
         Room.databaseBuilder<BridgeDatabase>(name = databasePath())
             .setDriver(BundledSQLiteDriver())
+            // Everything stored here is re-fetchable, so a schema change drops the tables rather
+            // than migrating them. Nothing a person typed is ever kept in this database.
+            .fallbackToDestructiveMigration(dropAllTables = true)
             .setQueryCoroutineContext(queryDispatcher)
             .build()
 

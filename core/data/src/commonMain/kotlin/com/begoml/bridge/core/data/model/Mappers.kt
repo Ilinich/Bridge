@@ -5,6 +5,7 @@ import com.begoml.bridge.core.data.openfootball.SeasonEnvelope
 import com.begoml.bridge.core.data.sportsdb.EventDto
 import com.begoml.bridge.core.data.sportsdb.PlayerDto
 import com.begoml.bridge.core.data.sportsdb.TeamDto
+import com.begoml.bridge.core.data.sportsdb.VenueDto
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
@@ -26,9 +27,44 @@ internal fun TeamDto.toClub(): Club? {
         stadiumCapacity = stadiumCapacity?.toIntOrNull(),
         location = location?.takeIf { it.isNotBlank() },
         description = description?.takeIf { it.isNotBlank() },
-        badgeUrl = badge?.takeIf { it.isNotBlank() },
-        fanartUrls = listOfNotNull(fanart1, fanart2, fanart3, fanart4)
-            .filter { it.isNotBlank() },
+        media = ClubMedia(
+            badgeUrl = badge?.takeIf { it.isNotBlank() },
+            logoUrl = logo?.takeIf { it.isNotBlank() },
+            bannerUrl = banner?.takeIf { it.isNotBlank() },
+            fanartUrls = listOfNotNull(fanart1, fanart2, fanart3, fanart4).filter { it.isNotBlank() },
+        ),
+        details = ClubDetails(
+            nicknames = keywords.orEmpty().split(',').map { it.trim() }.filter { it.isNotEmpty() },
+            colours = ClubColours(
+                primary = colour1?.takeIf { it.isNotBlank() },
+                secondary = colour2?.takeIf { it.isNotBlank() },
+                tertiary = colour3?.takeIf { it.isNotBlank() },
+            ),
+            links = ClubLinks(
+                website = website?.takeIf { it.isNotBlank() },
+                youtube = youtube?.takeIf { it.isNotBlank() },
+                twitter = twitter?.takeIf { it.isNotBlank() },
+                instagram = instagram?.takeIf { it.isNotBlank() },
+            ),
+            venueId = venueId?.takeIf { it.isNotBlank() },
+        ),
+    )
+}
+
+internal fun VenueDto.toVenue(): Venue? {
+    val id = id ?: return null
+    val name = name ?: return null
+    return Venue(
+        id = id,
+        name = name,
+        description = description?.takeIf { it.isNotBlank() },
+        capacity = capacity?.toIntOrNull(),
+        openedYear = openedYear?.toIntOrNull(),
+        location = location?.takeIf { it.isNotBlank() },
+        thumbUrl = thumb?.takeIf { it.isNotBlank() },
+        fanartUrl = fanart1?.takeIf { it.isNotBlank() },
+        map = map?.takeIf { it.isNotBlank() },
+        website = website?.takeIf { it.isNotBlank() },
     )
 }
 

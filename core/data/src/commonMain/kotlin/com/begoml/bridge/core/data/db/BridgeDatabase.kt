@@ -8,17 +8,20 @@ import androidx.room.RoomDatabaseConstructor
 @Database(
     entities = [
         ClubEntity::class,
+        VenueEntity::class,
         PlayerEntity::class,
         SeasonMatchEntity::class,
         FreshnessEntity::class,
     ],
-    version = 1,
+    version = 2,
     exportSchema = true,
 )
 @ConstructedBy(BridgeDatabaseConstructor::class)
 abstract class BridgeDatabase : RoomDatabase() {
 
     abstract fun clubDao(): ClubDao
+
+    abstract fun venueDao(): VenueDao
 
     abstract fun playerDao(): PlayerDao
 

@@ -14,8 +14,33 @@ class ClubEntity(
     val location: String?,
     val description: String?,
     val badgeUrl: String?,
+    val logoUrl: String?,
+    val bannerUrl: String?,
     /** Newline-joined; a handful of URLs does not justify a second table. */
     val fanartUrls: String,
+    val nicknames: String,
+    val colourPrimary: String?,
+    val colourSecondary: String?,
+    val colourTertiary: String?,
+    val website: String?,
+    val youtube: String?,
+    val twitter: String?,
+    val instagram: String?,
+    val venueId: String?,
+)
+
+@Entity(tableName = "venue")
+class VenueEntity(
+    @PrimaryKey val id: String,
+    val name: String,
+    val description: String?,
+    val capacity: Int?,
+    val openedYear: Int?,
+    val location: String?,
+    val thumbUrl: String?,
+    val fanartUrl: String?,
+    val map: String?,
+    val website: String?,
 )
 
 @Entity(tableName = "player")

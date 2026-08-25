@@ -19,6 +19,9 @@ internal class AndroidDatabaseFactory(
             name = context.getDatabasePath(DatabaseName).absolutePath,
         )
             .setDriver(BundledSQLiteDriver())
+            // Everything stored here is re-fetchable, so a schema change drops the tables rather
+            // than migrating them. Nothing a person typed is ever kept in this database.
+            .fallbackToDestructiveMigration(dropAllTables = true)
             .setQueryCoroutineContext(queryDispatcher)
             .build()
 }
