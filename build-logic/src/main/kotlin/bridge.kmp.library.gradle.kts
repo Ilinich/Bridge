@@ -12,6 +12,11 @@ val libs = extensions.getByType<VersionCatalogsExtension>().named("libs")
 kotlin {
     jvmToolchain(21)
 
+    compilerOptions {
+        // expect/actual classes are Beta but supported; the platform shader runtimes need them.
+        freeCompilerArgs.add("-Xexpect-actual-classes")
+    }
+
     iosArm64()
     iosSimulatorArm64()
 
