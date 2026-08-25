@@ -26,6 +26,7 @@ import bridge.feature.matches.generated.resources.match_not_found
 import bridge.feature.matches.generated.resources.match_title
 import com.begoml.bridge.core.data.model.SeasonMatch
 import com.begoml.bridge.feature.matches.formatKickoff
+import com.begoml.bridge.uikit.LocalScreenPadding
 import com.begoml.bridge.uikit.component.BridgeBackButton
 import com.begoml.bridge.uikit.component.BridgeTopBar
 import com.begoml.bridge.uikit.component.GlassPanel
@@ -42,11 +43,11 @@ import org.jetbrains.compose.resources.stringResource
 @Composable
 fun MatchDetailScreen(
     match: SeasonMatch?,
-    contentPadding: PaddingValues,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val brush = rememberAnimatedShaderBrush(ClubBackgroundShader)
+    val contentPadding = LocalScreenPadding.current
 
     GlassBackdrop(
         modifier = modifier.fillMaxSize(),

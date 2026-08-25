@@ -22,7 +22,7 @@ class SquadRepository internal constructor(
         loader = { id -> api.squad(id).mapNotNull { it.toPlayer() } },
         dispatcher = dispatcher,
         nowMillis = nowMillis,
-        staleAfter = 6.hours,
+        staleAfter = 4.hours,
         expireAfter = 24.hours,
         backgroundScope = backgroundScope,
     )

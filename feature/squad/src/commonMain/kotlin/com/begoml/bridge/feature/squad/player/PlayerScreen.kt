@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -17,6 +16,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -32,6 +32,9 @@ import bridge.feature.squad.generated.resources.squad_number
 import bridge.feature.squad.generated.resources.squad_position
 import bridge.feature.squad.generated.resources.squad_title
 import com.begoml.bridge.core.data.model.Player
+import com.begoml.bridge.feature.squad.grid.SquadDelegate
+import com.begoml.bridge.foundation.tessera.collectUiState
+import com.begoml.bridge.uikit.LocalScreenPadding
 import com.begoml.bridge.uikit.component.BridgeBackButton
 import com.begoml.bridge.uikit.component.BridgeTopBar
 import com.begoml.bridge.uikit.component.CutoutImage
@@ -47,7 +50,6 @@ import org.jetbrains.compose.resources.stringResource
 import kotlin.math.absoluteValue
 
 private const val CutoutParallaxDp = 40f
-private const val NumberParallaxDp = -90f
 private const val EdgeFadeStrength = 0.4f
 
 /**
@@ -63,13 +65,15 @@ private const val EdgeFadeStrength = 0.4f
  */
 @Composable
 fun PlayerScreen(
-    players: List<Player>,
+    delegate: SquadDelegate,
     initialPlayerId: String,
-    contentPadding: PaddingValues,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val squadState by delegate.collectUiState()
+    val players = squadState.players
     val brush = rememberAnimatedShaderBrush(ClubBackgroundShader)
+    val contentPadding = LocalScreenPadding.current
 
     GlassBackdrop(
         modifier = modifier.fillMaxSize(),
@@ -91,15 +95,10 @@ fun PlayerScreen(
 
         HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { page ->
             val offset = (pagerState.currentPage - page) + pagerState.currentPageOffsetFraction
-            PlayerPage(
-                glass = glass,
-                player = players[page],
-                offset = offset,
-                contentPadding = contentPadding,
-            )
+            PlayerPage(glass = glass, player = players[page], offset = offset)
         }
 
-        Column(modifier = Modifier.fillMaxWidth().safeContentPadding()) {
+        Column(modifier = Modifier.fillMaxWidth().padding(top = contentPadding.calculateTopPadding())) {
             BridgeTopBar(
                 title = players.getOrNull(pagerState.currentPage)?.name
                     ?: stringResource(Res.string.squad_title),
@@ -125,32 +124,14 @@ fun PlayerScreen(
 }
 
 @Composable
-private fun PlayerPage(
-    glass: GlassScope,
-    player: Player,
-    offset: Float,
-    contentPadding: PaddingValues,
-) {
+private fun PlayerPage(glass: GlassScope, player: Player, offset: Float) {
+    val contentPadding = LocalScreenPadding.current
     Box(modifier = Modifier.fillMaxSize()) {
-        player.shirtNumber?.let { number ->
-            Text(
-                text = number,
-                style = FigureStyle.copy(
-                    fontSize = MaterialTheme.typography.displayLarge.fontSize,
-                ),
-                color = BridgeColors.TextPrimary.copy(alpha = 0.09f),
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .padding(top = 60.dp)
-                    .graphicsLayer { translationX = offset * NumberParallaxDp * density },
-            )
-        }
-
         CutoutImage(
             url = player.cutoutUrl,
             modifier = Modifier
                 .fillMaxSize()
-                .padding(top = 90.dp, bottom = 190.dp)
+                .padding(top = 70.dp, bottom = 190.dp)
                 .graphicsLayer {
                     translationX = offset * CutoutParallaxDp * density
                     alpha = 1f - offset.absoluteValue * EdgeFadeStrength

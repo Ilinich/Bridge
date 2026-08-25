@@ -1,13 +1,14 @@
 package com.begoml.bridge.feature.matches.matchday
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -42,6 +43,7 @@ import com.begoml.bridge.core.data.model.Match
 import com.begoml.bridge.feature.matches.formatKickoff
 import com.begoml.bridge.feature.matches.groupedThousands
 import com.begoml.bridge.foundation.tessera.collectState
+import com.begoml.bridge.uikit.LocalScreenPadding
 import com.begoml.bridge.uikit.component.BackdropImage
 import com.begoml.bridge.uikit.component.BadgeImage
 import com.begoml.bridge.uikit.component.GlassPanel
@@ -53,13 +55,13 @@ import com.begoml.bridge.uikit.theme.FigureStyle
 import com.begoml.bridge.uikit.theme.LabelStyle
 import org.jetbrains.compose.resources.stringResource
 
+/** The hero card needs air under the status bar; the window inset alone sits it flush. */
+private val HeroTopInset = 16.dp
+
 @Composable
-fun MatchdayScreen(
-    feature: MatchdayFeature,
-    contentPadding: androidx.compose.foundation.layout.PaddingValues,
-    modifier: Modifier = Modifier,
-) {
+fun MatchdayScreen(feature: MatchdayFeature, modifier: Modifier = Modifier) {
     val state by feature.collectState()
+    val contentPadding = LocalScreenPadding.current
 
     GlassBackdrop(
         modifier = modifier.fillMaxSize(),
@@ -74,9 +76,9 @@ fun MatchdayScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .safeContentPadding()
+                    .verticalScroll(rememberScrollState())
                     .padding(contentPadding)
-                    .padding(horizontal = 14.dp),
+                    .padding(horizontal = 14.dp, vertical = HeroTopInset),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 with(glass) { HeroCard(state = state) }

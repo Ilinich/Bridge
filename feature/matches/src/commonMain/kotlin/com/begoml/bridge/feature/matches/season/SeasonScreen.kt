@@ -8,8 +8,9 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -38,6 +39,7 @@ import com.begoml.bridge.core.data.model.SeasonRound
 import com.begoml.bridge.feature.matches.formatDay
 import com.begoml.bridge.feature.matches.formatTime
 import com.begoml.bridge.foundation.tessera.collectState
+import com.begoml.bridge.uikit.LocalScreenPadding
 import com.begoml.bridge.uikit.component.LoadableContent
 import com.begoml.bridge.uikit.component.TeamMonogram
 import com.begoml.bridge.uikit.theme.BridgeColors
@@ -48,11 +50,11 @@ import org.jetbrains.compose.resources.stringResource
 @Composable
 fun SeasonScreen(
     feature: SeasonFeature,
-    contentPadding: PaddingValues,
     onMatchClick: (SeasonMatch) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val state by feature.collectState()
+    val contentPadding = LocalScreenPadding.current
 
     LoadableContent(
         isLoading = state.isLoading && state.rounds.isEmpty(),
@@ -73,9 +75,10 @@ fun SeasonScreen(
         }
 
         Column(
-            modifier = Modifier.fillMaxSize().safeContentPadding().padding(contentPadding),
+            modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
+            Spacer(Modifier.height(contentPadding.calculateTopPadding()))
             RoundPills(
                 rounds = state.rounds,
                 selectedIndex = pagerState.currentPage,
@@ -90,6 +93,7 @@ fun SeasonScreen(
                     round = state.rounds[page],
                     isOurs = { index -> feature.isOurs(state.rounds[page], index) },
                     onMatchClick = onMatchClick,
+                    bottomPadding = contentPadding.calculateBottomPadding(),
                 )
             }
         }
@@ -130,10 +134,16 @@ private fun RoundPage(
     round: SeasonRound,
     isOurs: (Int) -> Boolean,
     onMatchClick: (SeasonMatch) -> Unit,
+    bottomPadding: androidx.compose.ui.unit.Dp,
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 4.dp),
+        contentPadding = PaddingValues(
+            start = 14.dp,
+            end = 14.dp,
+            top = 4.dp,
+            bottom = bottomPadding,
+        ),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         items(

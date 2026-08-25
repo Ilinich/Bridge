@@ -71,7 +71,7 @@ class GlassScope internal constructor(
 
     private companion object {
         val GlassCornerRadius = 16.dp
-        val GlassBlurRadius = 24.dp
+        val GlassBlurRadius = 28.dp
         const val GlassTintAlpha = 0.55f
     }
 }

@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -31,7 +32,10 @@ import com.begoml.bridge.uikit.theme.LabelStyle
 
 private val BarHeight = 46.dp
 private val BarInset = 18.dp
-private val BarBottomInset = 13.dp
+private val BarBottomInset = 12.dp
+
+/** Bars sit over moving content, so they carry far less tint than a panel does. */
+private const val BarTintAlpha = 0.26f
 
 /**
  * The floating tab capsule.
@@ -49,10 +53,16 @@ fun GlassScope.BridgeTabBar(
     Row(
         modifier = modifier
             .align(Alignment.BottomCenter)
+            .navigationBarsPadding()
             .padding(start = BarInset, end = BarInset, bottom = BarBottomInset)
             .fillMaxWidth()
             .height(BarHeight)
-            .then(Modifier.glass(shape = CircleShape))
+            .then(
+                Modifier.glass(
+                    shape = CircleShape,
+                    tint = BridgeColors.Ground.copy(alpha = BarTintAlpha),
+                ),
+            )
             .border(1.dp, Color.White.copy(alpha = 0.16f), CircleShape)
             .padding(4.dp),
         horizontalArrangement = Arrangement.spacedBy(3.dp),

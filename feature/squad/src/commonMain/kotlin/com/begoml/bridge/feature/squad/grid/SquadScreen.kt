@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -26,6 +25,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.begoml.bridge.core.data.model.Player
 import com.begoml.bridge.foundation.tessera.collectUiState
+import com.begoml.bridge.uikit.LocalScreenPadding
 import com.begoml.bridge.uikit.component.CutoutImage
 import com.begoml.bridge.uikit.component.LoadableContent
 import com.begoml.bridge.uikit.shader.ClubBackgroundShader
@@ -37,12 +37,9 @@ import com.begoml.bridge.uikit.theme.LabelStyle
 private const val GridColumns = 2
 
 @Composable
-fun SquadScreen(
-    delegate: SquadDelegate,
-    contentPadding: PaddingValues,
-    modifier: Modifier = Modifier,
-) {
+fun SquadScreen(delegate: SquadDelegate, modifier: Modifier = Modifier) {
     val state by delegate.collectUiState()
+    val contentPadding = LocalScreenPadding.current
 
     LoadableContent(
         isLoading = state.isLoading && state.players.isEmpty(),
@@ -52,11 +49,11 @@ fun SquadScreen(
     ) {
         LazyVerticalGrid(
             columns = GridCells.Fixed(GridColumns),
-            modifier = Modifier.fillMaxSize().safeContentPadding(),
+            modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(
                 start = 14.dp,
                 end = 14.dp,
-                top = 4.dp,
+                top = contentPadding.calculateTopPadding() + 4.dp,
                 bottom = contentPadding.calculateBottomPadding(),
             ),
             horizontalArrangement = Arrangement.spacedBy(9.dp),
@@ -95,7 +92,7 @@ private fun PlayerCard(player: Player, onClick: () -> Unit) {
         }
         CutoutImage(
             url = player.cutoutUrl,
-            modifier = Modifier.fillMaxSize().padding(top = 10.dp, bottom = 34.dp),
+            modifier = Modifier.fillMaxSize().padding(top = 10.dp, bottom = 46.dp),
         )
         Column(
             modifier = Modifier.align(Alignment.BottomStart).padding(8.dp),
