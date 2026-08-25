@@ -6,6 +6,8 @@ complexity:
     active: true
     functionThreshold: 8
     constructorThreshold: 10
+    # A wire DTO's shape is the server's decision, not a design smell of ours.
+    ignoreAnnotated: ['Serializable']
   TooManyFunctions:
     active: true
     thresholdInClasses: 20
@@ -18,6 +20,8 @@ style:
   ReturnCount:
     active: true
     max: 3
+    # Mapping a nullable wire record is a run of guard clauses by nature.
+    excludeGuardClauses: true
   MaxLineLength:
     active: true
     maxLineLength: 120
