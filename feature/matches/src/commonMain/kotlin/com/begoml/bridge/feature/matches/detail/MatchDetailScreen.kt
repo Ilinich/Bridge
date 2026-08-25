@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
@@ -25,6 +27,7 @@ import bridge.feature.matches.generated.resources.match_kickoff
 import bridge.feature.matches.generated.resources.match_not_found
 import bridge.feature.matches.generated.resources.match_title
 import com.begoml.bridge.core.data.model.SeasonMatch
+import com.begoml.bridge.core.data.repository.MatchRepository
 import com.begoml.bridge.feature.matches.formatKickoff
 import com.begoml.bridge.uikit.LocalScreenPadding
 import com.begoml.bridge.uikit.component.BridgeBackButton
@@ -42,10 +45,12 @@ import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun MatchDetailScreen(
-    match: SeasonMatch?,
+    matchId: String,
+    repository: MatchRepository,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val match by repository.match(matchId).collectAsStateWithLifecycle(initialValue = null)
     val brush = rememberAnimatedShaderBrush(ClubBackgroundShader)
     val contentPadding = LocalScreenPadding.current
 
@@ -70,7 +75,8 @@ fun MatchDetailScreen(
                 },
             )
 
-            if (match == null) {
+            val current = match
+            if (current == null) {
                 Text(
                     text = stringResource(Res.string.match_not_found),
                     color = BridgeColors.TextMuted,
@@ -80,7 +86,7 @@ fun MatchDetailScreen(
                 return@Column
             }
 
-            with(glass) { FixtureCard(match = match) }
+            with(glass) { FixtureCard(match = current) }
         }
     }
 }

@@ -1,41 +1,54 @@
 package com.begoml.bridge.core.data.repository
 
 import com.begoml.bridge.core.data.TeamNames
+import com.begoml.bridge.core.data.db.SeasonDao
+import com.begoml.bridge.core.data.db.Syncer
+import com.begoml.bridge.core.data.db.toEntity
+import com.begoml.bridge.core.data.db.toSeason
 import com.begoml.bridge.core.data.model.Loadable
-import com.begoml.bridge.core.data.model.map
 import com.begoml.bridge.core.data.model.Match
 import com.begoml.bridge.core.data.model.Season
 import com.begoml.bridge.core.data.model.SeasonMatch
 import com.begoml.bridge.core.data.model.SeasonRound
+import com.begoml.bridge.core.data.model.map
 import com.begoml.bridge.core.data.model.roundAt
 import com.begoml.bridge.core.data.model.toMatch
 import com.begoml.bridge.core.data.model.toSeason
 import com.begoml.bridge.core.data.openfootball.SeasonApi
+import com.begoml.bridge.core.data.previousSeasonId
+import com.begoml.bridge.core.data.seasonIdAt
 import com.begoml.bridge.core.data.sportsdb.SportsDbApi
 import com.begoml.bridge.foundation.cache.InMemoryCache
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
 /**
- * Fixtures from both sources, each on the time to live its nature deserves.
+ * Fixtures from two sources, each held for as long as its nature allows.
  *
- * The next match sits under a countdown, so it goes stale in a minute; the season is a static file
- * that gains scores as rounds are played, so it holds for hours. The two are never merged: they
- * answer different questions and fail independently.
+ * The next match and the last result sit under a countdown, so they live in memory with a short
+ * time to live and are re-fetched often. A season is the opposite: 380 fixtures that stop changing
+ * the moment the last one is played, so they go to disk — a **finished** season is fetched exactly
+ * once ever, and the season in progress is refreshed a few times a day as scores land.
  */
 class MatchRepository internal constructor(
     private val teamId: String,
     private val clubName: String,
     sportsDb: SportsDbApi,
-    seasonApi: SeasonApi,
+    private val seasonApi: SeasonApi,
+    private val seasonDao: SeasonDao,
+    private val syncer: Syncer,
     dispatcher: CoroutineDispatcher,
-    backgroundScope: CoroutineScope,
-    nowMillis: () -> Long,
+    private val backgroundScope: CoroutineScope,
+    private val nowMillis: () -> Long,
 ) {
 
     private val nextMatchCache = InMemoryCache<String, List<Match>>(
@@ -56,15 +69,6 @@ class MatchRepository internal constructor(
         backgroundScope = backgroundScope,
     )
 
-    private val seasonCache = InMemoryCache<String, Season>(
-        loader = { seasonApi.season().toSeason() },
-        dispatcher = dispatcher,
-        nowMillis = nowMillis,
-        staleAfter = 6.hours,
-        expireAfter = 24.hours,
-        backgroundScope = backgroundScope,
-    )
-
     fun nextMatch(): Flow<Loadable<Match?>> =
         nextMatchCache.loadable(teamId).map { loadable ->
             loadable.map { matches -> matches.minByOrNull { it.kickoff } }
@@ -75,21 +79,61 @@ class MatchRepository internal constructor(
             loadable.map { matches -> matches.maxByOrNull { it.kickoff } }
         }
 
-    fun season(): Flow<Loadable<Season>> = seasonCache.loadable(SeasonKey)
+    /** The season now being played, falling back to the last one while the new one is unpublished. */
+    fun season(): Flow<Loadable<Season>> = flow {
+        val seasonId = resolveSeasonId()
+        backgroundScope.launch { runCatching { cacheFinishedSeason(previousSeasonId(seasonId)) } }
 
-    /** True when either side of the fixture is the club this app follows. */
+        val stored = seasonDao.observeSeason(seasonId)
+            .map { rows -> rows.takeIf { it.isNotEmpty() }?.toSeason(seasonId) }
+
+        emitAll(
+            persistedResource(stored = stored) {
+                syncer.sync(key = seasonKey(seasonId), ttl = ttlFor(seasonId)) { fetch(seasonId) }
+            },
+        )
+    }
+
     fun isOurs(homeName: String, awayName: String): Boolean =
         TeamNames.matches(homeName, clubName) || TeamNames.matches(awayName, clubName)
 
-    /** Looks a fixture up in the season already held; returns null once the cache has been dropped. */
-    fun findSeasonMatch(id: String): SeasonMatch? =
-        seasonCache.peek(SeasonKey)?.rounds?.firstNotNullOfOrNull { round ->
-            round.matches.firstOrNull { it.id == id }
-        }
-
     fun currentRound(season: Season, nowMillis: Long): SeasonRound? = season.roundAt(nowMillis)
 
+    fun match(id: String): Flow<SeasonMatch?> = seasonDao.observeMatch(id).map { entity ->
+        entity?.let { listOf(it).toSeason("").rounds.first().matches.first() }
+    }
+
+    /**
+     * A season the calendar does not show, kept because it never changes again.
+     *
+     * One request in the lifetime of an install, and it is on disk for good.
+     */
+    private suspend fun cacheFinishedSeason(seasonId: String) {
+        syncer.sync(key = seasonKey(seasonId), ttl = null) { fetch(seasonId) }
+    }
+
+    private suspend fun resolveSeasonId(): String {
+        val current = seasonIdAt(nowMillis())
+        runCatching {
+            syncer.sync(key = seasonKey(current), ttl = CurrentSeasonTtl) { fetch(current) }
+        }
+        return if (seasonDao.count(current) > 0) current else previousSeasonId(current)
+    }
+
+    private suspend fun fetch(seasonId: String) {
+        val envelope = seasonApi.season(seasonId) ?: return
+        val matches = envelope.toSeason(seasonId).rounds
+            .flatMap { round -> round.matches }
+            .map { match -> match.toEntity(seasonId) }
+        if (matches.isNotEmpty()) seasonDao.replaceSeason(seasonId, matches)
+    }
+
+    private fun ttlFor(seasonId: String): Duration? =
+        if (seasonId == seasonIdAt(nowMillis())) CurrentSeasonTtl else null
+
+    private fun seasonKey(seasonId: String) = "season:$seasonId"
+
     private companion object {
-        const val SeasonKey = "en.1"
+        val CurrentSeasonTtl = 6.hours
     }
 }

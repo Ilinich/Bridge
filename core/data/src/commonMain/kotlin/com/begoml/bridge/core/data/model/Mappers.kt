@@ -66,7 +66,7 @@ internal fun PlayerDto.toPlayer(): Player? {
     )
 }
 
-internal fun SeasonEnvelope.toSeason(): Season {
+internal fun SeasonEnvelope.toSeason(seasonId: String): Season {
     val matches = matches.mapNotNull { dto ->
         val round = dto.round?.roundNumber() ?: return@mapNotNull null
         val home = dto.homeTeam ?: return@mapNotNull null
@@ -74,7 +74,7 @@ internal fun SeasonEnvelope.toSeason(): Season {
         val kickoff = parseDate(dto.date, dto.time) ?: return@mapNotNull null
 
         SeasonMatch(
-            id = seasonMatchId(round, home, away),
+            id = seasonMatchId(seasonId, round, home, away),
             round = round,
             kickoff = kickoff,
             home = teamRef(home, badgeUrl = null),
@@ -94,8 +94,8 @@ internal fun SeasonEnvelope.toSeason(): Season {
 }
 
 /** The feed has no fixture id, so one is derived from the only fields that identify it. */
-internal fun seasonMatchId(round: Int, home: String, away: String): String =
-    "$round-${TeamNames.code(home)}-${TeamNames.code(away)}"
+internal fun seasonMatchId(seasonId: String, round: Int, home: String, away: String): String =
+    "$seasonId-$round-${TeamNames.code(home)}-${TeamNames.code(away)}"
 
 private fun teamRef(name: String, badgeUrl: String?) = TeamRef(
     name = TeamNames.displayName(name),

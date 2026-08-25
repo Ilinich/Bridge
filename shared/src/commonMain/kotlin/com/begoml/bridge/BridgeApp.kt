@@ -162,10 +162,7 @@ private fun entryFor(
     }
 
     is Route.MatchDetail -> NavEntry(key, metadata = swipeBackMetadata()) {
-        MatchDetailScreen(
-            match = matchRepository.findSeasonMatch(key.matchId),
-            onBack = onBack,
-        )
+        MatchDetailScreen(matchId = key.matchId, repository = matchRepository, onBack = onBack)
     }
 
     // The player pager owns a horizontal drag, so it deliberately does not opt into swipe-back.

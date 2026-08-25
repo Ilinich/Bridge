@@ -7,7 +7,7 @@ complexity:
     functionThreshold: 8
     constructorThreshold: 10
     # A wire DTO's shape is the server's decision, not a design smell of ours.
-    ignoreAnnotated: ['Serializable']
+    ignoreAnnotated: ['Serializable', 'Entity']
   TooManyFunctions:
     active: true
     thresholdInClasses: 20

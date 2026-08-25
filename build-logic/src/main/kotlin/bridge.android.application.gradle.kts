@@ -54,8 +54,10 @@ detekt {
 }
 
 // The Kotlin plugin feeds generated sources into its source sets; detekt must not judge them.
+// Patterns are matched relative to each source root, and a generated root starts *below* build/,
+// so the check has to look at the absolute path instead.
 tasks.withType<Detekt>().configureEach {
-    exclude("**/build/**", "**/generated/**")
+    exclude { element -> element.file.absolutePath.contains("${File.separator}build${File.separator}") }
 }
 
 tasks.register("detektAll") {

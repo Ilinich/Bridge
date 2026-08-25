@@ -1,6 +1,6 @@
 package com.begoml.bridge.di
 
-import com.begoml.bridge.core.data.di.dataModule
+import com.begoml.bridge.core.data.di.dataModules
 import com.begoml.bridge.feature.matches.di.matchesModule
 import com.begoml.bridge.feature.squad.di.squadModule
 import com.begoml.bridge.ioDispatcher
@@ -16,5 +16,5 @@ import org.koin.dsl.KoinAppDeclaration
  */
 fun startBridge(declaration: KoinAppDeclaration = {}): KoinApplication = startKoin {
     declaration()
-    modules(dataModule(ioDispatcher), matchesModule(), squadModule())
+    modules(dataModules(ioDispatcher) + matchesModule() + squadModule())
 }

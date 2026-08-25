@@ -1,5 +1,13 @@
 package com.begoml.bridge.core.data.di
 
+import com.begoml.bridge.core.data.db.BridgeDatabase
+import com.begoml.bridge.core.data.db.ClubDao
+import com.begoml.bridge.core.data.db.DatabaseFactory
+import com.begoml.bridge.core.data.db.FreshnessDao
+import com.begoml.bridge.core.data.db.PlayerDao
+import com.begoml.bridge.core.data.db.SeasonDao
+import com.begoml.bridge.core.data.db.Syncer
+import com.begoml.bridge.core.data.db.platformDatabaseModule
 import com.begoml.bridge.core.data.network.createHttpClient
 import com.begoml.bridge.core.data.openfootball.SeasonApi
 import com.begoml.bridge.core.data.repository.ClubRepository
@@ -10,6 +18,7 @@ import io.ktor.client.HttpClient
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
+import org.koin.core.module.Module
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
 import kotlin.time.Clock
@@ -21,40 +30,47 @@ private const val ClubName = "Chelsea"
 val IoDispatcher = named("io")
 val DataScope = named("data")
 
-fun dataModule(ioDispatcher: CoroutineDispatcher) = module {
+private val nowMillis: () -> Long = { Clock.System.now().toEpochMilliseconds() }
+
+fun dataModules(ioDispatcher: CoroutineDispatcher): List<Module> =
+    listOf(platformDatabaseModule(), dataModule(ioDispatcher))
+
+private fun dataModule(ioDispatcher: CoroutineDispatcher) = module {
     single<CoroutineDispatcher>(IoDispatcher) { ioDispatcher }
-    single<CoroutineScope>(DataScope) { CoroutineScope(SupervisorJob() + get<CoroutineDispatcher>(IoDispatcher)) }
+    single<CoroutineScope>(DataScope) {
+        CoroutineScope(SupervisorJob() + get<CoroutineDispatcher>(IoDispatcher))
+    }
+
     single<HttpClient> { createHttpClient() }
     single { SportsDbApi(get()) }
     single { SeasonApi(get()) }
 
+    single<BridgeDatabase> { get<DatabaseFactory>().create() }
+    single<ClubDao> { get<BridgeDatabase>().clubDao() }
+    single<PlayerDao> { get<BridgeDatabase>().playerDao() }
+    single<SeasonDao> { get<BridgeDatabase>().seasonDao() }
+    single<FreshnessDao> { get<BridgeDatabase>().freshnessDao() }
     single {
-        ClubRepository(
-            teamId = TeamId,
-            api = get(),
+        Syncer(
+            freshness = get(),
+            nowMillis = nowMillis,
             dispatcher = get(IoDispatcher),
-            backgroundScope = get(DataScope),
-            nowMillis = { Clock.System.now().toEpochMilliseconds() },
         )
     }
+
+    single { ClubRepository(teamId = TeamId, api = get(), dao = get(), syncer = get()) }
+    single { SquadRepository(teamId = TeamId, api = get(), dao = get(), syncer = get()) }
     single {
         MatchRepository(
             teamId = TeamId,
             clubName = ClubName,
             sportsDb = get(),
             seasonApi = get(),
+            seasonDao = get(),
+            syncer = get(),
             dispatcher = get(IoDispatcher),
             backgroundScope = get(DataScope),
-            nowMillis = { Clock.System.now().toEpochMilliseconds() },
-        )
-    }
-    single {
-        SquadRepository(
-            teamId = TeamId,
-            api = get(),
-            dispatcher = get(IoDispatcher),
-            backgroundScope = get(DataScope),
-            nowMillis = { Clock.System.now().toEpochMilliseconds() },
+            nowMillis = nowMillis,
         )
     }
 }

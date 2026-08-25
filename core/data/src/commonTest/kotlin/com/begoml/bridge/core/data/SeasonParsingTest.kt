@@ -23,7 +23,7 @@ private val SeasonJson = """
 
 class SeasonParsingTest {
 
-    private fun season() = BridgeJson.decodeFromString<SeasonEnvelope>(SeasonJson).toSeason()
+    private fun season() = BridgeJson.decodeFromString<SeasonEnvelope>(SeasonJson).toSeason("2025-26")
 
     @Test
     fun `score is read from both the object form and the array form`() {
