@@ -1,0 +1,8 @@
+<resources>
+    <string name="squad_title">Squad</string>
+    <string name="squad_number">Number</string>
+    <string name="squad_position">Position</string>
+    <string name="squad_country">Country</string>
+    <string name="squad_height">Height</string>
+    <string name="squad_not_found">This player is no longer loaded.</string>
+</resources>
