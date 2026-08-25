@@ -46,6 +46,7 @@ import com.begoml.bridge.core.data.model.Venue
 import com.begoml.bridge.foundation.tessera.collectUiState
 import com.begoml.bridge.uikit.LocalScreenPadding
 import com.begoml.bridge.uikit.component.BackdropImage
+import com.begoml.bridge.uikit.component.BackdropVideo
 import com.begoml.bridge.uikit.component.BadgeImage
 import com.begoml.bridge.uikit.component.GlassPanel
 import com.begoml.bridge.uikit.component.LoadableContent
@@ -56,6 +57,17 @@ import com.begoml.bridge.uikit.theme.BridgeColors
 import com.begoml.bridge.uikit.theme.LabelStyle
 import org.jetbrains.compose.resources.stringResource
 
+/**
+ * The clip behind this screen.
+ *
+ * Abstract on purpose. A backdrop has to survive being blended over a photograph, and anything
+ * with a subject does not: tried on device, narrative footage stays recognisable at any opacity.
+ * A night sky has nothing to recognise, so it reads as weather over the crest rather than as a
+ * video someone left running.
+ */
+private const val AmbientClipUrl =
+    "https://videos.pexels.com/video-files/2611250/2611250-hd_1920_1080_30fps.mp4"
+
 @Composable
 fun ClubScreen(delegate: ClubDelegate, modifier: Modifier = Modifier) {
     val state by delegate.collectUiState()
@@ -63,7 +75,12 @@ fun ClubScreen(delegate: ClubDelegate, modifier: Modifier = Modifier) {
 
     GlassBackdrop(
         modifier = modifier.fillMaxSize(),
-        backdrop = { BackdropImage(url = state.club?.media?.fanartUrls?.lastOrNull()) },
+        backdrop = {
+            BackdropVideo(
+                videoUrl = AmbientClipUrl,
+                posterUrl = state.club?.media?.fanartUrls?.lastOrNull(),
+            )
+        },
     ) {
         val glass = this
         LoadableContent(
