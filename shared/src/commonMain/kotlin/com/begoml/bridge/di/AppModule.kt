@@ -1,0 +1,20 @@
+package com.begoml.bridge.di
+
+import com.begoml.bridge.core.data.di.dataModule
+import com.begoml.bridge.feature.matches.di.matchesModule
+import com.begoml.bridge.feature.squad.di.squadModule
+import com.begoml.bridge.ioDispatcher
+import org.koin.core.KoinApplication
+import org.koin.core.context.startKoin
+import org.koin.dsl.KoinAppDeclaration
+
+/**
+ * Starts the graph.
+ *
+ * Both platforms call this, and iOS calls it from its own entry point rather than inheriting one,
+ * which is why it lives here instead of inside the Android application class.
+ */
+fun startBridge(declaration: KoinAppDeclaration = {}): KoinApplication = startKoin {
+    declaration()
+    modules(dataModule(ioDispatcher), matchesModule(), squadModule())
+}
