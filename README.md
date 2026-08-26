@@ -1,23 +1,53 @@
 # Bridge
 
-A football supporter app for Android and iOS, built with Kotlin Multiplatform and Compose
-Multiplatform. Clone it and run it — there is no API key to obtain and no account to create.
+**A worked example of a Kotlin Multiplatform app.** One codebase, two platforms, and a real
+feature set rather than a template: networking, a database, navigation with its own gesture,
+runtime shaders, a video player, background work and tests that run on both platforms.
+
+It is a football supporter app because an example needs a subject. Clone it and run it — there is
+no API key to obtain and no account to create.
 
 > Unofficial fan project. Not affiliated with, endorsed by, or connected to Chelsea Football Club.
 > No club artwork is stored in this repository; every image is loaded at runtime from the data
 > sources listed below.
 
-| Matchday | Season | Squad |
+### iOS
+
+| Matchday | Season | Squad | Club |
+|---|---|---|---|
+| ![Matchday](docs/screenshots/ios-matchday.png) | ![Season](docs/screenshots/ios-season.png) | ![Squad](docs/screenshots/ios-squad.png) | ![Club](docs/screenshots/ios-club.png) |
+
+### Android — the same shared code
+
+| Player | Match | Swipe back, mid-gesture |
 |---|---|---|
-| ![Matchday](docs/screenshots/android-matchday.png) | ![Season](docs/screenshots/android-season.png) | ![Squad](docs/screenshots/android-squad.png) |
+| ![Player](docs/screenshots/android-player.png) | ![Match](docs/screenshots/android-match.png) | ![Swipe](docs/screenshots/android-swipe-back.png) |
 
-| Player | Club | Swipe back, mid-gesture |
+## What is shared, and what is not
+
+Every screen, every state holder, every repository and every test below is written once in
+`commonMain`. The platform code is the short list on the right, and it is short on purpose: an
+`expect`/`actual` pair is used where the platforms genuinely differ, not to organise the code.
+
+| Concern | Shared | Platform-specific |
 |---|---|---|
-| ![Player](docs/screenshots/android-player.png) | ![Club](docs/screenshots/android-club.png) | ![Swipe](docs/screenshots/android-swipe-back.png) |
+| UI | Compose Multiplatform 1.11.1 — all screens | — |
+| Navigation | Navigation3, routes, router, per-tab stacks, swipe-to-dismiss | — |
+| State | `tessera`: `feature()` / `UiStateDelegate`, ViewModels | — |
+| DI | Koin 4.2 | Android `Context` binding |
+| Network | Ktor 3.5, kotlinx.serialization | OkHttp / Darwin engines |
+| Database | Room 2.8 KMP, bundled SQLite | database file location |
+| Images | coil3 | — |
+| Blur | Haze 2.0 | — |
+| Runtime shaders | one source in a dialect both accept | AGSL / SkSL runtime |
+| Video | playback contract, transport controls | ExoPlayer / AVPlayer |
+| Logging | levels, tags, the debug gate | `Log` / `NSLog` |
+| Background refresh | what to refresh | WorkManager / `BGTaskScheduler` |
+| Tests | Compose UI tests in `commonTest` | run natively on iOS, on a device on Android |
 
-The same shared code on iOS:
-
-<img src="docs/screenshots/ios-matchday.png" width="260" alt="Matchday on iOS">
+Kotlin 2.4.10, Gradle 9.1, AGP 9.0, JDK 21, minSdk 26. Static analysis is detekt with a rule
+written for this repository; performance has a Macrobenchmark module and a recorded baseline
+profile.
 
 ## What is interesting here
 
@@ -87,6 +117,9 @@ everywhere else.
 |---|---|
 | `foundation:tessera` | state holders: `feature()` and `UiStateDelegate` ([readme](foundation/tessera/README.md)) |
 | `foundation:cache` | in-memory cache with soft and hard TTL |
+| `foundation:logger:api` / `:impl` | the logging contract, and the platform sink behind it |
+| `foundation:analytics:api` / `:impl` | typed events, recorded to the log until a backend exists |
+| `foundation:background:api` / `:impl` | daily refresh: WorkManager and `BGTaskScheduler` |
 | `core:data` | HTTP clients, DTOs, domain models, repositories |
 | `uikit` | theme, glass surfaces, runtime-shader brushes, components |
 | `navigation:core` | the routing contract, the router, per-tab stacks ([readme](navigation/core/README.md)) |
@@ -95,6 +128,7 @@ everywhere else.
 | `feature:matches:api` / `:impl` | matchday, season calendar, match detail |
 | `feature:squad:api` / `:impl` | squad grid, player pager |
 | `detekt-rules` | the custom static-analysis rule |
+| `benchmark` | baseline-profile generator and startup / scroll benchmarks |
 | `shared` | dependency graph, navigation host, iOS framework |
 | `androidApp` / `iosApp` | platform shells |
 
