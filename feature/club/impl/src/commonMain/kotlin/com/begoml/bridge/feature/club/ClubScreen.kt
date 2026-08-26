@@ -25,6 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -36,13 +37,16 @@ import com.begoml.bridge.uikit.LocalScreenPadding
 import com.begoml.bridge.uikit.groupedThousands
 import com.begoml.bridge.uikit.component.BackdropImage
 import com.begoml.bridge.uikit.component.BadgeImage
+import com.begoml.bridge.uikit.component.GlassPanel
 import com.begoml.bridge.uikit.component.LoadableContent
 import com.begoml.bridge.uikit.glass.EdgeFadeOverhang
+import com.begoml.bridge.uikit.glass.GlassBackdrop
+import com.begoml.bridge.uikit.glass.GlassScope
 import com.begoml.bridge.uikit.glass.ScrollEdge
-import com.begoml.bridge.uikit.glass.EdgeFadeOverhang
 import com.begoml.bridge.uikit.glass.ScrollEdgeFade
-import com.begoml.bridge.uikit.component.ShaderPanel
 import com.begoml.bridge.uikit.shader.FloodlightShader
+import com.begoml.bridge.uikit.shader.rememberAnimatedShader
+import com.begoml.bridge.uikit.shader.shaded
 import com.begoml.bridge.uikit.rememberUrlOpener
 import com.begoml.bridge.uikit.theme.BridgeColors
 import com.begoml.bridge.uikit.theme.LabelStyle
@@ -57,6 +61,9 @@ import com.begoml.bridge.uikit.video.rememberVideoPlayback
  * footage is rights-controlled, and this repository is public. The 720p rendition is the one
  * fetched — a phone gains nothing from 1080p in a card this size.
  */
+/** Enough to read as moving light over the crest, not enough to hide it. */
+private const val ShaderWashAlpha = 0.55f
+
 private const val ClipUrl =
     "https://videos.pexels.com/video-files/11918917/11918917-hd_1280_720_60fps.mp4"
 
@@ -65,9 +72,26 @@ internal fun ClubScreen(viewModel: ClubViewModel, modifier: Modifier = Modifier)
     val state by viewModel.state.collectAsStateWithLifecycle()
     val contentPadding = LocalScreenPadding.current
 
-    Box(modifier = modifier.fillMaxSize()) {
-        BackdropImage(url = state.club?.media?.fanartUrls?.lastOrNull())
+    val shader = rememberAnimatedShader(FloodlightShader)
 
+    // The shader is the backdrop, so the frosted panels blur something that is actually moving
+    // rather than a still photograph: the light travels underneath the glass.
+    GlassBackdrop(
+        modifier = modifier.fillMaxSize(),
+        backdrop = {
+            Box(modifier = Modifier.fillMaxSize()) {
+                BackdropImage(url = state.club?.media?.fanartUrls?.lastOrNull())
+                // Over the photograph rather than behind it: the panels frost whatever is directly
+                // beneath them, so the light has to be the top layer to be visible through them.
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .graphicsLayer { alpha = ShaderWashAlpha }
+                        .shaded(shader),
+                )
+            }
+        },
+    ) {
         LoadableContent(
             isLoading = (state.isLoading || state.labels == null) && state.club == null,
             error = state.error.takeIf { state.club == null },
@@ -83,7 +107,7 @@ internal fun ClubScreen(viewModel: ClubViewModel, modifier: Modifier = Modifier)
                     .padding(horizontal = 14.dp, vertical = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
-                Header(club = club, labels = labels)
+                with(this@GlassBackdrop) { Header(club = club, labels = labels) }
                 MediaSection(title = labels.media)
                 club.description?.let { Section(title = labels.about) { Prose(it) } }
                 state.venue?.let { GroundSection(venue = it, labels = labels) }
@@ -104,8 +128,8 @@ internal fun ClubScreen(viewModel: ClubViewModel, modifier: Modifier = Modifier)
 
 
 @Composable
-private fun Header(club: Club, labels: ClubLabels) {
-    ShaderPanel(spec = FloodlightShader, modifier = Modifier.fillMaxWidth()) {
+private fun GlassScope.Header(club: Club, labels: ClubLabels) {
+    GlassPanel(modifier = Modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,

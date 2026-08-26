@@ -7,6 +7,7 @@ import com.begoml.bridge.feature.squad.api.SquadRoute
 import com.begoml.bridge.feature.squad.grid.SquadScreen
 import com.begoml.bridge.feature.squad.player.PlayerScreen
 import com.begoml.bridge.navigation.FeatureNavigationEntry
+import com.begoml.bridge.navigation.swipeBackMetadata
 import org.koin.compose.viewmodel.koinViewModel
 
 internal class SquadNavigationEntry : FeatureNavigationEntry {
@@ -16,8 +17,10 @@ internal class SquadNavigationEntry : FeatureNavigationEntry {
             SquadScreen(viewModel = koinViewModel<SquadViewModel>())
         }
 
-        // No swipe-back metadata: the pager owns the horizontal drag and the two would fight.
-        scope.entry<PlayerDetailRoute> { route ->
+        // The pager owns the horizontal drag, but only while it has somewhere to go: on the first
+        // player it stops consuming, and the leftover reaches the dismiss layer through nested
+        // scroll. So the gesture closes the screen exactly where paging runs out.
+        scope.entry<PlayerDetailRoute>(metadata = swipeBackMetadata()) { route ->
             PlayerScreen(
                 viewModel = koinViewModel<PlayerViewModel>(),
                 initialPlayerId = route.playerId,

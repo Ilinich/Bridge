@@ -90,11 +90,8 @@ private fun TabItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val background by animateColorAsState(
-        targetValue = if (selected) BridgeColors.Club else Color.Transparent,
-    )
     val tint by animateColorAsState(
-        targetValue = if (selected) BridgeColors.TextPrimary else BridgeColors.TextMuted,
+        targetValue = if (selected) BridgeColors.ClubBright else BridgeColors.TextMuted,
     )
 
     Row(
@@ -102,7 +99,6 @@ private fun TabItem(
             .fillMaxWidth()
             .height(BarHeight - 8.dp)
             .clip(CircleShape)
-            .background(background)
             // The label is gone from the screen but not from the tab: it stays the accessible
             // name, so a screen reader still announces which tab this is.
             .clickable(onClickLabel = tab.label, onClick = onClick)

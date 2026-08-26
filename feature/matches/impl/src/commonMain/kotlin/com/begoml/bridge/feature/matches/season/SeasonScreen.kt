@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -25,12 +27,15 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
 import bridge.feature.matches.impl.generated.resources.Res
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.begoml.bridge.uikit.LocalScreenPadding
@@ -68,9 +73,11 @@ internal fun SeasonScreen(viewModel: SeasonViewModel, modifier: Modifier = Modif
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Spacer(Modifier.height(contentPadding.calculateTopPadding()))
+            val scope = rememberCoroutineScope()
             RoundPills(
                 rounds = state.rounds,
                 selectedIndex = pagerState.currentPage,
+                onSelect = { index -> scope.launch { pagerState.animateScrollToPage(index) } },
                 state = pillsState,
             )
             HorizontalPager(
@@ -92,7 +99,8 @@ internal fun SeasonScreen(viewModel: SeasonViewModel, modifier: Modifier = Modif
 private fun RoundPills(
     rounds: List<SeasonRoundUi>,
     selectedIndex: Int,
-    state: androidx.compose.foundation.lazy.LazyListState,
+    onSelect: (Int) -> Unit,
+    state: LazyListState,
 ) {
     LazyRow(
         state = state,
@@ -111,10 +119,9 @@ private fun RoundPills(
                 style = LabelStyle,
                 color = if (selected) BridgeColors.TextPrimary else BridgeColors.TextMuted,
                 modifier = Modifier
-                    .background(
-                        color = if (selected) BridgeColors.Club else BridgeColors.Surface,
-                        shape = CircleShape,
-                    )
+                    .clip(CircleShape)
+                    .background(if (selected) BridgeColors.Club else BridgeColors.Surface)
+                    .clickable { onSelect(index) }
                     .padding(horizontal = 11.dp, vertical = 6.dp),
             )
         }
