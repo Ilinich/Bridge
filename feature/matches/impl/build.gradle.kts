@@ -7,6 +7,9 @@ kotlin {
         commonMain.dependencies {
             api(projects.feature.matches.api)
 
+            // Another feature's destinations, and nothing else of it.
+            implementation(projects.feature.club.api)
+
             implementation(projects.core.data)
             implementation(projects.navigation)
             implementation(projects.uikit)

@@ -21,10 +21,10 @@ import androidx.compose.runtime.toMutableStateList
  * themselves back on the first tab.
  */
 class TabbedBackStack internal constructor(
-    roots: List<Route>,
+    private val roots: List<Route>,
     initialTab: Int = 0,
     initialStacks: List<List<Route>>? = null,
-) : Navigator {
+) {
 
     private val stacks: List<SnapshotStateList<Route>> =
         roots.mapIndexed { index, root ->
@@ -39,12 +39,36 @@ class TabbedBackStack internal constructor(
 
     val canPop: Boolean get() = current.size > 1
 
-    override fun push(route: Route) {
+    fun push(route: Route) {
         if (current.lastOrNull() != route) current.add(route)
     }
 
-    override fun pop() {
+    fun pop() {
         if (canPop) current.removeAt(current.lastIndex)
+    }
+
+    fun popToRoot() {
+        while (canPop) pop()
+    }
+
+    /** Pops until [route] is on top; leaves the stack alone when it does not hold it. */
+    fun popTo(route: Route) {
+        if (!contains(route)) return
+        while (canPop && current.last() != route) pop()
+    }
+
+    fun contains(route: Route): Boolean = current.contains(route)
+
+    /**
+     * Selects the tab a root destination belongs to.
+     *
+     * Returns false for anything that is not a root, which is how the router knows to push instead.
+     */
+    fun selectTabFor(route: Route): Boolean {
+        val index = roots.indexOfFirst { it == route }
+        if (index < 0) return false
+        selectedTab = index
+        return true
     }
 
     /** Selecting the tab already shown returns it to its root, the way a tab bar is expected to. */

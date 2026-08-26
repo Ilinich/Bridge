@@ -103,6 +103,11 @@ Feature modules never depend on each other. Each is split in two: `api` holds th
 owns, `impl` holds its screens, state holders and wiring. Only the composition root may depend on
 an `impl`, and it does so from one file — the DI graph.
 
+**Features reach each other by naming a destination.** Tapping the stadium card on matchday opens
+the club screen: `feature:matches:impl` depends on `feature:club:api` and calls
+`appRouter.navigateTo(ClubRoute)`. The club's screen, state holder and module stay invisible from
+there, so the two features can be built and changed independently.
+
 **Features contribute their own destinations.** Each `impl` binds a `FeatureNavigationEntry` that
 registers its routes, and the host collects them from the graph. There is no `when` in the
 composition root naming every screen, and adding a feature means adding a binding rather than

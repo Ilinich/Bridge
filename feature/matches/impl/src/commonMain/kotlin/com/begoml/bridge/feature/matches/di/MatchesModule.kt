@@ -27,6 +27,6 @@ fun matchesModule() = module {
             nowMillis = { Clock.System.now().toEpochMilliseconds() },
         )
     }
-    single { MatchesNavigationEntry(navigator = get()) } bind FeatureNavigationEntry::class
+    single { MatchesNavigationEntry(router = get()) } bind FeatureNavigationEntry::class
     single { MatchesRouteCodec() } bind RouteCodec::class
 }

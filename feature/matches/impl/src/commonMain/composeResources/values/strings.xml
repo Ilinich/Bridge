@@ -24,4 +24,6 @@
     <string name="fixture_teams">%1$s — %2$s</string>
     <string name="fixture_score">%1$d : %2$d</string>
     <string name="fixture_versus">—</string>
+    <string name="matchday_loading_fixture">Looking up the next fixture…</string>
+    <string name="matchday_fixture_failed">Could not reach the fixture list</string>
 </resources>

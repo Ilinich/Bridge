@@ -11,13 +11,15 @@ import com.begoml.bridge.feature.squad.grid.SquadEvent
 import com.begoml.bridge.feature.squad.grid.SquadScreen
 import com.begoml.bridge.feature.squad.player.PlayerScreen
 import com.begoml.bridge.navigation.FeatureNavigationEntry
-import com.begoml.bridge.navigation.Navigator
+import com.begoml.bridge.navigation.router.AppRouter
+import com.begoml.bridge.navigation.router.navigateTo
+import com.begoml.bridge.navigation.router.navigateUp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.collectLatest
 import org.koin.compose.koinInject
 import org.koin.core.parameter.parametersOf
 
-internal class SquadNavigationEntry(private val navigator: Navigator) : FeatureNavigationEntry {
+internal class SquadNavigationEntry(private val router: AppRouter) : FeatureNavigationEntry {
 
     override fun register(scope: EntryProviderScope<NavKey>) {
         scope.entry<SquadRoute> {
@@ -27,7 +29,7 @@ internal class SquadNavigationEntry(private val navigator: Navigator) : FeatureN
             LaunchedEffect(delegate) {
                 delegate.singleEvents.collectLatest { event ->
                     when (event) {
-                        is SquadEvent.OpenPlayer -> navigator.push(PlayerDetailRoute(event.playerId))
+                        is SquadEvent.OpenPlayer -> router.navigateTo(PlayerDetailRoute(event.playerId))
                     }
                 }
             }
@@ -42,7 +44,7 @@ internal class SquadNavigationEntry(private val navigator: Navigator) : FeatureN
             PlayerScreen(
                 delegate = delegate,
                 initialPlayerId = route.playerId,
-                onBack = navigator::pop,
+                onBack = router::navigateUp,
             )
         }
     }

@@ -31,7 +31,7 @@ import com.begoml.bridge.feature.matches.api.SeasonRoute
 import com.begoml.bridge.feature.squad.api.SquadRoute
 import com.begoml.bridge.navigation.BridgeNavDisplay
 import com.begoml.bridge.navigation.FeatureNavigationEntry
-import com.begoml.bridge.navigation.NavigatorHolder
+import com.begoml.bridge.navigation.router.AppRouterImpl
 import com.begoml.bridge.navigation.Route
 import com.begoml.bridge.navigation.RouteCodec
 import com.begoml.bridge.navigation.rememberTabbedBackStack
@@ -70,12 +70,12 @@ fun App() {
     BridgeTheme {
         val codecs: List<RouteCodec> = remember { KoinPlatform.getKoin().getAll() }
         val entries: List<FeatureNavigationEntry> = remember { KoinPlatform.getKoin().getAll() }
-        val navigatorHolder: NavigatorHolder = koinInject()
+        val router: AppRouterImpl = koinInject()
 
         val backStack = rememberTabbedBackStack(roots = TabRoutes, codecs = codecs)
         DisposableEffect(backStack) {
-            navigatorHolder.attach(backStack)
-            onDispose { navigatorHolder.detach() }
+            router.attach(backStack)
+            onDispose { router.detach() }
         }
 
         val tabs = rememberTabs()

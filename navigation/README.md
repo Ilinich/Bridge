@@ -2,6 +2,22 @@
 
 Navigation 3 routes, per-tab back stacks and a swipe-to-dismiss gesture, all in common code.
 
+## Asking to go somewhere
+
+A feature injects an `AppRouter` and names a destination. It never holds another feature's screens
+or state holders, and never learns which tab it is in.
+
+```kotlin
+appRouter.navigateTo(ClubRoute)                    // from feature:matches, using feature:club:api
+appRouter.navigateToIfNotLastInBackStack(route)    // don't reopen what the user is looking at
+appRouter.navigateOrReplaceIfSameTypeOnTop(route)  // deep links, without stacking duplicates
+appRouter.navigateUp()
+```
+
+One rule the tabs impose: a destination that **is** a tab root selects that tab instead of being
+pushed. Pushing a tab root would bury a whole section inside another section's history, and back
+would then walk out of a tab rather than up it.
+
 ## Back stacks
 
 Each tab owns its own stack. Switching tabs preserves where the user was; selecting the tab

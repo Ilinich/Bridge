@@ -18,6 +18,16 @@ data class MatchdayState(
     val club: Club? = null,
     val nextMatch: Match? = null,
     val lastResult: Match? = null,
+    /**
+     * Whether the fixture source has answered yet.
+     *
+     * Separate from [isLoading] because the club now arrives from disk instantly while the fixture
+     * is still on the network: without this the screen would announce "no fixture" for a second
+     * every cold start, which is a different statement from "still asking".
+     */
+    val nextMatchLoaded: Boolean = false,
+    /** A fixture that failed to load is not the same statement as a club with no fixture. */
+    val nextMatchFailed: Boolean = false,
     val isLoading: Boolean = true,
     val error: Throwable? = null,
     val nowMillis: Long = 0L,
@@ -68,6 +78,8 @@ class MatchdayFeature(
             state.copy(
                 club = (club as? Loadable.Content)?.value ?: state.club,
                 nextMatch = (next as? Loadable.Content)?.value ?: state.nextMatch,
+                nextMatchLoaded = state.nextMatchLoaded || next !is Loadable.Loading,
+                nextMatchFailed = next is Loadable.Failed,
                 lastResult = (last as? Loadable.Content)?.value ?: state.lastResult,
                 isLoading = listOf(club, next, last).any { it is Loadable.Loading },
                 error = listOf(club, next, last).filterIsInstance<Loadable.Failed>()

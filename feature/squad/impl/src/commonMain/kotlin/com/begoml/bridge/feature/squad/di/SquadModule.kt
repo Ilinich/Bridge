@@ -11,6 +11,6 @@ import org.koin.dsl.module
 
 fun squadModule() = module {
     factory { (scope: CoroutineScope) -> SquadDelegate(scope = scope, repository = get()) }
-    single { SquadNavigationEntry(navigator = get()) } bind FeatureNavigationEntry::class
+    single { SquadNavigationEntry(router = get()) } bind FeatureNavigationEntry::class
     single { SquadRouteCodec() } bind RouteCodec::class
 }

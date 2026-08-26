@@ -1,6 +1,7 @@
 package com.begoml.bridge.feature.matches.matchday
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -28,12 +29,14 @@ import bridge.feature.matches.impl.generated.resources.fixture_versus
 import bridge.feature.matches.impl.generated.resources.matchday_arena
 import bridge.feature.matches.impl.generated.resources.matchday_capacity
 import bridge.feature.matches.impl.generated.resources.matchday_days
+import bridge.feature.matches.impl.generated.resources.matchday_fixture_failed
 import bridge.feature.matches.impl.generated.resources.matchday_founded
 import bridge.feature.matches.impl.generated.resources.matchday_hours
 import bridge.feature.matches.impl.generated.resources.matchday_kickoff_local
 import bridge.feature.matches.impl.generated.resources.matchday_kickoff_now
 import bridge.feature.matches.impl.generated.resources.matchday_minutes
 import bridge.feature.matches.impl.generated.resources.matchday_next_match
+import bridge.feature.matches.impl.generated.resources.matchday_loading_fixture
 import bridge.feature.matches.impl.generated.resources.matchday_no_fixture
 import bridge.feature.matches.impl.generated.resources.matchday_recent
 import bridge.feature.matches.impl.generated.resources.matchday_seconds
@@ -60,7 +63,11 @@ import org.jetbrains.compose.resources.stringResource
 private val HeroTopInset = 16.dp
 
 @Composable
-fun MatchdayScreen(feature: MatchdayFeature, modifier: Modifier = Modifier) {
+fun MatchdayScreen(
+    feature: MatchdayFeature,
+    onStadiumClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val state by feature.collectState()
     val contentPadding = LocalScreenPadding.current
 
@@ -84,7 +91,7 @@ fun MatchdayScreen(feature: MatchdayFeature, modifier: Modifier = Modifier) {
             ) {
                 with(glass) { HeroCard(state = state) }
                 state.lastResult?.let { RecentSection(match = it) }
-                state.club?.let { StadiumSection(club = it) }
+                state.club?.let { StadiumSection(club = it, onClick = onStadiumClick) }
             }
         }
     }
@@ -135,7 +142,11 @@ private fun GlassScope.HeroCard(state: MatchdayState) {
             val match = state.nextMatch
             if (match == null) {
                 Text(
-                    text = stringResource(Res.string.matchday_no_fixture),
+                    text = when {
+                        state.nextMatchFailed -> stringResource(Res.string.matchday_fixture_failed)
+                        state.nextMatchLoaded -> stringResource(Res.string.matchday_no_fixture)
+                        else -> stringResource(Res.string.matchday_loading_fixture)
+                    },
                     color = BridgeColors.TextMuted,
                     modifier = Modifier.fillMaxWidth(),
                     textAlign = TextAlign.Center,
@@ -283,7 +294,7 @@ private fun RecentSection(match: Match) {
 }
 
 @Composable
-private fun StadiumSection(club: Club) {
+private fun StadiumSection(club: Club, onClick: () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
         Text(
             text = stringResource(Res.string.matchday_stadium),
@@ -294,6 +305,7 @@ private fun StadiumSection(club: Club) {
             modifier = Modifier
                 .fillMaxWidth()
                 .background(BridgeColors.Surface, RoundedCornerShape(12.dp))
+                .clickable(onClick = onClick)
                 .padding(10.dp),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
