@@ -67,6 +67,20 @@ private class ExoPlayback(val player: ExoPlayer) : VideoPlayback, Player.Listene
     override fun onPlaybackStateChanged(playbackState: Int) {
         isBuffering = playbackState == Player.STATE_BUFFERING
         readDuration()
+        if (playbackState == Player.STATE_ENDED) rewind()
+    }
+
+    /**
+     * Returns a finished clip to its first frame.
+     *
+     * ExoPlayer stops on the last frame and leaves the position at the duration, so without this
+     * the readout would sit at the end and the next tap on play would resume nothing. AVPlayer
+     * needs the same nudge, so both platforms end a clip the same way.
+     */
+    private fun rewind() {
+        player.playWhenReady = false
+        player.seekTo(0L)
+        positionMillis = 0L
     }
 
     fun poll() {
