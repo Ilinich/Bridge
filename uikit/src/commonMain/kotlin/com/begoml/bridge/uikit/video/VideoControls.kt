@@ -25,6 +25,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -68,6 +69,7 @@ fun VideoControls(playback: VideoPlayback, modifier: Modifier = Modifier) {
             text = formatClock(shownPosition),
             style = FigureStyle,
             color = BridgeColors.TextPrimary,
+            modifier = Modifier.testTag(VideoControlsTags.Position),
         )
         Slider(
             value = fraction.coerceIn(0f, 1f),
@@ -82,12 +84,13 @@ fun VideoControls(playback: VideoPlayback, modifier: Modifier = Modifier) {
                 activeTrackColor = BridgeColors.Club,
                 inactiveTrackColor = Color.White.copy(alpha = 0.22f),
             ),
-            modifier = Modifier.weight(1f).height(28.dp),
+            modifier = Modifier.weight(1f).height(28.dp).testTag(VideoControlsTags.Scrubber),
         )
         Text(
             text = formatClock(duration),
             style = FigureStyle,
             color = BridgeColors.TextMuted,
+            modifier = Modifier.testTag(VideoControlsTags.Duration),
         )
         MuteButton(muted = playback.isMuted, onClick = { playback.mute(!playback.isMuted) })
     }
@@ -100,6 +103,7 @@ private fun TransportButton(playing: Boolean, onClick: () -> Unit) {
     Box(
         modifier = Modifier
             .size(34.dp)
+            .testTag(VideoControlsTags.Transport)
             .background(BridgeColors.Club, CircleShape)
             .clickable(onClickLabel = label, onClick = onClick)
             .semantics { contentDescription = label },
@@ -116,6 +120,7 @@ private fun MuteButton(muted: Boolean, onClick: () -> Unit) {
     Box(
         modifier = Modifier
             .size(30.dp)
+            .testTag(VideoControlsTags.Mute)
             .clickable(onClickLabel = label, onClick = onClick)
             .semantics { contentDescription = label },
         contentAlignment = Alignment.Center,

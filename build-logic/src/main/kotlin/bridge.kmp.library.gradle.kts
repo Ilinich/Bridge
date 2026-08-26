@@ -29,6 +29,7 @@ kotlin {
             jvmTarget = JvmTarget.JVM_11
         }
         withHostTest { }
+        withDeviceTest { instrumentationRunner = "androidx.test.runner.AndroidJUnitRunner" }
     }
 
     sourceSets {
