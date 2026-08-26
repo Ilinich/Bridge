@@ -124,10 +124,13 @@ actual fun rememberVideoPlayback(
 
     LifecycleBoundPlayback(playback = playback, autoPlay = autoPlay)
 
-    LaunchedEffect(playback) {
-        while (true) {
-            playback.poll()
+    // Gated on isPlaying, as on Android: a paused clip has no position to report, and the timer
+    // would otherwise wake five times a second for the life of the screen.
+    LaunchedEffect(playback, playback.isPlaying) {
+        playback.poll()
+        while (playback.isPlaying) {
             delay(PositionPollMillis)
+            playback.poll()
         }
     }
 

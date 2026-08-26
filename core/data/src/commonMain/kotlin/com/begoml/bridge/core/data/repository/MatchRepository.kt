@@ -4,6 +4,8 @@ import com.begoml.bridge.core.data.TeamNames
 import com.begoml.bridge.core.data.db.SeasonDao
 import com.begoml.bridge.core.data.db.Syncer
 import com.begoml.bridge.core.data.db.toEntity
+import com.begoml.bridge.core.data.db.SeasonMatchEntity
+import com.begoml.bridge.core.data.db.toSeasonMatch
 import com.begoml.bridge.core.data.db.toSeason
 import com.begoml.bridge.core.data.model.Loadable
 import com.begoml.bridge.core.data.model.Match
@@ -24,6 +26,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlin.time.Duration
@@ -44,9 +48,7 @@ interface MatchRepository {
 
     fun isOurs(homeName: String, awayName: String): Boolean
 
-    fun currentRound(season: Season, nowMillis: Long): SeasonRound?
-
-    fun match(id: String): Flow<SeasonMatch?>
+    fun match(id: String): Flow<Loadable<SeasonMatch?>>
 }
 
 internal class MatchRepositoryImpl(
@@ -56,7 +58,7 @@ internal class MatchRepositoryImpl(
     private val seasonApi: SeasonApi,
     private val seasonDao: SeasonDao,
     private val syncer: Syncer,
-    dispatcher: CoroutineDispatcher,
+    private val dispatcher: CoroutineDispatcher,
     private val backgroundScope: CoroutineScope,
     private val nowMillis: () -> Long,
 ) : MatchRepository {
@@ -94,8 +96,11 @@ internal class MatchRepositoryImpl(
         val seasonId = resolveSeasonId()
         backgroundScope.launch { runCatching { cacheFinishedSeason(previousSeasonId(seasonId)) } }
 
+        // A season is 380 fixtures: grouping and sorting them belongs off the collector's context,
+        // which is the main dispatcher.
         val stored = seasonDao.observeSeason(seasonId)
             .map { rows -> rows.takeIf { it.isNotEmpty() }?.toSeason(seasonId) }
+            .flowOn(dispatcher)
 
         emitAll(
             persistedResource(stored = stored) {
@@ -107,11 +112,12 @@ internal class MatchRepositoryImpl(
     override fun isOurs(homeName: String, awayName: String): Boolean =
         TeamNames.matches(homeName, clubName) || TeamNames.matches(awayName, clubName)
 
-    override fun currentRound(season: Season, nowMillis: Long): SeasonRound? = season.roundAt(nowMillis)
-
-    override fun match(id: String): Flow<SeasonMatch?> = seasonDao.observeMatch(id).map { entity ->
-        entity?.let { listOf(it).toSeason("").rounds.first().matches.first() }
-    }
+    override fun match(id: String): Flow<Loadable<SeasonMatch?>> = seasonDao.observeMatch(id)
+        .map<SeasonMatchEntity?, Loadable<SeasonMatch?>> { entity ->
+            Loadable.Content(entity?.toSeasonMatch())
+        }
+        .onStart { emit(Loadable.Loading) }
+        .flowOn(dispatcher)
 
     /**
      * A season the calendar does not show, kept because it never changes again.

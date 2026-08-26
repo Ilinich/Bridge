@@ -19,10 +19,11 @@ private const val SeasonUrlTemplate =
 internal class SeasonApi(private val client: HttpClient) {
 
     suspend fun season(seasonId: String): SeasonEnvelope? {
-        val response: HttpResponse = client.get(SeasonUrlTemplate.format(seasonId))
+        val response: HttpResponse = client.get(SeasonUrlTemplate.withSeason(seasonId))
         if (response.status == HttpStatusCode.NotFound) return null
         return response.body()
     }
 }
 
-private fun String.format(argument: String): String = replace("%s", argument)
+/** The template carries one `%s`; this is a substitution, not a printf-style format. */
+private fun String.withSeason(seasonId: String): String = replace("%s", seasonId)

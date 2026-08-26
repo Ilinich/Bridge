@@ -5,7 +5,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameMillis
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
@@ -33,7 +32,7 @@ fun rememberAnimatedShaderBrush(spec: ShaderSpec, enabled: Boolean = true): Brus
 
     val program = remember(spec.source) { ShaderProgram(spec.source) }
     val lifecycleState by LocalLifecycleOwner.current.lifecycle.currentStateAsState()
-    var timeSeconds by remember { mutableFloatStateOf(0f) }
+    val timeSeconds = remember { mutableFloatStateOf(0f) }
 
     LaunchedEffect(lifecycleState) {
         if (!lifecycleState.isAtLeast(Lifecycle.State.RESUMED)) return@LaunchedEffect
@@ -41,32 +40,18 @@ fun rememberAnimatedShaderBrush(spec: ShaderSpec, enabled: Boolean = true): Brus
         while (true) {
             withFrameMillis { frameMillis ->
                 if (startMillis == 0L) startMillis = frameMillis
-                timeSeconds = (frameMillis - startMillis) / MillisPerSecond
+                timeSeconds.floatValue = (frameMillis - startMillis) / MillisPerSecond
             }
         }
     }
 
-    return remember(program, timeSeconds) {
-        object : ShaderBrush() {
-            override fun createShader(size: Size): Shader = program.shader(timeSeconds, size)
-        }
-    }
-}
-
-/**
- * A runtime shader that never changes, or the spec's fallback where none is available.
- *
- * The counterpart to [rememberAnimatedShaderBrush] for effects that are a better gradient rather
- * than an animation: the program is compiled once and no frame is ever requested.
- */
-@Composable
-fun rememberStaticShaderBrush(spec: ShaderSpec): Brush {
-    if (!isRuntimeShaderSupported()) return spec.fallback
-
-    val program = remember(spec.source) { ShaderProgram(spec.source) }
+    // The clock is read inside createShader, which the draw phase calls, and never in composition.
+    // Reading it here instead would put a per-frame snapshot read into the caller's restart scope
+    // and recompose the whole calling screen sixty times a second.
     return remember(program) {
         object : ShaderBrush() {
-            override fun createShader(size: Size): Shader = program.shader(timeSeconds = 0f, size = size)
+            override fun createShader(size: Size): Shader =
+                program.shader(timeSeconds.floatValue, size)
         }
     }
 }

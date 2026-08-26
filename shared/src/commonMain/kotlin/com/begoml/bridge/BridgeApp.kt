@@ -78,8 +78,8 @@ fun App() {
             onDispose { router.detach() }
         }
 
-        val tabs = rememberTabs()
-        val contentPadding = rememberScreenPadding()
+        val tabs = bridgeTabs()
+        val contentPadding = screenPadding()
 
         CompositionLocalProvider(LocalScreenPadding provides contentPadding) {
             GlassBackdrop(
@@ -106,7 +106,7 @@ fun App() {
 }
 
 @Composable
-private fun rememberScreenPadding(): PaddingValues {
+private fun screenPadding(): PaddingValues {
     val insets = WindowInsets.safeDrawing.asPaddingValues()
     val layoutDirection = LocalLayoutDirection.current
     return PaddingValues(
@@ -118,7 +118,7 @@ private fun rememberScreenPadding(): PaddingValues {
 }
 
 @Composable
-private fun rememberTabs(): List<BridgeTab> = listOf(
+private fun bridgeTabs(): List<BridgeTab> = listOf(
     BridgeTab(BridgeIcon.Matchday, stringResource(Res.string.tab_matchday)),
     BridgeTab(BridgeIcon.Season, stringResource(Res.string.tab_season)),
     BridgeTab(BridgeIcon.Squad, stringResource(Res.string.tab_squad)),

@@ -1,6 +1,7 @@
 package com.begoml.bridge.foundation.cache
 
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
@@ -143,16 +144,21 @@ class InMemoryCache<Key : Any, Value : Any>(
 
         return try {
             val value = withContext(dispatcher) { loader(key) }
-            mutex.withLock {
-                if ((generations[key] ?: 0L) == generationAtStart) {
-                    entries.value = entries.value + (key to Entry(value, nowMillis()))
+            // NonCancellable because the caller may already be cancelled by the time the loader
+            // returns: taking the mutex would then throw before the key is released, and every
+            // later caller would await a deferred nobody will ever complete.
+            withContext(NonCancellable) {
+                mutex.withLock {
+                    if ((generations[key] ?: 0L) == generationAtStart) {
+                        entries.value = entries.value + (key to Entry(value, nowMillis()))
+                    }
+                    inFlight.remove(key)
                 }
-                inFlight.remove(key)
             }
             owned.complete(value)
             value
         } catch (error: Throwable) {
-            mutex.withLock { inFlight.remove(key) }
+            withContext(NonCancellable) { mutex.withLock { inFlight.remove(key) } }
             owned.completeExceptionally(error)
             throw error
         }

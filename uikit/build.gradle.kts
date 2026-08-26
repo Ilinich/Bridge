@@ -5,7 +5,6 @@ plugins {
 kotlin {
     sourceSets {
         commonMain.dependencies {
-            api(projects.foundation.tessera)
 
             implementation(libs.compose.components.resources)
             implementation(libs.compose.material3)

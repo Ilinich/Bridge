@@ -33,11 +33,14 @@ import com.begoml.bridge.core.data.model.Club
 import com.begoml.bridge.core.data.model.Venue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.begoml.bridge.uikit.LocalScreenPadding
+import com.begoml.bridge.uikit.groupedThousands
 import com.begoml.bridge.uikit.component.BackdropImage
 import com.begoml.bridge.uikit.component.BadgeImage
 import com.begoml.bridge.uikit.component.GlassPanel
 import com.begoml.bridge.uikit.component.LoadableContent
+import com.begoml.bridge.uikit.glass.EdgeFadeOverhang
 import com.begoml.bridge.uikit.glass.ScrollEdge
+import com.begoml.bridge.uikit.glass.EdgeFadeOverhang
 import com.begoml.bridge.uikit.glass.ScrollEdgeFade
 import com.begoml.bridge.uikit.component.ShaderPanel
 import com.begoml.bridge.uikit.glass.GlassBackdrop
@@ -72,7 +75,7 @@ internal fun ClubScreen(viewModel: ClubViewModel, modifier: Modifier = Modifier)
         },
     ) {
         LoadableContent(
-            isLoading = state.isLoading && state.club == null,
+            isLoading = (state.isLoading || state.labels == null) && state.club == null,
             error = state.error.takeIf { state.club == null },
             onRetry = viewModel::retry,
         ) {
@@ -105,8 +108,6 @@ internal fun ClubScreen(viewModel: ClubViewModel, modifier: Modifier = Modifier)
     }
 }
 
-/** How far the fade runs past the inset. Short enough and the eye reads the end as a border. */
-private val EdgeFadeOverhang = 64.dp
 
 @Composable
 private fun Header(club: Club, labels: ClubLabels) {
@@ -225,7 +226,7 @@ private fun GroundSection(venue: Venue, labels: ClubLabels) {
             )
             Row(modifier = Modifier.fillMaxWidth()) {
                 venue.capacity?.let {
-                    Fact(labels.capacity, it.grouped(), Modifier.weight(1f))
+                    Fact(labels.capacity, it.groupedThousands(), Modifier.weight(1f))
                 }
                 venue.openedYear?.let {
                     Fact(labels.opened, it.toString(), Modifier.weight(1f))
@@ -303,12 +304,6 @@ private fun Fact(label: String, value: String, modifier: Modifier = Modifier) {
             overflow = TextOverflow.Ellipsis,
         )
     }
-}
-
-private fun Int.grouped(): String {
-    val text = toString()
-    if (text.length <= 3) return text
-    return text.reversed().chunked(3).joinToString(" ").reversed()
 }
 
 /** The feed writes colours as `#RRGGBB`; anything else is skipped rather than guessed at. */

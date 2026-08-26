@@ -51,14 +51,3 @@ expect fun rememberVideoPlayback(
 /** Draws the frames of [playback]. Carries no controls; compose it with [VideoControls]. */
 @Composable
 expect fun VideoSurface(playback: VideoPlayback, modifier: Modifier)
-
-/**
- * A silent looping clip, used as a moving backdrop.
- *
- * There is no error surface on purpose — the caller draws a still image underneath, so a clip that
- * fails to load is invisible rather than broken.
- */
-@Composable
-fun VideoSurface(url: String, modifier: Modifier) {
-    VideoSurface(playback = rememberVideoPlayback(url), modifier = modifier)
-}

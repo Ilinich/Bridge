@@ -14,7 +14,7 @@ import com.begoml.bridge.core.data.model.TeamRef
 import com.begoml.bridge.core.data.model.Venue
 import kotlin.time.Instant
 
-private const val FanartSeparator = "\n"
+private const val ListSeparator = "\n"
 
 internal fun Club.toEntity() = ClubEntity(
     id = id,
@@ -28,8 +28,8 @@ internal fun Club.toEntity() = ClubEntity(
     badgeUrl = media.badgeUrl,
     logoUrl = media.logoUrl,
     bannerUrl = media.bannerUrl,
-    fanartUrls = media.fanartUrls.joinToString(FanartSeparator),
-    nicknames = details.nicknames.joinToString(FanartSeparator),
+    fanartUrls = media.fanartUrls.joinToString(ListSeparator),
+    nicknames = details.nicknames.joinToString(ListSeparator),
     colourPrimary = details.colours.primary,
     colourSecondary = details.colours.secondary,
     colourTertiary = details.colours.tertiary,
@@ -53,10 +53,10 @@ internal fun ClubEntity.toClub() = Club(
         badgeUrl = badgeUrl,
         logoUrl = logoUrl,
         bannerUrl = bannerUrl,
-        fanartUrls = fanartUrls.split(FanartSeparator).filter { it.isNotBlank() },
+        fanartUrls = fanartUrls.split(ListSeparator).filter { it.isNotBlank() },
     ),
     details = ClubDetails(
-        nicknames = nicknames.split(FanartSeparator).filter { it.isNotBlank() },
+        nicknames = nicknames.split(ListSeparator).filter { it.isNotBlank() },
         colours = ClubColours(colourPrimary, colourSecondary, colourTertiary),
         links = ClubLinks(website, youtube, twitter, instagram),
         venueId = venueId,
@@ -136,7 +136,7 @@ internal fun List<SeasonMatchEntity>.toSeason(name: String): Season = Season(
         .sortedBy { it.number },
 )
 
-private fun SeasonMatchEntity.toSeasonMatch() = SeasonMatch(
+internal fun SeasonMatchEntity.toSeasonMatch() = SeasonMatch(
     id = id,
     round = round,
     kickoff = Instant.fromEpochMilliseconds(kickoffMillis),

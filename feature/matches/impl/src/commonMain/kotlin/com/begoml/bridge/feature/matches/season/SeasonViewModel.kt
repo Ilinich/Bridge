@@ -53,6 +53,9 @@ data class SeasonUiState(
     val error: Throwable? = null,
 )
 
+/** How long a state flow outlives its last collector, so a rotation does not refetch. */
+private const val SubscriptionTimeoutMillis = 5_000L
+
 internal class SeasonViewModel(
     private val matchRepository: MatchRepository,
     nowMillis: () -> Long,
@@ -75,7 +78,7 @@ internal class SeasonViewModel(
                 error = content.error,
             )
         }
-        .stateIn(viewModelScope, SharingStarted.Eagerly, SeasonUiState())
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(SubscriptionTimeoutMillis), SeasonUiState())
 
     fun retry() {
         feature.dispatchAction(SeasonAction.Retry)

@@ -36,7 +36,7 @@ import com.begoml.bridge.uikit.theme.BridgeColors
 import com.begoml.bridge.uikit.theme.FigureStyle
 import com.begoml.bridge.uikit.theme.LabelStyle
 
-/** The side gutter every screen shares, so cards line up across the app. */
+/** The side gutter of this screen. */
 private val ScreenGutter = 14.dp
 
 @Composable
@@ -61,7 +61,7 @@ internal fun MatchDetailScreen(viewModel: MatchDetailViewModel, modifier: Modifi
                     with(glass) {
                         BridgeBackButton(
                             onClick = viewModel::onBack,
-                            contentDescription = labels.title,
+                            contentDescription = labels.back,
                         )
                     }
                 },

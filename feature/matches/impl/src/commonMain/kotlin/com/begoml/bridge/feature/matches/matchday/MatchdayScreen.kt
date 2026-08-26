@@ -26,11 +26,10 @@ import bridge.feature.matches.impl.generated.resources.Res
 import com.begoml.bridge.core.data.model.Club
 import com.begoml.bridge.core.data.model.Match
 import com.begoml.bridge.feature.matches.formatKickoff
-import com.begoml.bridge.feature.matches.groupedThousands
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.begoml.bridge.uikit.LocalScreenPadding
+import com.begoml.bridge.uikit.groupedThousands
 import com.begoml.bridge.uikit.component.BackdropImage
-import com.begoml.bridge.uikit.component.BackdropVideo
 import com.begoml.bridge.uikit.component.BadgeImage
 import com.begoml.bridge.uikit.component.GlassPanel
 import com.begoml.bridge.uikit.component.LoadableContent
@@ -54,7 +53,8 @@ internal fun MatchdayScreen(viewModel: MatchdayViewModel, modifier: Modifier = M
     ) {
         val glass = this
         LoadableContent(
-            isLoading = state.isLoading && state.nextMatch == null && state.club == null,
+            isLoading = (state.isLoading || state.labels == null) &&
+                state.nextMatch == null && state.club == null,
             error = state.error.takeIf { state.club == null && state.nextMatch == null },
             onRetry = viewModel::retry,
         ) {
@@ -75,27 +75,9 @@ internal fun MatchdayScreen(viewModel: MatchdayViewModel, modifier: Modifier = M
     }
 }
 
-/**
- * The clip that plays behind this screen, or null for the photograph alone.
- *
- * Null today, and the reason was found by looking rather than guessing: the feed carries no video,
- * and every keyless stock clip is narrative footage. Tried on device, a film clip stays
- * recognisable at any opacity — a character's face ends up behind the fixture — while the club's
- * own photograph was carrying the screen. Point this at a football loop and the backdrop becomes
- * video; nothing else has to change.
- */
-private val AmbientClipUrl: String? = null
-
 @Composable
 private fun StadiumBackdrop(club: Club?) {
-    val poster = club?.media?.fanartUrls?.firstOrNull()
-    val clip = AmbientClipUrl
-
-    if (clip == null) {
-        BackdropImage(url = poster)
-    } else {
-        BackdropVideo(videoUrl = clip, posterUrl = poster)
-    }
+    BackdropImage(url = club?.media?.fanartUrls?.firstOrNull())
 }
 
 @Composable

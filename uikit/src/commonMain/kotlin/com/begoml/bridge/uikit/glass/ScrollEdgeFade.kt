@@ -11,9 +11,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import com.begoml.bridge.uikit.theme.BridgeColors
 
 private const val PeakAlpha = 0.88f
+
+/** How far the fade runs past the inset. Any shorter and the eye reads its end as a border. */
+val EdgeFadeOverhang = 64.dp
 
 /**
  * A dark translucent band at one end of scrolling content, with a soft edge.
@@ -52,9 +56,9 @@ private const val StopCount = 12
 private fun fadeStops(edge: ScrollEdge): Array<Pair<Float, Color>> = Array(StopCount) { index ->
     val t = index.toFloat() / (StopCount - 1)
     val distanceFromEdge = if (edge == ScrollEdge.Top) t else 1f - t
-    val alpha = PeakAlpha * easeOut(1f - distanceFromEdge)
+    val alpha = PeakAlpha * smoothstep(1f - distanceFromEdge)
     t to BridgeColors.Ground.copy(alpha = alpha)
 }
 
-/** Holds density near the edge, then falls away — a shadow rather than a linear ramp. */
-private fun easeOut(value: Float): Float = value * value * (3f - 2f * value)
+/** The classic smoothstep S-curve: eases in at both ends so neither edge shows a corner. */
+private fun smoothstep(value: Float): Float = value * value * (3f - 2f * value)

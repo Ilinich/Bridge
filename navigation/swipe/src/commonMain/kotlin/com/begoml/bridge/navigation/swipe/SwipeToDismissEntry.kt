@@ -48,7 +48,7 @@ inline fun <reified T : NavKey> EntryProviderScope<NavKey>.swipeToDismissHorizon
 }
 
 /**
- * Predictive-back pop transition mirroring the Android app: the dismissed screen slides towards
+ * Predictive-back pop transition matching the platform gesture: the dismissed screen slides towards
  * the gesture edge while scaling down, the previous screen is revealed statically underneath.
  */
 val predictiveBackHorizontalTransition:

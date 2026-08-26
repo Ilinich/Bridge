@@ -7,9 +7,10 @@ import com.begoml.bridge.core.data.repository.ClubRepository
 import com.begoml.bridge.foundation.tessera.UiStateDelegate
 import com.begoml.bridge.foundation.tessera.UiStateDelegateImpl
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
-data class ClubScreenState(
+data class ClubState(
     val club: Club? = null,
     val venue: Venue? = null,
     val isLoading: Boolean = true,
@@ -28,14 +29,18 @@ sealed interface ClubEvent
 class ClubDelegate(
     private val scope: CoroutineScope,
     private val repository: ClubRepository,
-) : UiStateDelegate<ClubScreenState, ClubEvent> by UiStateDelegateImpl(ClubScreenState()) {
+) : UiStateDelegate<ClubState, ClubEvent> by UiStateDelegateImpl(ClubState()) {
+
+    /** A forced refresh holds the syncer's key mutex across the network, so only one may run. */
+    private var refreshJob: Job? = null
 
     init {
         observe()
     }
 
     fun retry() {
-        scope.launch { repository.refresh() }
+        if (refreshJob?.isActive == true) return
+        refreshJob = scope.launch { repository.refresh() }
     }
 
     private fun observe() {

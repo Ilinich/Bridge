@@ -169,5 +169,6 @@ actual fun VideoSurface(playback: VideoPlayback, modifier: Modifier) {
                 player = exoPlayback.player
             }
         },
+        onRelease = { view -> view.player = null },
     )
 }

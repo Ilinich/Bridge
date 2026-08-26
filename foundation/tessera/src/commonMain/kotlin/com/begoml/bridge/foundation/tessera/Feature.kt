@@ -109,7 +109,10 @@ private class FeatureImpl<State, Action, Event, InternalState>(
     override val events: Flow<Event> = eventChannel.receiveAsFlow()
 
     override suspend fun updateState(transform: (State) -> State) {
-        stateMutex.withLock { mutableState.value = transform(mutableState.value) }
+        // update() rather than a plain read-modify-write: updateStateAsync writes without taking
+        // this mutex, so a value read here could otherwise be stale by the time it is written back
+        // and the async write would be lost.
+        stateMutex.withLock { mutableState.update(transform) }
     }
 
     override fun updateStateAsync(transform: (State) -> State) {

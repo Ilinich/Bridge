@@ -26,4 +26,5 @@
     <string name="fixture_versus">—</string>
     <string name="matchday_loading_fixture">Looking up the next fixture…</string>
     <string name="matchday_fixture_failed">Could not reach the fixture list</string>
+    <string name="match_back">Back</string>
 </resources>

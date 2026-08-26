@@ -38,7 +38,7 @@ kotlin {
 dependencies {
     // Espresso 3.5, which the Compose test artifact still resolves, calls InputManager.getInstance;
     // newer platforms removed it and every device test dies on the first assertion.
-    "androidDeviceTestImplementation"(libs.findLibrary("androidx-test-espresso").get())
+    "androidDeviceTestImplementation"(libs.findLibrary("androidx-espresso-core").get())
     "androidDeviceTestImplementation"(libs.findLibrary("androidx-test-runner").get())
     "androidDeviceTestImplementation"(libs.findLibrary("compose-uiTestManifest").get())
 }

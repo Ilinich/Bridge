@@ -13,14 +13,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
-/**
- * The three tab glyphs, drawn rather than imported.
- *
- * Three shapes do not justify an icon dependency, and drawing them keeps the stroke weight
- * consistent with the rest of the kit.
- */
 private val DefaultGlyphSize = 16.dp
 
+/**
+ * The four tab glyphs, drawn rather than imported.
+ *
+ * Four shapes do not justify an icon dependency, and drawing them keeps the stroke weight
+ * consistent with the rest of the kit.
+ */
 enum class BridgeIcon { Matchday, Season, Squad, Club }
 
 @Composable

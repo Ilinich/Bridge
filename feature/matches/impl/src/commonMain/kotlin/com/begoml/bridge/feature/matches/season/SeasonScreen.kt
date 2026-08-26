@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -99,8 +100,12 @@ private fun RoundPills(
         contentPadding = PaddingValues(horizontal = 14.dp),
         horizontalArrangement = Arrangement.spacedBy(7.dp),
     ) {
-        items(items = rounds, key = { it.number }, contentType = { "round-pill" }) { round ->
-            val selected = rounds.indexOf(round) == selectedIndex
+        itemsIndexed(
+            items = rounds,
+            key = { _, round -> round.number },
+            contentType = { _, _ -> "round-pill" },
+        ) { index, round ->
+            val selected = index == selectedIndex
             Text(
                 text = round.title,
                 style = LabelStyle,

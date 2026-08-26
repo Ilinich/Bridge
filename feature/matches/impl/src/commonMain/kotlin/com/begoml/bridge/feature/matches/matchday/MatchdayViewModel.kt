@@ -29,7 +29,12 @@ import com.begoml.bridge.feature.club.api.ClubRoute
 import com.begoml.bridge.navigation.router.AppRouter
 import com.begoml.bridge.navigation.router.navigateTo
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -79,10 +84,14 @@ data class MatchdayUiState(
     val nowMillis: Long = 0L,
 )
 
+/** How long a state flow outlives its last collector, so a rotation does not refetch. */
+private const val SubscriptionTimeoutMillis = 5_000L
+private const val TickMillis = 1_000L
+
 internal class MatchdayViewModel(
     clubRepository: ClubRepository,
     matchRepository: MatchRepository,
-    nowMillis: () -> Long,
+    private val nowMillis: () -> Long,
     private val router: AppRouter,
     private val ioDispatcher: CoroutineDispatcher,
 ) : ViewModel() {
@@ -91,25 +100,47 @@ internal class MatchdayViewModel(
         scope = viewModelScope,
         clubRepository = clubRepository,
         matchRepository = matchRepository,
-        nowMillis = nowMillis,
     )
 
     private val labels = MutableStateFlow<MatchdayLabels?>(null)
 
+    /**
+     * The countdown's clock.
+     *
+     * A flow rather than a loop on viewModelScope: combined into [state], it only runs while
+     * something collects, so a screen the user has left stops ticking.
+     */
+    private val ticker: Flow<Long> = flow {
+        while (true) {
+            emit(nowMillis())
+            delay(TickMillis)
+        }
+    }
+
+    /** Built only when the result itself changes; the clock must not re-format it every second. */
+    private val recent: Flow<RecentMatchUi?> = feature.stateFlow
+        .map { it.lastResult }
+        .distinctUntilChanged()
+        .map { match -> match?.let { withContext(ioDispatcher) { it.toUi() } } }
+
     val state: StateFlow<MatchdayUiState> =
-        combine(feature.stateFlow, labels) { content, resolved ->
+        combine(feature.stateFlow, labels, recent, ticker) { content, resolved, recentUi, now ->
             MatchdayUiState(
                 club = content.club,
                 nextMatch = content.nextMatch,
-                recent = content.lastResult?.let { withContext(ioDispatcher) { it.toUi() } },
+                recent = recentUi,
                 labels = resolved,
                 nextMatchLoaded = content.nextMatchLoaded,
                 nextMatchFailed = content.nextMatchFailed,
                 isLoading = content.isLoading || resolved == null,
                 error = content.error,
-                nowMillis = content.nowMillis,
+                nowMillis = now,
             )
-        }.stateIn(viewModelScope, SharingStarted.Eagerly, MatchdayUiState())
+        }.stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(SubscriptionTimeoutMillis),
+            MatchdayUiState(),
+        )
 
     init {
         viewModelScope.launch { labels.value = withContext(ioDispatcher) { readLabels() } }

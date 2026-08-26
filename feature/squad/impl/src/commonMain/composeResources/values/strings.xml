@@ -5,4 +5,5 @@
     <string name="squad_country">Country</string>
     <string name="squad_height">Height</string>
     <string name="squad_not_found">This player is no longer loaded.</string>
+    <string name="squad_back">Back</string>
 </resources>

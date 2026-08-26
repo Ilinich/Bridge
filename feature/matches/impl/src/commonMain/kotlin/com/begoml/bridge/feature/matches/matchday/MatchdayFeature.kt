@@ -11,8 +11,7 @@ import com.begoml.bridge.foundation.tessera.composeState
 import com.begoml.bridge.foundation.tessera.feature
 import com.begoml.bridge.foundation.tessera.withInitial
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.Job
 
 data class MatchdayState(
     val club: Club? = null,
@@ -30,7 +29,6 @@ data class MatchdayState(
     val nextMatchFailed: Boolean = false,
     val isLoading: Boolean = true,
     val error: Throwable? = null,
-    val nowMillis: Long = 0L,
 )
 
 sealed interface MatchdayAction {
@@ -39,25 +37,29 @@ sealed interface MatchdayAction {
 
 sealed interface MatchdayEvent
 
-private const val TickMillis = 1000L
-
 /**
  * The matchday screen's state, folded from three independent sources.
  *
- * The countdown ticks here rather than in the composable: the state carries a kick-off instant and
- * the current time, and the screen only renders the difference. A timer that lived in composition
- * would restart on every recomposition and stop being a clock.
+ * The countdown is not driven here. A clock owned by the feature runs for as long as the feature
+ * does, which is the whole session; the ViewModel supplies the current time instead, so it stops
+ * when nobody is looking at the screen.
  */
 class MatchdayFeature(
     private val scope: CoroutineScope,
     private val clubRepository: ClubRepository,
     private val matchRepository: MatchRepository,
-    private val nowMillis: () -> Long,
 ) : SimpleFeature<MatchdayState, MatchdayAction, MatchdayEvent> by feature(MatchdayState(), scope) {
+
+    /**
+     * The subscription Retry replaces.
+     *
+     * Without it every Retry left the previous collector running: several chains then wrote to one
+     * state, and a stale one could put a screen that had already rendered back into loading.
+     */
+    private var sourcesJob: Job? = null
 
     init {
         observeSources()
-        startClock()
         awaitActionsIn(scope) { action ->
             when (action) {
                 MatchdayAction.Retry -> {
@@ -69,7 +71,8 @@ class MatchdayFeature(
     }
 
     private fun observeSources() {
-        composeState(
+        sourcesJob?.cancel()
+        sourcesJob = composeState(
             scope = scope,
             source1 = clubRepository.club().withInitial(scope, Loadable.Loading),
             source2 = matchRepository.nextMatch().withInitial(scope, Loadable.Loading),
@@ -89,12 +92,4 @@ class MatchdayFeature(
         }
     }
 
-    private fun startClock() {
-        scope.launch {
-            while (true) {
-                updateStateAsync { state -> state.copy(nowMillis = nowMillis()) }
-                delay(TickMillis)
-            }
-        }
-    }
 }

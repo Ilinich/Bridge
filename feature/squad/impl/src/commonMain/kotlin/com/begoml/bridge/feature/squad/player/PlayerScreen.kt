@@ -24,15 +24,9 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import bridge.feature.squad.impl.generated.resources.Res
-import bridge.feature.squad.impl.generated.resources.squad_country
-import bridge.feature.squad.impl.generated.resources.squad_height
-import bridge.feature.squad.impl.generated.resources.squad_not_found
-import bridge.feature.squad.impl.generated.resources.squad_number
-import bridge.feature.squad.impl.generated.resources.squad_position
-import bridge.feature.squad.impl.generated.resources.squad_title
 import com.begoml.bridge.core.data.model.Player
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.begoml.bridge.feature.squad.PlayerLabels
 import com.begoml.bridge.feature.squad.PlayerViewModel
 import com.begoml.bridge.uikit.LocalScreenPadding
 import com.begoml.bridge.uikit.component.BridgeBackButton
@@ -46,7 +40,6 @@ import com.begoml.bridge.uikit.shader.rememberAnimatedShaderBrush
 import com.begoml.bridge.uikit.theme.BridgeColors
 import com.begoml.bridge.uikit.theme.FigureStyle
 import com.begoml.bridge.uikit.theme.LabelStyle
-import org.jetbrains.compose.resources.stringResource
 import kotlin.math.absoluteValue
 
 private const val CutoutParallaxDp = 40f
@@ -69,8 +62,9 @@ internal fun PlayerScreen(
     initialPlayerId: String,
     modifier: Modifier = Modifier,
 ) {
-    val squadState by viewModel.state.collectAsStateWithLifecycle()
-    val players = squadState.players
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    val players = state.squad.players
+    val labels = state.labels
     val brush = rememberAnimatedShaderBrush(ClubBackgroundShader)
     val contentPadding = LocalScreenPadding.current
 
@@ -79,9 +73,10 @@ internal fun PlayerScreen(
         backdrop = { Box(Modifier.fillMaxSize().background(brush)) },
     ) {
         val glass = this
+        if (labels == null) return@GlassBackdrop
         if (players.isEmpty()) {
             Text(
-                text = stringResource(Res.string.squad_not_found),
+                text = labels.notFound,
                 color = BridgeColors.TextMuted,
                 modifier = Modifier.align(Alignment.Center).padding(24.dp),
                 textAlign = TextAlign.Center,
@@ -94,18 +89,17 @@ internal fun PlayerScreen(
 
         HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { page ->
             val offset = (pagerState.currentPage - page) + pagerState.currentPageOffsetFraction
-            PlayerPage(glass = glass, player = players[page], offset = offset)
+            PlayerPage(glass = glass, player = players[page], labels = labels, offset = offset)
         }
 
         Column(modifier = Modifier.fillMaxWidth().padding(top = contentPadding.calculateTopPadding())) {
             BridgeTopBar(
-                title = players.getOrNull(pagerState.currentPage)?.name
-                    ?: stringResource(Res.string.squad_title),
+                title = players.getOrNull(pagerState.currentPage)?.name ?: labels.title,
                 leading = {
                     with(glass) {
                         BridgeBackButton(
                             onClick = viewModel::onBack,
-                            contentDescription = stringResource(Res.string.squad_title),
+                            contentDescription = labels.back,
                         )
                     }
                 },
@@ -123,7 +117,7 @@ internal fun PlayerScreen(
 }
 
 @Composable
-private fun PlayerPage(glass: GlassScope, player: Player, offset: Float) {
+private fun PlayerPage(glass: GlassScope, player: Player, labels: PlayerLabels, offset: Float) {
     val contentPadding = LocalScreenPadding.current
     Box(modifier = Modifier.fillMaxSize()) {
         CutoutImage(
@@ -148,14 +142,14 @@ private fun PlayerPage(glass: GlassScope, player: Player, offset: Float) {
                         bottom = contentPadding.calculateBottomPadding() + 34.dp,
                     ),
             ) {
-                PlayerFacts(player = player)
+                PlayerFacts(player = player, labels = labels)
             }
         }
     }
 }
 
 @Composable
-private fun PlayerFacts(player: Player) {
+private fun PlayerFacts(player: Player, labels: PlayerLabels) {
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(9.dp),
@@ -168,10 +162,10 @@ private fun PlayerFacts(player: Player) {
             overflow = TextOverflow.Ellipsis,
         )
         Row(modifier = Modifier.fillMaxWidth()) {
-            Fact(stringResource(Res.string.squad_number), player.shirtNumber, Modifier.weight(1f))
-            Fact(stringResource(Res.string.squad_position), player.position, Modifier.weight(1.6f))
-            Fact(stringResource(Res.string.squad_country), player.nationality, Modifier.weight(1.2f))
-            Fact(stringResource(Res.string.squad_height), player.height, Modifier.weight(1f))
+            Fact(labels.number, player.shirtNumber, Modifier.weight(1f))
+            Fact(labels.position, player.position, Modifier.weight(1.6f))
+            Fact(labels.country, player.nationality, Modifier.weight(1.2f))
+            Fact(labels.height, player.height, Modifier.weight(1f))
         }
     }
 }

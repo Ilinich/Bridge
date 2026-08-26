@@ -55,7 +55,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 /**
- * Interactive swipe-to-dismiss (back). Port of the app's SwipeToDismissLayout: the [foregroundContent]
+ * Interactive swipe-to-dismiss (back). Drags the top screen away with the finger: the [foregroundContent]
  * follows the finger (translationX + progressive corner rounding) while the [backgroundContent] — the
  * live previous screen — is revealed with a 1/3 parallax. Commit by distance ([SwipeSensitivity]
  * distanceFraction) or velocity finishes the pop via [onDismiss], else it springs back.

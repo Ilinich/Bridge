@@ -7,6 +7,7 @@ kotlin {
         commonMain.dependencies {
             api(projects.feature.club.api)
 
+            implementation(projects.foundation.tessera)
             implementation(projects.core.data)
             implementation(projects.navigation.core)
             implementation(projects.uikit)

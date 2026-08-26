@@ -12,7 +12,7 @@ import org.junit.runner.RunWith
 
 private const val ScrollIterations = 8
 
-/** Frame timings for the screens a user scrolls, each opened cold from the launcher. */
+/** Frame timings for the screens a user scrolls, each opened warm so startup is not measured. */
 @RunWith(AndroidJUnit4::class)
 class ScreenScrollBenchmark {
 

@@ -35,9 +35,3 @@ fun Instant.formatTime(): String {
     val minute = if (local.minute < 10) "0${local.minute}" else "${local.minute}"
     return "$hour:$minute"
 }
-
-fun Int.groupedThousands(): String {
-    val text = toString()
-    if (text.length <= 3) return text
-    return text.reversed().chunked(3).joinToString(" ").reversed()
-}

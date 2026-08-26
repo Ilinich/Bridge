@@ -3,6 +3,7 @@ package com.begoml.bridge.feature.matches.season
 import com.begoml.bridge.core.data.model.Loadable
 import com.begoml.bridge.core.data.model.Season
 import com.begoml.bridge.core.data.model.SeasonRound
+import com.begoml.bridge.core.data.model.roundAt
 import com.begoml.bridge.core.data.repository.MatchRepository
 import com.begoml.bridge.foundation.tessera.SimpleFeature
 import com.begoml.bridge.foundation.tessera.awaitActionsIn
@@ -13,6 +14,7 @@ import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 
 data class SeasonState(
     val rounds: ImmutableList<SeasonRound> = persistentListOf(),
@@ -40,6 +42,9 @@ class SeasonFeature(
     private val nowMillis: () -> Long,
 ) : SimpleFeature<SeasonState, SeasonAction, SeasonEvent> by feature(SeasonState(), scope) {
 
+    /** The subscription Retry replaces; see [observeSeason]. */
+    private var seasonJob: Job? = null
+
     init {
         observeSeason()
         awaitActionsIn(scope) { action ->
@@ -49,13 +54,9 @@ class SeasonFeature(
         }
     }
 
-    fun isOurs(round: SeasonRound, index: Int): Boolean {
-        val match = round.matches.getOrNull(index) ?: return false
-        return matchRepository.isOurs(match.home.name, match.away.name)
-    }
-
     private fun observeSeason() {
-        composeState(
+        seasonJob?.cancel()
+        seasonJob = composeState(
             scope = scope,
             source = matchRepository.season().withInitial(scope, Loadable.Loading),
         ) { state, loadable ->
@@ -73,7 +74,7 @@ class SeasonFeature(
     }
 
     private fun startingRoundIndex(season: Season): Int {
-        val current = matchRepository.currentRound(season, nowMillis())
+        val current = season.roundAt(nowMillis())
         return season.rounds.indexOfFirst { it.number == current?.number }.coerceAtLeast(0)
     }
 }

@@ -60,6 +60,9 @@ data class ClubUiState(
     val error: Throwable? = null,
 )
 
+/** How long a state flow outlives its last collector, so a rotation does not refetch. */
+private const val SubscriptionTimeoutMillis = 5_000L
+
 internal class ClubViewModel(
     repository: ClubRepository,
     private val ioDispatcher: CoroutineDispatcher,
@@ -77,7 +80,7 @@ internal class ClubViewModel(
                 isLoading = content.isLoading || resolved == null,
                 error = content.error,
             )
-        }.stateIn(viewModelScope, SharingStarted.Eagerly, ClubUiState())
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(SubscriptionTimeoutMillis), ClubUiState())
 
     init {
         viewModelScope.launch { labels.value = withContext(ioDispatcher) { readLabels() } }

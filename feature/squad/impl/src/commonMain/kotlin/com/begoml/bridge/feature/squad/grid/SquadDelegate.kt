@@ -9,6 +9,7 @@ import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 data class SquadState(
@@ -33,6 +34,9 @@ class SquadDelegate(
     private val repository: SquadRepository,
 ) : UiStateDelegate<SquadState, SquadEvent> by UiStateDelegateImpl(SquadState()) {
 
+    /** The subscription [retry] replaces, so repeated taps cannot stack collectors. */
+    private var squadJob: Job? = null
+
     init {
         observe()
     }
@@ -46,7 +50,8 @@ class SquadDelegate(
     }
 
     private fun observe() {
-        scope.launch {
+        squadJob?.cancel()
+        squadJob = scope.launch {
             repository.squad().collect { loadable ->
                 updateUiState { state ->
                     when (loadable) {

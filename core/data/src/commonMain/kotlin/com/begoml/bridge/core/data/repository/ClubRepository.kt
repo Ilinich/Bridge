@@ -13,7 +13,10 @@ import com.begoml.bridge.core.data.model.toClub
 import com.begoml.bridge.core.data.model.toVenue
 import com.begoml.bridge.core.data.sportsdb.SportsDbApi
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
@@ -42,23 +45,35 @@ internal class ClubRepositoryImpl(
     private val dao: ClubDao,
     private val venueDao: VenueDao,
     private val syncer: Syncer,
+    private val dispatcher: CoroutineDispatcher,
 ) : ClubRepository {
 
     override fun club(): Flow<Loadable<Club>> = persistedResource(
-        stored = dao.observe(teamId).map { entity -> entity?.toClub() },
+        stored = dao.observe(teamId).map { entity -> entity?.toClub() }.flowOn(dispatcher),
     ) {
         syncer.sync(key = clubKey, ttl = ClubTtl) { fetchClub() }
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    override fun venue(): Flow<Loadable<Venue>> = club().flatMapLatest { loadable ->
-        val venueId = (loadable as? Loadable.Content)?.value?.details?.venueId
-            ?: return@flatMapLatest flowOf(Loadable.Loading)
+    /**
+     * The ground, looked up once the club record says which ground to ask about.
+     *
+     * Keyed on the venue id and not on the club: Room re-emits the club on every upsert, and
+     * flatMapLatest would cancel an in-flight venue request and start it again each time — under
+     * repeated refreshes it would never finish.
+     */
+    override fun venue(): Flow<Loadable<Venue>> = club()
+        .map { loadable -> (loadable as? Loadable.Content)?.value?.details?.venueId }
+        .distinctUntilChanged()
+        .flatMapLatest { venueId ->
+            if (venueId == null) return@flatMapLatest flowOf(Loadable.Loading)
 
-        persistedResource(stored = venueDao.observe(venueId).map { it?.toVenue() }) {
-            syncer.sync(key = "venue:$venueId", ttl = ClubTtl) { fetchVenue(venueId) }
+            persistedResource(
+                stored = venueDao.observe(venueId).map { it?.toVenue() }.flowOn(dispatcher),
+            ) {
+                syncer.sync(key = "venue:$venueId", ttl = ClubTtl) { fetchVenue(venueId) }
+            }
         }
-    }
 
     override suspend fun refresh() {
         syncer.sync(key = clubKey, ttl = null, force = true) { fetchClub() }

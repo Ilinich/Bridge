@@ -70,9 +70,16 @@ private fun dataModule(ioDispatcher: CoroutineDispatcher) = module {
             dao = get(),
             venueDao = get(),
             syncer = get(),
+            dispatcher = get(IoDispatcher),
         )
     }
-    single<SquadRepository> { SquadRepositoryImpl(teamId = TeamId, api = get(), dao = get(), syncer = get()) }
+    single<SquadRepository> { SquadRepositoryImpl(
+            teamId = TeamId,
+            api = get(),
+            dao = get(),
+            syncer = get(),
+            dispatcher = get(IoDispatcher),
+        ) }
     single<MatchRepository> {
         MatchRepositoryImpl(
             teamId = TeamId,

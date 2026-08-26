@@ -21,6 +21,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.begoml.bridge.core.data.model.Player
@@ -29,7 +30,9 @@ import com.begoml.bridge.feature.squad.SquadViewModel
 import com.begoml.bridge.uikit.LocalScreenPadding
 import com.begoml.bridge.uikit.component.CutoutImage
 import com.begoml.bridge.uikit.component.LoadableContent
+import com.begoml.bridge.uikit.glass.EdgeFadeOverhang
 import com.begoml.bridge.uikit.glass.ScrollEdge
+import com.begoml.bridge.uikit.glass.EdgeFadeOverhang
 import com.begoml.bridge.uikit.glass.ScrollEdgeFade
 import com.begoml.bridge.uikit.shader.ClubBackgroundShader
 import com.begoml.bridge.uikit.shader.rememberAnimatedShaderBrush
@@ -39,13 +42,15 @@ import com.begoml.bridge.uikit.theme.LabelStyle
 
 private const val GridColumns = 2
 
-/** How far the fade runs past the inset. Short enough and the eye reads the end as a border. */
-private val EdgeFadeOverhang = 64.dp
 
 @Composable
 internal fun SquadScreen(viewModel: SquadViewModel, modifier: Modifier = Modifier) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val contentPadding = LocalScreenPadding.current
+
+    // One program for the whole grid: building it per card compiles a shader per visible cell on
+    // the first frame, and again for every card that scrolls in.
+    val cardBrush = rememberAnimatedShaderBrush(ClubBackgroundShader)
 
     Box(modifier = modifier.fillMaxSize()) {
         LoadableContent(
@@ -71,7 +76,11 @@ internal fun SquadScreen(viewModel: SquadViewModel, modifier: Modifier = Modifie
                     key = { player -> player.id },
                     contentType = { "player-card" },
                 ) { player ->
-                    PlayerCard(player = player, onClick = { viewModel.onPlayerClick(player.id) })
+                    PlayerCard(
+                        player = player,
+                        brush = cardBrush,
+                        onClick = { viewModel.onPlayerClick(player.id) },
+                    )
                 }
             }
         }
@@ -88,9 +97,7 @@ internal fun SquadScreen(viewModel: SquadViewModel, modifier: Modifier = Modifie
 }
 
 @Composable
-private fun PlayerCard(player: Player, onClick: () -> Unit) {
-    val brush = rememberAnimatedShaderBrush(ClubBackgroundShader)
-
+private fun PlayerCard(player: Player, brush: Brush, onClick: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
