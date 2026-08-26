@@ -1,9 +1,11 @@
 name: CI
 
+# Manual only. Every run raises a macOS runner, which a private repository bills at ten times the
+# Linux rate, and that is what exhausted the account's Actions budget. The pipeline is kept as it
+# is: making the repository public restores free minutes on every runner, and the triggers can go
+# back to push and pull_request unchanged.
 on:
-  push:
-    branches: [ master ]
-  pull_request:
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

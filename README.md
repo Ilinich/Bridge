@@ -1,7 +1,5 @@
 # Bridge
 
-[![CI](https://github.com/Ilinich/Bridge/actions/workflows/ci.yml/badge.svg)](https://github.com/Ilinich/Bridge/actions/workflows/ci.yml)
-
 A football supporter app for Android and iOS, built with Kotlin Multiplatform and Compose
 Multiplatform. Clone it and run it — there is no API key to obtain and no account to create.
 
