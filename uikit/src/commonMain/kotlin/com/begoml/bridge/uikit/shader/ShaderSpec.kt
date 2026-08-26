@@ -51,3 +51,60 @@ val ClubBackgroundShader: ShaderSpec = ShaderSpec(
         ),
     ),
 )
+
+private const val FloodlightSource = """
+uniform float uTime;
+uniform float2 uResolution;
+
+float grain(float2 p) {
+    return fract(sin(dot(p, float2(127.1, 311.7))) * 43758.5453);
+}
+
+float beam(float2 uv, float originX, float phase, float speed) {
+    float2 toPixel = uv - float2(originX, -0.45);
+    float angle = atan(toPixel.x, toPixel.y);
+    float aim = sin(uTime * speed + phase) * 0.28;
+    float cone = smoothstep(0.30, 0.0, abs(angle - aim));
+    float reach = smoothstep(1.70, 0.10, length(toPixel));
+    return cone * reach;
+}
+
+half4 main(float2 fragCoord) {
+    float2 uv = fragCoord / uResolution;
+
+    half3 deep = half3(0.006, 0.035, 0.078);
+    half3 club = half3(0.020, 0.259, 0.553);
+    half3 color = mix(club, deep, half(smoothstep(-0.15, 1.05, uv.y)));
+
+    float light = beam(uv, 0.18, 0.0, 0.55)
+        + beam(uv, 0.50, 2.1, 0.42)
+        + beam(uv, 0.82, 4.2, 0.63);
+    color += half3(0.62, 0.78, 1.0) * half(light * 0.17);
+
+    float flicker = grain(floor(fragCoord * 0.6) + floor(uTime * 20.0));
+    color += half3(half((flicker - 0.5) * 0.05));
+
+    float vignette = smoothstep(1.30, 0.30, length(uv - float2(0.5, 0.42)));
+    color *= half(0.58 + 0.42 * vignette);
+
+    return half4(color, 1.0);
+}
+"""
+
+/**
+ * Sweeping floodlights over the club crest.
+ *
+ * Three cones aim on independent sine phases, so the pattern never visibly repeats, and per-pixel
+ * grain sits on top. Neither survives translation into a [Brush] — that is the point: this spec is
+ * the screen that shows a runtime shader doing something a gradient cannot.
+ */
+val FloodlightShader: ShaderSpec = ShaderSpec(
+    source = FloodlightSource,
+    fallback = Brush.verticalGradient(
+        colors = listOf(
+            Color(0xFF0B3E77),
+            Color(0xFF072B57),
+            Color(0xFF03101F),
+        ),
+    ),
+)

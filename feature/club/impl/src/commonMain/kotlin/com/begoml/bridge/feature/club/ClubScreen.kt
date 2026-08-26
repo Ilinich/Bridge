@@ -50,8 +50,10 @@ import com.begoml.bridge.uikit.component.BackdropVideo
 import com.begoml.bridge.uikit.component.BadgeImage
 import com.begoml.bridge.uikit.component.GlassPanel
 import com.begoml.bridge.uikit.component.LoadableContent
+import com.begoml.bridge.uikit.component.ShaderPanel
 import com.begoml.bridge.uikit.glass.GlassBackdrop
 import com.begoml.bridge.uikit.glass.GlassScope
+import com.begoml.bridge.uikit.shader.FloodlightShader
 import com.begoml.bridge.uikit.rememberUrlOpener
 import com.begoml.bridge.uikit.theme.BridgeColors
 import com.begoml.bridge.uikit.theme.LabelStyle
@@ -97,7 +99,7 @@ fun ClubScreen(delegate: ClubDelegate, modifier: Modifier = Modifier) {
                     .padding(horizontal = 14.dp, vertical = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
-                with(glass) { Header(club = club) }
+                Header(club = club)
                 club.description?.let { Section(title = stringResource(Res.string.club_about)) { Prose(it) } }
                 state.venue?.let { GroundSection(venue = it) }
                 LinksSection(club = club)
@@ -107,8 +109,8 @@ fun ClubScreen(delegate: ClubDelegate, modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun GlassScope.Header(club: Club) {
-    GlassPanel(modifier = Modifier.fillMaxWidth()) {
+private fun Header(club: Club) {
+    ShaderPanel(spec = FloodlightShader, modifier = Modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
