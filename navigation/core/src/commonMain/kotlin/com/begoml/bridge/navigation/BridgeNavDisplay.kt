@@ -10,6 +10,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
+import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
+import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import com.begoml.bridge.navigation.swipe.SwipeToDismissSceneStrategy
 
@@ -41,6 +43,12 @@ fun BridgeNavDisplay(
         backStack = backStack,
         modifier = modifier,
         onBack = onBack,
+        // Without these a screen's ViewModel would live in the host's store: shared between
+        // destinations and never cleared when one is popped.
+        entryDecorators = listOf(
+            rememberSaveableStateHolderNavEntryDecorator(),
+            rememberViewModelStoreNavEntryDecorator(),
+        ),
         sceneStrategies = listOf(SwipeToDismissSceneStrategy()),
         entryProvider = entryProvider,
         transitionSpec = {

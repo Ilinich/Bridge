@@ -31,35 +31,23 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import bridge.feature.matches.impl.generated.resources.Res
-import bridge.feature.matches.impl.generated.resources.fixture_score
-import bridge.feature.matches.impl.generated.resources.fixture_teams
-import bridge.feature.matches.impl.generated.resources.season_round
-import com.begoml.bridge.core.data.model.SeasonMatch
-import com.begoml.bridge.core.data.model.SeasonRound
-import com.begoml.bridge.feature.matches.formatDay
-import com.begoml.bridge.feature.matches.formatTime
-import com.begoml.bridge.foundation.tessera.collectState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.begoml.bridge.uikit.LocalScreenPadding
 import com.begoml.bridge.uikit.component.LoadableContent
 import com.begoml.bridge.uikit.component.TeamMonogram
 import com.begoml.bridge.uikit.theme.BridgeColors
 import com.begoml.bridge.uikit.theme.FigureStyle
 import com.begoml.bridge.uikit.theme.LabelStyle
-import org.jetbrains.compose.resources.stringResource
 
 @Composable
-fun SeasonScreen(
-    feature: SeasonFeature,
-    onMatchClick: (SeasonMatch) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val state by feature.collectState()
+internal fun SeasonScreen(viewModel: SeasonViewModel, modifier: Modifier = Modifier) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
     val contentPadding = LocalScreenPadding.current
 
     LoadableContent(
         isLoading = state.isLoading && state.rounds.isEmpty(),
         error = state.error.takeIf { state.rounds.isEmpty() },
-        onRetry = { feature.dispatchAction(SeasonAction.Retry) },
+        onRetry = viewModel::retry,
         modifier = modifier.fillMaxSize().background(BridgeColors.Ground),
     ) {
         if (state.rounds.isEmpty()) return@LoadableContent
@@ -91,8 +79,7 @@ fun SeasonScreen(
             ) { page ->
                 RoundPage(
                     round = state.rounds[page],
-                    isOurs = { index -> feature.isOurs(state.rounds[page], index) },
-                    onMatchClick = onMatchClick,
+                    onMatchClick = viewModel::onMatchClick,
                     bottomPadding = contentPadding.calculateBottomPadding(),
                 )
             }
@@ -102,7 +89,7 @@ fun SeasonScreen(
 
 @Composable
 private fun RoundPills(
-    rounds: List<SeasonRound>,
+    rounds: List<SeasonRoundUi>,
     selectedIndex: Int,
     state: androidx.compose.foundation.lazy.LazyListState,
 ) {
@@ -115,7 +102,7 @@ private fun RoundPills(
         items(items = rounds, key = { it.number }, contentType = { "round-pill" }) { round ->
             val selected = rounds.indexOf(round) == selectedIndex
             Text(
-                text = stringResource(Res.string.season_round, round.number),
+                text = round.title,
                 style = LabelStyle,
                 color = if (selected) BridgeColors.TextPrimary else BridgeColors.TextMuted,
                 modifier = Modifier
@@ -131,9 +118,8 @@ private fun RoundPills(
 
 @Composable
 private fun RoundPage(
-    round: SeasonRound,
-    isOurs: (Int) -> Boolean,
-    onMatchClick: (SeasonMatch) -> Unit,
+    round: SeasonRoundUi,
+    onMatchClick: (String) -> Unit,
     bottomPadding: androidx.compose.ui.unit.Dp,
 ) {
     LazyColumn(
@@ -151,18 +137,14 @@ private fun RoundPage(
             key = { match -> match.id },
             contentType = { "fixture" },
         ) { match ->
-            val index = round.matches.indexOf(match)
-            FixtureRow(
-                match = match,
-                highlighted = isOurs(index),
-                onClick = { onMatchClick(match) },
-            )
+            FixtureRow(match = match, onClick = { onMatchClick(match.id) })
         }
     }
 }
 
 @Composable
-private fun FixtureRow(match: SeasonMatch, highlighted: Boolean, onClick: () -> Unit) {
+private fun FixtureRow(match: FixtureRowUi, onClick: () -> Unit) {
+    val highlighted = match.highlighted
     val background = remember(highlighted) {
         if (highlighted) {
             Brush.horizontalGradient(
@@ -182,28 +164,25 @@ private fun FixtureRow(match: SeasonMatch, highlighted: Boolean, onClick: () -> 
         horizontalArrangement = Arrangement.spacedBy(9.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        TeamMonogram(code = match.home.code, size = 22.dp, highlighted = highlighted)
+        TeamMonogram(code = match.homeCode, size = 22.dp, highlighted = highlighted)
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = stringResource(Res.string.fixture_teams, match.home.name, match.away.name),
+                text = match.teams,
                 style = MaterialTheme.typography.labelLarge,
                 color = BridgeColors.TextPrimary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
-                text = match.kickoff.formatDay(),
+                text = match.day,
                 style = LabelStyle,
                 color = BridgeColors.TextMuted,
             )
         }
-        val score = match.score
         Text(
-            text = score
-                ?.let { stringResource(Res.string.fixture_score, it.home, it.away) }
-                ?: match.kickoff.formatTime(),
+            text = match.trailing,
             style = FigureStyle,
-            color = if (score != null) BridgeColors.TextPrimary else BridgeColors.TextMuted,
+            color = if (match.hasScore) BridgeColors.TextPrimary else BridgeColors.TextMuted,
         )
     }
 }

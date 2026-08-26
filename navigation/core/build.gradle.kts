@@ -9,7 +9,7 @@ kotlin {
             api(projects.uikit)
 
             api(libs.navigation3.ui)
-            implementation(libs.lifecycle.viewmodel.navigation3)
+            api(libs.lifecycle.viewmodel.navigation3)
             implementation(libs.koin.core)
         }
     }

@@ -29,22 +29,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import bridge.feature.club.impl.generated.resources.Res
-import bridge.feature.club.impl.generated.resources.club_about
-import bridge.feature.club.impl.generated.resources.club_capacity
-import bridge.feature.club.impl.generated.resources.club_colours
-import bridge.feature.club.impl.generated.resources.club_founded
-import bridge.feature.club.impl.generated.resources.club_ground
-import bridge.feature.club.impl.generated.resources.club_instagram
-import bridge.feature.club.impl.generated.resources.club_links
-import bridge.feature.club.impl.generated.resources.club_media
-import bridge.feature.club.impl.generated.resources.club_location
-import bridge.feature.club.impl.generated.resources.club_opened
-import bridge.feature.club.impl.generated.resources.club_twitter
-import bridge.feature.club.impl.generated.resources.club_website
-import bridge.feature.club.impl.generated.resources.club_youtube
 import com.begoml.bridge.core.data.model.Club
 import com.begoml.bridge.core.data.model.Venue
-import com.begoml.bridge.foundation.tessera.collectUiState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.begoml.bridge.uikit.LocalScreenPadding
 import com.begoml.bridge.uikit.component.BackdropImage
 import com.begoml.bridge.uikit.component.BadgeImage
@@ -60,7 +47,6 @@ import com.begoml.bridge.uikit.theme.LabelStyle
 import com.begoml.bridge.uikit.video.VideoControls
 import com.begoml.bridge.uikit.video.VideoSurface
 import com.begoml.bridge.uikit.video.rememberVideoPlayback
-import org.jetbrains.compose.resources.stringResource
 
 /**
  * The clip the media section plays.
@@ -73,8 +59,8 @@ private const val ClipUrl =
     "https://videos.pexels.com/video-files/2611250/2611250-hd_1920_1080_30fps.mp4"
 
 @Composable
-fun ClubScreen(delegate: ClubDelegate, modifier: Modifier = Modifier) {
-    val state by delegate.collectUiState()
+internal fun ClubScreen(viewModel: ClubViewModel, modifier: Modifier = Modifier) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
     val contentPadding = LocalScreenPadding.current
 
     GlassBackdrop(
@@ -86,9 +72,10 @@ fun ClubScreen(delegate: ClubDelegate, modifier: Modifier = Modifier) {
         LoadableContent(
             isLoading = state.isLoading && state.club == null,
             error = state.error.takeIf { state.club == null },
-            onRetry = delegate::retry,
+            onRetry = viewModel::retry,
         ) {
             val club = state.club ?: return@LoadableContent
+            val labels = state.labels ?: return@LoadableContent
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -97,18 +84,18 @@ fun ClubScreen(delegate: ClubDelegate, modifier: Modifier = Modifier) {
                     .padding(horizontal = 14.dp, vertical = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
-                Header(club = club)
-                MediaSection()
-                club.description?.let { Section(title = stringResource(Res.string.club_about)) { Prose(it) } }
-                state.venue?.let { GroundSection(venue = it) }
-                LinksSection(club = club)
+                Header(club = club, labels = labels)
+                MediaSection(title = labels.media)
+                club.description?.let { Section(title = labels.about) { Prose(it) } }
+                state.venue?.let { GroundSection(venue = it, labels = labels) }
+                LinksSection(club = club, labels = labels)
             }
         }
     }
 }
 
 @Composable
-private fun Header(club: Club) {
+private fun Header(club: Club, labels: ClubLabels) {
     ShaderPanel(spec = FloodlightShader, modifier = Modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier.fillMaxWidth(),
@@ -134,16 +121,16 @@ private fun Header(club: Club) {
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 club.foundedYear?.let {
-                    Fact(stringResource(Res.string.club_founded), it.toString())
+                    Fact(labels.founded, it.toString())
                 }
-                ColourStrip(club = club)
+                ColourStrip(club = club, label = labels.colours)
             }
         }
     }
 }
 
 @Composable
-private fun ColourStrip(club: Club) {
+private fun ColourStrip(club: Club, label: String) {
     val colours = listOfNotNull(
         club.details.colours.primary,
         club.details.colours.secondary,
@@ -153,7 +140,7 @@ private fun ColourStrip(club: Club) {
 
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Text(
-            text = stringResource(Res.string.club_colours),
+            text = label,
             style = LabelStyle,
             color = BridgeColors.TextMuted,
         )
@@ -179,7 +166,7 @@ private fun ColourStrip(club: Club) {
  * position readout look broken.
  */
 @Composable
-private fun MediaSection() {
+private fun MediaSection(title: String) {
     val playback = rememberVideoPlayback(
         url = ClipUrl,
         autoPlay = false,
@@ -187,7 +174,7 @@ private fun MediaSection() {
         muted = true,
     )
 
-    Section(title = stringResource(Res.string.club_media)) {
+    Section(title = title) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Box(
                 modifier = Modifier
@@ -204,8 +191,8 @@ private fun MediaSection() {
 }
 
 @Composable
-private fun GroundSection(venue: Venue) {
-    Section(title = stringResource(Res.string.club_ground)) {
+private fun GroundSection(venue: Venue, labels: ClubLabels) {
+    Section(title = labels.ground) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             venue.thumbUrl?.let { url ->
                 Box(
@@ -224,13 +211,13 @@ private fun GroundSection(venue: Venue) {
             )
             Row(modifier = Modifier.fillMaxWidth()) {
                 venue.capacity?.let {
-                    Fact(stringResource(Res.string.club_capacity), it.grouped(), Modifier.weight(1f))
+                    Fact(labels.capacity, it.grouped(), Modifier.weight(1f))
                 }
                 venue.openedYear?.let {
-                    Fact(stringResource(Res.string.club_opened), it.toString(), Modifier.weight(1f))
+                    Fact(labels.opened, it.toString(), Modifier.weight(1f))
                 }
                 venue.location?.let {
-                    Fact(stringResource(Res.string.club_location), it, Modifier.weight(1.6f))
+                    Fact(labels.location, it, Modifier.weight(1.6f))
                 }
             }
             venue.description?.let { Prose(it) }
@@ -239,17 +226,17 @@ private fun GroundSection(venue: Venue) {
 }
 
 @Composable
-private fun LinksSection(club: Club) {
+private fun LinksSection(club: Club, labels: ClubLabels) {
     val opener = rememberUrlOpener()
     val links = listOfNotNull(
-        club.details.links.website?.let { stringResource(Res.string.club_website) to it },
-        club.details.links.youtube?.let { stringResource(Res.string.club_youtube) to it },
-        club.details.links.twitter?.let { stringResource(Res.string.club_twitter) to it },
-        club.details.links.instagram?.let { stringResource(Res.string.club_instagram) to it },
+        club.details.links.website?.let { labels.website to it },
+        club.details.links.youtube?.let { labels.youtube to it },
+        club.details.links.twitter?.let { labels.twitter to it },
+        club.details.links.instagram?.let { labels.instagram to it },
     )
     if (links.isEmpty()) return
 
-    Section(title = stringResource(Res.string.club_links)) {
+    Section(title = labels.links) {
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             links.forEach { (label, url) ->
                 Text(

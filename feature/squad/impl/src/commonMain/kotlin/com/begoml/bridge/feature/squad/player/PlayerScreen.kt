@@ -32,8 +32,8 @@ import bridge.feature.squad.impl.generated.resources.squad_number
 import bridge.feature.squad.impl.generated.resources.squad_position
 import bridge.feature.squad.impl.generated.resources.squad_title
 import com.begoml.bridge.core.data.model.Player
-import com.begoml.bridge.feature.squad.grid.SquadDelegate
-import com.begoml.bridge.foundation.tessera.collectUiState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.begoml.bridge.feature.squad.PlayerViewModel
 import com.begoml.bridge.uikit.LocalScreenPadding
 import com.begoml.bridge.uikit.component.BridgeBackButton
 import com.begoml.bridge.uikit.component.BridgeTopBar
@@ -64,13 +64,12 @@ private const val EdgeFadeStrength = 0.4f
  * would fight over the same drag.
  */
 @Composable
-fun PlayerScreen(
-    delegate: SquadDelegate,
+internal fun PlayerScreen(
+    viewModel: PlayerViewModel,
     initialPlayerId: String,
-    onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val squadState by delegate.collectUiState()
+    val squadState by viewModel.state.collectAsStateWithLifecycle()
     val players = squadState.players
     val brush = rememberAnimatedShaderBrush(ClubBackgroundShader)
     val contentPadding = LocalScreenPadding.current
@@ -105,7 +104,7 @@ fun PlayerScreen(
                 leading = {
                     with(glass) {
                         BridgeBackButton(
-                            onClick = onBack,
+                            onClick = viewModel::onBack,
                             contentDescription = stringResource(Res.string.squad_title),
                         )
                     }

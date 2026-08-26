@@ -23,29 +23,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import bridge.feature.matches.impl.generated.resources.Res
-import bridge.feature.matches.impl.generated.resources.fixture_score
-import bridge.feature.matches.impl.generated.resources.fixture_teams
-import bridge.feature.matches.impl.generated.resources.fixture_versus
-import bridge.feature.matches.impl.generated.resources.matchday_arena
-import bridge.feature.matches.impl.generated.resources.matchday_capacity
-import bridge.feature.matches.impl.generated.resources.matchday_days
-import bridge.feature.matches.impl.generated.resources.matchday_fixture_failed
-import bridge.feature.matches.impl.generated.resources.matchday_founded
-import bridge.feature.matches.impl.generated.resources.matchday_hours
-import bridge.feature.matches.impl.generated.resources.matchday_kickoff_local
-import bridge.feature.matches.impl.generated.resources.matchday_kickoff_now
-import bridge.feature.matches.impl.generated.resources.matchday_minutes
-import bridge.feature.matches.impl.generated.resources.matchday_next_match
-import bridge.feature.matches.impl.generated.resources.matchday_loading_fixture
-import bridge.feature.matches.impl.generated.resources.matchday_no_fixture
-import bridge.feature.matches.impl.generated.resources.matchday_recent
-import bridge.feature.matches.impl.generated.resources.matchday_seconds
-import bridge.feature.matches.impl.generated.resources.matchday_stadium
 import com.begoml.bridge.core.data.model.Club
 import com.begoml.bridge.core.data.model.Match
 import com.begoml.bridge.feature.matches.formatKickoff
 import com.begoml.bridge.feature.matches.groupedThousands
-import com.begoml.bridge.foundation.tessera.collectState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.begoml.bridge.uikit.LocalScreenPadding
 import com.begoml.bridge.uikit.component.BackdropImage
 import com.begoml.bridge.uikit.component.BackdropVideo
@@ -57,18 +39,13 @@ import com.begoml.bridge.uikit.glass.GlassScope
 import com.begoml.bridge.uikit.theme.BridgeColors
 import com.begoml.bridge.uikit.theme.FigureStyle
 import com.begoml.bridge.uikit.theme.LabelStyle
-import org.jetbrains.compose.resources.stringResource
 
 /** The hero card needs air under the status bar; the window inset alone sits it flush. */
 private val HeroTopInset = 16.dp
 
 @Composable
-fun MatchdayScreen(
-    feature: MatchdayFeature,
-    onStadiumClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val state by feature.collectState()
+internal fun MatchdayScreen(viewModel: MatchdayViewModel, modifier: Modifier = Modifier) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
     val contentPadding = LocalScreenPadding.current
 
     GlassBackdrop(
@@ -79,8 +56,9 @@ fun MatchdayScreen(
         LoadableContent(
             isLoading = state.isLoading && state.nextMatch == null && state.club == null,
             error = state.error.takeIf { state.club == null && state.nextMatch == null },
-            onRetry = { feature.dispatchAction(MatchdayAction.Retry) },
+            onRetry = viewModel::retry,
         ) {
+            val labels = state.labels ?: return@LoadableContent
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -89,9 +67,9 @@ fun MatchdayScreen(
                     .padding(horizontal = 14.dp, vertical = HeroTopInset),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                with(glass) { HeroCard(state = state) }
-                state.lastResult?.let { RecentSection(match = it) }
-                state.club?.let { StadiumSection(club = it, onClick = onStadiumClick) }
+                with(glass) { HeroCard(state = state, labels = labels) }
+                state.recent?.let { RecentSection(recent = it, labels = labels) }
+                state.club?.let { StadiumSection(club = it, labels = labels, onClick = viewModel::onStadiumClick) }
             }
         }
     }
@@ -121,7 +99,7 @@ private fun StadiumBackdrop(club: Club?) {
 }
 
 @Composable
-private fun GlassScope.HeroCard(state: MatchdayState) {
+private fun GlassScope.HeroCard(state: MatchdayUiState, labels: MatchdayLabels) {
     GlassPanel(modifier = Modifier.fillMaxWidth()) {
         Column(verticalArrangement = Arrangement.spacedBy(11.dp)) {
             Row(
@@ -129,8 +107,7 @@ private fun GlassScope.HeroCard(state: MatchdayState) {
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 Text(
-                    text = state.nextMatch?.competition
-                        ?: stringResource(Res.string.matchday_next_match),
+                    text = state.nextMatch?.competition ?: labels.nextMatch,
                     style = LabelStyle,
                     color = BridgeColors.TextMuted,
                 )
@@ -143,16 +120,16 @@ private fun GlassScope.HeroCard(state: MatchdayState) {
             if (match == null) {
                 Text(
                     text = when {
-                        state.nextMatchFailed -> stringResource(Res.string.matchday_fixture_failed)
-                        state.nextMatchLoaded -> stringResource(Res.string.matchday_no_fixture)
-                        else -> stringResource(Res.string.matchday_loading_fixture)
+                        state.nextMatchFailed -> labels.fixtureFailed
+                        state.nextMatchLoaded -> labels.noFixture
+                        else -> labels.loadingFixture
                     },
                     color = BridgeColors.TextMuted,
                     modifier = Modifier.fillMaxWidth(),
                     textAlign = TextAlign.Center,
                 )
             } else {
-                Versus(match = match)
+                Versus(match = match, versus = labels.versus)
                 Column(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -164,12 +141,13 @@ private fun GlassScope.HeroCard(state: MatchdayState) {
                         color = BridgeColors.TextPrimary,
                     )
                     Text(
-                        text = stringResource(Res.string.matchday_kickoff_local),
+                        text = labels.kickoffLocal,
                         style = LabelStyle,
                         color = BridgeColors.TextMuted,
                     )
                 }
                 CountdownRow(
+                    labels = labels,
                     countdown = Countdown.between(
                         nowMillis = state.nowMillis,
                         kickoffMillis = match.kickoff.toEpochMilliseconds(),
@@ -181,7 +159,7 @@ private fun GlassScope.HeroCard(state: MatchdayState) {
 }
 
 @Composable
-private fun Versus(match: Match) {
+private fun Versus(match: Match, versus: String) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
@@ -189,7 +167,7 @@ private fun Versus(match: Match) {
     ) {
         TeamColumn(name = match.home.name, code = match.home.code, badge = match.home.badgeUrl)
         Text(
-            text = stringResource(Res.string.fixture_versus),
+            text = versus,
             style = FigureStyle,
             color = BridgeColors.TextMuted,
         )
@@ -217,10 +195,10 @@ private fun TeamColumn(name: String, code: String, badge: String?) {
 }
 
 @Composable
-private fun CountdownRow(countdown: Countdown) {
+private fun CountdownRow(labels: MatchdayLabels, countdown: Countdown) {
     if (countdown.hasStarted) {
         Text(
-            text = stringResource(Res.string.matchday_kickoff_now),
+            text = labels.kickoffNow,
             style = FigureStyle,
             color = BridgeColors.ClubBright,
             modifier = Modifier.fillMaxWidth(),
@@ -233,10 +211,10 @@ private fun CountdownRow(countdown: Countdown) {
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
     ) {
-        CountdownCell(countdown.days, stringResource(Res.string.matchday_days))
-        CountdownCell(countdown.hours, stringResource(Res.string.matchday_hours))
-        CountdownCell(countdown.minutes, stringResource(Res.string.matchday_minutes))
-        CountdownCell(countdown.seconds, stringResource(Res.string.matchday_seconds))
+        CountdownCell(countdown.days, labels.days)
+        CountdownCell(countdown.hours, labels.hours)
+        CountdownCell(countdown.minutes, labels.minutes)
+        CountdownCell(countdown.seconds, labels.seconds)
     }
 }
 
@@ -256,10 +234,10 @@ private fun CountdownCell(value: Long, unit: String) {
 }
 
 @Composable
-private fun RecentSection(match: Match) {
+private fun RecentSection(recent: RecentMatchUi, labels: MatchdayLabels) {
     Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
         Text(
-            text = stringResource(Res.string.matchday_recent),
+            text = labels.recent,
             style = LabelStyle,
             color = BridgeColors.TextMuted,
         )
@@ -271,20 +249,20 @@ private fun RecentSection(match: Match) {
             horizontalArrangement = Arrangement.spacedBy(9.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            BadgeImage(url = match.away.badgeUrl, code = match.away.code, size = 22.dp)
+            BadgeImage(url = recent.awayBadgeUrl, code = recent.awayCode, size = 22.dp)
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = stringResource(Res.string.fixture_teams, match.home.name, match.away.name),
+                    text = recent.teams,
                     style = MaterialTheme.typography.labelLarge,
                     color = BridgeColors.TextPrimary,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                Text(text = match.competition, style = LabelStyle, color = BridgeColors.TextMuted)
+                Text(text = recent.competition, style = LabelStyle, color = BridgeColors.TextMuted)
             }
-            match.score?.let {
+            recent.score?.let {
                 Text(
-                    text = stringResource(Res.string.fixture_score, it.home, it.away),
+                    text = it,
                     style = FigureStyle,
                     color = BridgeColors.TextPrimary,
                 )
@@ -294,10 +272,10 @@ private fun RecentSection(match: Match) {
 }
 
 @Composable
-private fun StadiumSection(club: Club, onClick: () -> Unit) {
+private fun StadiumSection(club: Club, labels: MatchdayLabels, onClick: () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
         Text(
-            text = stringResource(Res.string.matchday_stadium),
+            text = labels.stadium,
             style = LabelStyle,
             color = BridgeColors.TextMuted,
         )
@@ -310,17 +288,17 @@ private fun StadiumSection(club: Club, onClick: () -> Unit) {
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             Fact(
-                label = stringResource(Res.string.matchday_arena),
+                label = labels.arena,
                 value = club.stadium.orEmpty(),
                 modifier = Modifier.weight(1.7f),
             )
             Fact(
-                label = stringResource(Res.string.matchday_capacity),
+                label = labels.capacity,
                 value = club.stadiumCapacity?.groupedThousands().orEmpty(),
                 modifier = Modifier.weight(1f),
             )
             Fact(
-                label = stringResource(Res.string.matchday_founded),
+                label = labels.founded,
                 value = club.foundedYear?.toString().orEmpty(),
                 modifier = Modifier.weight(1f),
             )

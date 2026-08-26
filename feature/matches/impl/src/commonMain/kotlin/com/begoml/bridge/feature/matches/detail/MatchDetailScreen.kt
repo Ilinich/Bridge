@@ -20,11 +20,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import bridge.feature.matches.impl.generated.resources.Res
-import bridge.feature.matches.impl.generated.resources.fixture_score
-import bridge.feature.matches.impl.generated.resources.fixture_versus
-import bridge.feature.matches.impl.generated.resources.match_kickoff
-import bridge.feature.matches.impl.generated.resources.match_not_found
-import bridge.feature.matches.impl.generated.resources.match_title
 import com.begoml.bridge.core.data.model.SeasonMatch
 import com.begoml.bridge.core.data.repository.MatchRepository
 import com.begoml.bridge.feature.matches.formatKickoff
@@ -40,19 +35,13 @@ import com.begoml.bridge.uikit.shader.rememberAnimatedShaderBrush
 import com.begoml.bridge.uikit.theme.BridgeColors
 import com.begoml.bridge.uikit.theme.FigureStyle
 import com.begoml.bridge.uikit.theme.LabelStyle
-import org.jetbrains.compose.resources.stringResource
 
 /** The side gutter every screen shares, so cards line up across the app. */
 private val ScreenGutter = 14.dp
 
 @Composable
-fun MatchDetailScreen(
-    matchId: String,
-    repository: MatchRepository,
-    onBack: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val match by repository.match(matchId).collectAsStateWithLifecycle(initialValue = null)
+internal fun MatchDetailScreen(viewModel: MatchDetailViewModel, modifier: Modifier = Modifier) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
     val brush = rememberAnimatedShaderBrush(ClubBackgroundShader)
     val contentPadding = LocalScreenPadding.current
 
@@ -65,22 +54,23 @@ fun MatchDetailScreen(
             modifier = Modifier.fillMaxSize().padding(contentPadding),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
+            val labels = state.labels ?: return@Column
             BridgeTopBar(
-                title = stringResource(Res.string.match_title),
+                title = labels.title,
                 leading = {
                     with(glass) {
                         BridgeBackButton(
-                            onClick = onBack,
-                            contentDescription = stringResource(Res.string.match_title),
+                            onClick = viewModel::onBack,
+                            contentDescription = labels.title,
                         )
                     }
                 },
             )
 
-            val current = match
+            val current = state.match
             if (current == null) {
                 Text(
-                    text = stringResource(Res.string.match_not_found),
+                    text = labels.notFound,
                     color = BridgeColors.TextMuted,
                     modifier = Modifier.fillMaxWidth().padding(24.dp),
                     textAlign = TextAlign.Center,
@@ -88,13 +78,13 @@ fun MatchDetailScreen(
                 return@Column
             }
 
-            with(glass) { FixtureCard(match = current) }
+            with(glass) { FixtureCard(match = current, labels = labels) }
         }
     }
 }
 
 @Composable
-private fun GlassScope.FixtureCard(match: SeasonMatch) {
+private fun GlassScope.FixtureCard(match: MatchDetailUi, labels: MatchDetailLabels) {
     GlassPanel(modifier = Modifier.fillMaxWidth().padding(horizontal = ScreenGutter)) {
         Column(
             verticalArrangement = Arrangement.spacedBy(14.dp),
@@ -106,29 +96,27 @@ private fun GlassScope.FixtureCard(match: SeasonMatch) {
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Side(name = match.home.name, code = match.home.code)
+                Side(name = match.homeName, code = match.homeCode)
                 Text(
-                    text = match.score
-                        ?.let { stringResource(Res.string.fixture_score, it.home, it.away) }
-                        ?: stringResource(Res.string.fixture_versus),
+                    text = match.scoreline,
                     style = FigureStyle.copy(
                         fontSize = MaterialTheme.typography.headlineSmall.fontSize,
                     ),
                     color = BridgeColors.TextPrimary,
                 )
-                Side(name = match.away.name, code = match.away.code)
+                Side(name = match.awayName, code = match.awayCode)
             }
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(3.dp),
             ) {
                 Text(
-                    text = stringResource(Res.string.match_kickoff),
+                    text = labels.kickoff,
                     style = LabelStyle,
                     color = BridgeColors.TextMuted,
                 )
                 Text(
-                    text = match.kickoff.formatKickoff(),
+                    text = match.kickoff,
                     style = MaterialTheme.typography.titleSmall,
                     color = BridgeColors.TextPrimary,
                 )

@@ -24,7 +24,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.begoml.bridge.core.data.model.Player
-import com.begoml.bridge.foundation.tessera.collectUiState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.begoml.bridge.feature.squad.SquadViewModel
 import com.begoml.bridge.uikit.LocalScreenPadding
 import com.begoml.bridge.uikit.component.CutoutImage
 import com.begoml.bridge.uikit.component.LoadableContent
@@ -37,14 +38,14 @@ import com.begoml.bridge.uikit.theme.LabelStyle
 private const val GridColumns = 2
 
 @Composable
-fun SquadScreen(delegate: SquadDelegate, modifier: Modifier = Modifier) {
-    val state by delegate.collectUiState()
+internal fun SquadScreen(viewModel: SquadViewModel, modifier: Modifier = Modifier) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
     val contentPadding = LocalScreenPadding.current
 
     LoadableContent(
         isLoading = state.isLoading && state.players.isEmpty(),
         error = state.error.takeIf { state.players.isEmpty() },
-        onRetry = delegate::retry,
+        onRetry = viewModel::retry,
         modifier = modifier.fillMaxSize().background(BridgeColors.Ground),
     ) {
         LazyVerticalGrid(
@@ -64,7 +65,7 @@ fun SquadScreen(delegate: SquadDelegate, modifier: Modifier = Modifier) {
                 key = { player -> player.id },
                 contentType = { "player-card" },
             ) { player ->
-                PlayerCard(player = player, onClick = { delegate.onPlayerClick(player.id) })
+                PlayerCard(player = player, onClick = { viewModel.onPlayerClick(player.id) })
             }
         }
     }
