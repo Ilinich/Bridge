@@ -16,6 +16,8 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             implementation(projects.foundation.analytics.api)
+            implementation(projects.foundation.background.api)
+            implementation(projects.foundation.background.impl)
             implementation(projects.foundation.analytics.impl)
             implementation(projects.foundation.logger.impl)
             implementation(projects.core.data)

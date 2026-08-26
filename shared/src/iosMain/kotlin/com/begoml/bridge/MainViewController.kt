@@ -2,6 +2,7 @@ package com.begoml.bridge
 
 import androidx.compose.ui.window.ComposeUIViewController
 import com.begoml.bridge.di.startBridge
+import com.begoml.bridge.foundation.background.BackgroundRefresh
 
 private var started = false
 
@@ -15,7 +16,9 @@ private var started = false
 fun MainViewController() = ComposeUIViewController {
     if (!started) {
         started = true
-        startBridge()
+        // Registration has to happen before the app finishes launching, which on iOS is the first
+        // time this controller is built; BGTaskScheduler throws if it is asked any later.
+        startBridge().koin.get<BackgroundRefresh>().schedule()
     }
     App()
 }

@@ -2,6 +2,7 @@ package com.begoml.bridge.di
 
 import com.begoml.bridge.core.data.di.dataModules
 import com.begoml.bridge.foundation.analytics.impl.analyticsModule
+import com.begoml.bridge.foundation.background.impl.backgroundModule
 import com.begoml.bridge.foundation.logger.impl.loggerModule
 import com.begoml.bridge.feature.club.di.clubModule
 import com.begoml.bridge.navigation.di.navigationModule
@@ -24,7 +25,7 @@ fun startBridge(
 ): KoinApplication = startKoin {
     declaration()
     modules(
-        listOf(loggerModule(isLoggingEnabled), analyticsModule()) +
+        listOf(loggerModule(isLoggingEnabled), analyticsModule(), backgroundModule(), refreshModule()) +
             dataModules(ioDispatcher) + navigationModule() +
             matchesModule() + squadModule() + clubModule(),
     )

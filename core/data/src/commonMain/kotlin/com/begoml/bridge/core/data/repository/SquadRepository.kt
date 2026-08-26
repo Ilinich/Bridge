@@ -23,6 +23,9 @@ import kotlin.time.Duration.Companion.hours
 interface SquadRepository {
 
     fun squad(): Flow<Loadable<List<Player>>>
+
+    /** Revalidates now, ignoring the time to live. */
+    suspend fun refresh()
 }
 
 internal class SquadRepositoryImpl(
@@ -40,8 +43,14 @@ internal class SquadRepositoryImpl(
             rows.takeIf { it.isNotEmpty() }?.map { it.toPlayer() }
         }.flowOn(dispatcher),
     ) {
-        syncer.sync(key = "squad:$teamId", ttl = 4.hours) { fetch() }
+        syncer.sync(key = squadKey, ttl = 4.hours) { fetch() }
     }
+
+    override suspend fun refresh() {
+        syncer.sync(key = squadKey, ttl = null, force = true) { fetch() }
+    }
+
+    private val squadKey get() = "squad:$teamId"
 
     private suspend fun fetch() {
         val players = api.squad(teamId).mapNotNull { it.toPlayer() }

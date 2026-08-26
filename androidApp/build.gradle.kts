@@ -9,6 +9,7 @@ baselineProfile {
 
 dependencies {
     implementation(projects.shared)
+    implementation(projects.foundation.background.api)
 
     // Applies the recorded profile on first run; without it the profile ships and never installs.
     implementation(libs.androidx.profileinstaller)

@@ -50,6 +50,9 @@ interface MatchRepository {
     fun isOurClub(teamName: String): Boolean
 
     fun match(id: String): Flow<Loadable<SeasonMatch?>>
+
+    /** Revalidates the calendar and the fixture caches now, ignoring their time to live. */
+    suspend fun refresh()
 }
 
 internal class MatchRepositoryImpl(
@@ -111,6 +114,13 @@ internal class MatchRepositoryImpl(
     }
 
     override fun isOurClub(teamName: String): Boolean = TeamNames.matches(teamName, clubName)
+
+    override suspend fun refresh() {
+        val seasonId = resolveSeasonId()
+        syncer.sync(key = seasonKey(seasonId), ttl = null, force = true) { fetch(seasonId) }
+        nextMatchCache.invalidateAll()
+        lastResultCache.invalidateAll()
+    }
 
     override fun match(id: String): Flow<Loadable<SeasonMatch?>> = seasonDao.observeMatch(id)
         .map<SeasonMatchEntity?, Loadable<SeasonMatch?>> { entity ->
