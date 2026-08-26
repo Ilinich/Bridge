@@ -2,7 +2,6 @@ package com.begoml.bridge.benchmark
 
 import androidx.benchmark.macro.MacrobenchmarkScope
 import androidx.test.uiautomator.By
-import androidx.test.uiautomator.Direction
 import androidx.test.uiautomator.Until
 
 const val BridgePackage = "com.begoml.bridge"
@@ -10,6 +9,8 @@ const val BridgePackage = "com.begoml.bridge"
 private const val TabWaitMillis = 5_000L
 private const val ContentWaitMillis = 10_000L
 private const val ScrollSteps = 12
+private const val SwipeStartFraction = 0.75
+private const val SwipeEndFraction = 0.30
 
 /**
  * Tabs are found by their accessible name because the bar draws icons only.
@@ -42,11 +43,20 @@ fun MacrobenchmarkScope.awaitScrollableContent(): Boolean {
     return device.wait(Until.hasObject(scrollable), ContentWaitMillis) != null
 }
 
+/**
+ * Scrolls by coordinates rather than by driving the list node.
+ *
+ * A UiObject2 is a handle to one accessibility node, and the list is rebuilt when its data lands:
+ * the handle then goes stale between finding it and scrolling it, which fails the run. A swipe is
+ * addressed to the screen and cannot go stale.
+ */
 fun MacrobenchmarkScope.scrollDownAndBack() {
-    val list = device.findObject(By.scrollable(true)) ?: return
-    list.setGestureMargin(device.displayWidth / 5)
-    list.scroll(Direction.DOWN, 1f, ScrollSteps)
+    val x = device.displayWidth / 2
+    val bottom = (device.displayHeight * SwipeStartFraction).toInt()
+    val top = (device.displayHeight * SwipeEndFraction).toInt()
+
+    device.swipe(x, bottom, x, top, ScrollSteps)
     device.waitForIdle()
-    list.scroll(Direction.UP, 1f, ScrollSteps)
+    device.swipe(x, top, x, bottom, ScrollSteps)
     device.waitForIdle()
 }
