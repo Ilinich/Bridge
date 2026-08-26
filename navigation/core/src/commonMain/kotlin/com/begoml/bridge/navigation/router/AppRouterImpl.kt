@@ -15,15 +15,15 @@ import com.begoml.bridge.navigation.TabbedBackStack
  * it can be restored after a process death, while features resolve their router once from the
  * graph; the gap between those two lifetimes is here, in one place, rather than in every caller.
  */
-class AppRouterImpl : AppRouter {
+internal class AppRouterImpl : AppRouter, NavigationHost {
 
     private var backStack: TabbedBackStack? = null
 
-    fun attach(stack: TabbedBackStack) {
+    override fun attach(stack: TabbedBackStack) {
         backStack = stack
     }
 
-    fun detach() {
+    override fun detach() {
         backStack = null
     }
 
@@ -34,37 +34,13 @@ class AppRouterImpl : AppRouter {
 
     private fun TabbedBackStack.apply(command: NavigationCommand) {
         when (command) {
-            is NavigationCommand.NavigateTo -> navigate(command.destination, command.mode)
+            is NavigationCommand.NavigateTo -> navigate(command.destination)
             is NavigationCommand.NavigateUp -> pop()
-            is NavigationCommand.NavigateUpTo -> popTo(command.destination)
-            is NavigationCommand.ReplaceWith -> {
-                pop()
-                push(command.destination)
-            }
-
-            is NavigationCommand.ClearBackStackAndNavigateTo -> {
-                popToRoot()
-                navigate(command.destination, NavigationMode.Default)
-            }
         }
     }
 
-    private fun TabbedBackStack.navigate(destination: Route, mode: NavigationMode) {
+    private fun TabbedBackStack.navigate(destination: Route) {
         if (selectTabFor(destination)) return
-
-        when (mode) {
-            NavigationMode.Default -> push(destination)
-            NavigationMode.OnlyIfNotInStack -> if (!contains(destination)) push(destination)
-            NavigationMode.AvoidIfLastInStack -> if (current.lastOrNull() != destination) {
-                push(destination)
-            }
-
-            NavigationMode.ReplaceIfSameTypeOnTop -> {
-                if (current.lastOrNull()?.isSameKindAs(destination) == true) pop()
-                push(destination)
-            }
-        }
+        push(destination)
     }
 }
-
-private fun Route.isSameKindAs(other: Route): Boolean = this::class == other::class

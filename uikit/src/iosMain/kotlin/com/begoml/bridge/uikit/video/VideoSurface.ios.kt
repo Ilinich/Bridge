@@ -9,6 +9,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import com.begoml.bridge.uikit.theme.BridgeColors
 import androidx.compose.ui.viewinterop.UIKitView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -36,6 +38,14 @@ import platform.CoreGraphics.CGRectZero
 import platform.QuartzCore.kCATransactionDisableActions
 import platform.UIKit.UIColor
 import platform.UIKit.UIView
+
+@OptIn(ExperimentalForeignApi::class)
+private fun Color.toUIColor(): UIColor = UIColor(
+    red = red.toDouble(),
+    green = green.toDouble(),
+    blue = blue.toDouble(),
+    alpha = alpha.toDouble(),
+)
 
 private const val LoopNotification = "AVPlayerItemDidPlayToEndTimeNotification"
 private const val PositionPollMillis = 200L
@@ -172,7 +182,10 @@ private class PlayerContainerView : UIView(frame = CGRectZero.readValue()) {
     val playerLayer = AVPlayerLayer()
 
     init {
-        backgroundColor = UIColor.clearColor
+        // Opaque and dark, not clear: until the first frame decodes there is nothing in the layer,
+        // and a transparent interop view shows through as white for as long as that takes.
+        backgroundColor = BridgeColors.Ground.toUIColor()
+        playerLayer.backgroundColor = BridgeColors.Ground.toUIColor().CGColor
         playerLayer.videoGravity = AVLayerVideoGravityResizeAspectFill
         layer.addSublayer(playerLayer)
     }

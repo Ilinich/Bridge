@@ -2,9 +2,10 @@ package com.begoml.bridge.navigation.di
 
 import com.begoml.bridge.navigation.router.AppRouter
 import com.begoml.bridge.navigation.router.AppRouterImpl
-import org.koin.dsl.bind
+import com.begoml.bridge.navigation.router.NavigationHost
+import org.koin.dsl.binds
 import org.koin.dsl.module
 
 fun navigationModule() = module {
-    single { AppRouterImpl() } bind AppRouter::class
+    single { AppRouterImpl() } binds arrayOf(AppRouter::class, NavigationHost::class)
 }

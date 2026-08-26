@@ -44,7 +44,7 @@ import com.begoml.bridge.uikit.theme.LabelStyle
 import kotlin.math.absoluteValue
 
 private const val CutoutParallaxDp = 40f
-private const val EdgeFadeStrength = 0.4f
+private const val PageFadeStrength = 0.4f
 
 /**
  * The player card, paged sideways.
@@ -89,8 +89,17 @@ internal fun PlayerScreen(
         val pagerState = rememberPagerState(initialPage = startIndex) { players.size }
 
         HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { page ->
-            val offset = (pagerState.currentPage - page) + pagerState.currentPageOffsetFraction
-            PlayerPage(glass = glass, player = players[page], labels = labels, offset = offset)
+            // The offset is passed as a lambda and read inside graphicsLayer: reading the pager
+            // fraction here would recompose the page, its cutout and its glass panel on every
+            // frame of the swipe instead of leaving the motion on the render thread.
+            PlayerPage(
+                glass = glass,
+                player = players[page],
+                labels = labels,
+                offset = {
+                    (pagerState.currentPage - page) + pagerState.currentPageOffsetFraction
+                },
+            )
         }
 
         Column(modifier = Modifier.fillMaxWidth().padding(top = contentPadding.calculateTopPadding())) {
@@ -118,7 +127,12 @@ internal fun PlayerScreen(
 }
 
 @Composable
-private fun PlayerPage(glass: GlassScope, player: Player, labels: PlayerLabels, offset: Float) {
+private fun PlayerPage(
+    glass: GlassScope,
+    player: Player,
+    labels: PlayerLabels,
+    offset: () -> Float,
+) {
     val contentPadding = LocalScreenPadding.current
     Box(modifier = Modifier.fillMaxSize()) {
         CutoutImage(
@@ -127,8 +141,9 @@ private fun PlayerPage(glass: GlassScope, player: Player, labels: PlayerLabels, 
                 .fillMaxSize()
                 .padding(top = 70.dp, bottom = 190.dp)
                 .graphicsLayer {
-                    translationX = offset * CutoutParallaxDp * density
-                    alpha = 1f - offset.absoluteValue * EdgeFadeStrength
+                    val fraction = offset()
+                    translationX = fraction * CutoutParallaxDp * density
+                    alpha = 1f - fraction.absoluteValue * PageFadeStrength
                 },
         )
 

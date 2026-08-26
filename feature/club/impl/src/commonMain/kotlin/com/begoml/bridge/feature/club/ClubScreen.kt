@@ -36,15 +36,12 @@ import com.begoml.bridge.uikit.LocalScreenPadding
 import com.begoml.bridge.uikit.groupedThousands
 import com.begoml.bridge.uikit.component.BackdropImage
 import com.begoml.bridge.uikit.component.BadgeImage
-import com.begoml.bridge.uikit.component.GlassPanel
 import com.begoml.bridge.uikit.component.LoadableContent
 import com.begoml.bridge.uikit.glass.EdgeFadeOverhang
 import com.begoml.bridge.uikit.glass.ScrollEdge
 import com.begoml.bridge.uikit.glass.EdgeFadeOverhang
 import com.begoml.bridge.uikit.glass.ScrollEdgeFade
 import com.begoml.bridge.uikit.component.ShaderPanel
-import com.begoml.bridge.uikit.glass.GlassBackdrop
-import com.begoml.bridge.uikit.glass.GlassScope
 import com.begoml.bridge.uikit.shader.FloodlightShader
 import com.begoml.bridge.uikit.rememberUrlOpener
 import com.begoml.bridge.uikit.theme.BridgeColors
@@ -68,12 +65,9 @@ internal fun ClubScreen(viewModel: ClubViewModel, modifier: Modifier = Modifier)
     val state by viewModel.state.collectAsStateWithLifecycle()
     val contentPadding = LocalScreenPadding.current
 
-    GlassBackdrop(
-        modifier = modifier.fillMaxSize(),
-        backdrop = {
-            BackdropImage(url = state.club?.media?.fanartUrls?.lastOrNull())
-        },
-    ) {
+    Box(modifier = modifier.fillMaxSize()) {
+        BackdropImage(url = state.club?.media?.fanartUrls?.lastOrNull())
+
         LoadableContent(
             isLoading = (state.isLoading || state.labels == null) && state.club == null,
             error = state.error.takeIf { state.club == null },

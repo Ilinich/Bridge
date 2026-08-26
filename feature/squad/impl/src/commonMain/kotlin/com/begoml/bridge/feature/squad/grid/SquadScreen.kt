@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -22,6 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.dp
 import com.begoml.bridge.core.data.model.Player
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -42,12 +45,14 @@ import com.begoml.bridge.uikit.theme.FigureStyle
 import com.begoml.bridge.uikit.theme.LabelStyle
 
 private const val GridColumns = 2
+private val ScreenGutter = 14.dp
 
 
 @Composable
 internal fun SquadScreen(viewModel: SquadViewModel, modifier: Modifier = Modifier) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val contentPadding = LocalScreenPadding.current
+    val layoutDirection = LocalLayoutDirection.current
 
     // One program for the whole grid: building it per card compiles a shader per visible cell on
     // the first frame, and again for every card that scrolls in.
@@ -64,8 +69,10 @@ internal fun SquadScreen(viewModel: SquadViewModel, modifier: Modifier = Modifie
                 columns = GridCells.Fixed(GridColumns),
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(
-                    start = 14.dp,
-                    end = 14.dp,
+                    // The screen inset carries the cutout in landscape; a bare gutter would put
+                    // the first column under it.
+                    start = ScreenGutter + contentPadding.calculateStartPadding(layoutDirection),
+                    end = ScreenGutter + contentPadding.calculateEndPadding(layoutDirection),
                     top = contentPadding.calculateTopPadding() + 4.dp,
                     bottom = contentPadding.calculateBottomPadding(),
                 ),

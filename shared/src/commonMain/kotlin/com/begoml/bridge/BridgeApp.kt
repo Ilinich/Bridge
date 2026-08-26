@@ -31,7 +31,7 @@ import com.begoml.bridge.feature.matches.api.SeasonRoute
 import com.begoml.bridge.feature.squad.api.SquadRoute
 import com.begoml.bridge.navigation.BridgeNavDisplay
 import com.begoml.bridge.navigation.FeatureNavigationEntry
-import com.begoml.bridge.navigation.router.AppRouterImpl
+import com.begoml.bridge.navigation.router.NavigationHost
 import com.begoml.bridge.navigation.Route
 import com.begoml.bridge.navigation.RouteCodec
 import com.begoml.bridge.navigation.rememberTabbedBackStack
@@ -43,8 +43,8 @@ import com.begoml.bridge.uikit.glass.GlassBackdrop
 import com.begoml.bridge.uikit.theme.BridgeColors
 import com.begoml.bridge.uikit.theme.BridgeTheme
 import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.currentKoinScope
 import org.koin.compose.koinInject
-import org.koin.mp.KoinPlatform
 
 /** Tab-bar height plus the gap above and below it; screens scroll behind all of it. */
 private val TabBarInset = 70.dp
@@ -68,14 +68,18 @@ fun App() {
     }
 
     BridgeTheme {
-        val codecs: List<RouteCodec> = remember { KoinPlatform.getKoin().getAll() }
-        val entries: List<FeatureNavigationEntry> = remember { KoinPlatform.getKoin().getAll() }
-        val router: AppRouterImpl = koinInject()
+        // One graph for the whole function: the Koin taken from the composition, not the global
+        // instance, so a test that wraps App() in its own KoinApplication supplies all of these
+        // rather than the router alone.
+        val koin = currentKoinScope().getKoin()
+        val codecs: List<RouteCodec> = remember(koin) { koin.getAll() }
+        val entries: List<FeatureNavigationEntry> = remember(koin) { koin.getAll() }
+        val host: NavigationHost = koinInject()
 
         val backStack = rememberTabbedBackStack(roots = TabRoutes, codecs = codecs)
         DisposableEffect(backStack) {
-            router.attach(backStack)
-            onDispose { router.detach() }
+            host.attach(backStack)
+            onDispose { host.detach() }
         }
 
         val tabs = bridgeTabs()
