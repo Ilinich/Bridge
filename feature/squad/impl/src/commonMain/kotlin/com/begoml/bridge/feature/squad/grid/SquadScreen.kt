@@ -30,7 +30,6 @@ import com.begoml.bridge.uikit.LocalScreenPadding
 import com.begoml.bridge.uikit.component.CutoutImage
 import com.begoml.bridge.uikit.component.LoadableContent
 import com.begoml.bridge.uikit.glass.ScrollEdge
-import com.begoml.bridge.uikit.glass.GlassBackdrop
 import com.begoml.bridge.uikit.glass.ScrollEdgeFade
 import com.begoml.bridge.uikit.shader.ClubBackgroundShader
 import com.begoml.bridge.uikit.shader.rememberAnimatedShaderBrush
@@ -48,38 +47,35 @@ internal fun SquadScreen(viewModel: SquadViewModel, modifier: Modifier = Modifie
     val state by viewModel.state.collectAsStateWithLifecycle()
     val contentPadding = LocalScreenPadding.current
 
-    GlassBackdrop(
-        modifier = modifier.fillMaxSize(),
-        backdrop = {
-            LoadableContent(
-                isLoading = state.isLoading && state.players.isEmpty(),
-                error = state.error.takeIf { state.players.isEmpty() },
-                onRetry = viewModel::retry,
-                modifier = Modifier.fillMaxSize().background(BridgeColors.Ground),
+    Box(modifier = modifier.fillMaxSize()) {
+        LoadableContent(
+            isLoading = state.isLoading && state.players.isEmpty(),
+            error = state.error.takeIf { state.players.isEmpty() },
+            onRetry = viewModel::retry,
+            modifier = Modifier.fillMaxSize().background(BridgeColors.Ground),
+        ) {
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(GridColumns),
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(
+                    start = 14.dp,
+                    end = 14.dp,
+                    top = contentPadding.calculateTopPadding() + 4.dp,
+                    bottom = contentPadding.calculateBottomPadding(),
+                ),
+                horizontalArrangement = Arrangement.spacedBy(9.dp),
+                verticalArrangement = Arrangement.spacedBy(9.dp),
             ) {
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(GridColumns),
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(
-                        start = 14.dp,
-                        end = 14.dp,
-                        top = contentPadding.calculateTopPadding() + 4.dp,
-                        bottom = contentPadding.calculateBottomPadding(),
-                    ),
-                    horizontalArrangement = Arrangement.spacedBy(9.dp),
-                    verticalArrangement = Arrangement.spacedBy(9.dp),
-                ) {
-                    items(
-                        items = state.players,
-                        key = { player -> player.id },
-                        contentType = { "player-card" },
-                    ) { player ->
-                        PlayerCard(player = player, onClick = { viewModel.onPlayerClick(player.id) })
-                    }
+                items(
+                    items = state.players,
+                    key = { player -> player.id },
+                    contentType = { "player-card" },
+                ) { player ->
+                    PlayerCard(player = player, onClick = { viewModel.onPlayerClick(player.id) })
                 }
             }
-        },
-    ) {
+        }
+
         ScrollEdgeFade(
             edge = ScrollEdge.Top,
             height = contentPadding.calculateTopPadding() + EdgeFadeOverhang,

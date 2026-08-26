@@ -2,37 +2,32 @@ package com.begoml.bridge.uikit.glass
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
-import com.begoml.bridge.uikit.shader.EdgeFadeShader
-import com.begoml.bridge.uikit.shader.rememberStaticShaderBrush
-import dev.chrisbanes.haze.blur.HazeBlurDefaults
-import dev.chrisbanes.haze.blur.HazeProgressive
-import dev.chrisbanes.haze.blur.blurEffect
-import dev.chrisbanes.haze.hazeEffect
+import com.begoml.bridge.uikit.theme.BridgeColors
 
-private val EdgeBlurRadius = 24.dp
+private const val PeakAlpha = 0.88f
 
 /**
- * A translucent band at one end of scrolling content.
+ * A dark translucent band at one end of scrolling content, with a soft edge.
  *
- * Two effects, and neither can be dropped. The progressive mask fades the *blur*, so rows soften
- * as they approach the edge; the tint is a separate dithered gradient drawn on top, because Haze
- * applies its own tint to the whole layer and it does not follow that mask — leaning on it puts a
- * visible border exactly where this is meant to have none.
+ * It dims what runs under it and nothing more: the content itself is never blurred. An earlier
+ * version faded a blur through Haze's progressive mask, which softened the faces of the top row
+ * rather than the boundary of the band.
  *
- * The tint stays translucent on purpose: content is meant to be visible through it, blurred, in
- * the way a bar sits over a list rather than covering it.
+ * The ramp is a many-stop gradient on an eased curve. Density sits against the edge and the tail
+ * runs long and thin, so there is no distance at which the band reads as having a border, and the
+ * extra stops keep an 8-bit ramp from holding one value long enough to show as a step.
  */
 @Composable
-fun GlassScope.ScrollEdgeFade(
+fun BoxScope.ScrollEdgeFade(
     edge: ScrollEdge,
     height: Dp,
     modifier: Modifier = Modifier,
@@ -41,26 +36,25 @@ fun GlassScope.ScrollEdgeFade(
         ScrollEdge.Top -> Alignment.TopCenter
         ScrollEdge.Bottom -> Alignment.BottomCenter
     }
-    val tint = rememberStaticShaderBrush(EdgeFadeShader)
+    val stops = fadeStops(edge)
 
     Box(
         modifier = modifier
             .align(alignment)
             .fillMaxWidth()
             .height(height)
-            // The shader and the mask both run top-down; the other end is the same pair flipped.
-            .graphicsLayer { rotationX = if (edge == ScrollEdge.Bottom) 180f else 0f }
-            .then(progressiveBlur())
-            .background(tint),
+            .background(Brush.verticalGradient(colorStops = stops)),
     )
 }
 
-@Composable
-private fun GlassScope.progressiveBlur(): Modifier = Modifier.hazeEffect(hazeState) {
-    blurEffect {
-        blurRadius = EdgeBlurRadius
-        backgroundColor = Color.Transparent
-        colorEffects = listOf(HazeBlurDefaults.tint(Color.Transparent))
-        progressive = HazeProgressive.verticalGradient(startIntensity = 1f, endIntensity = 0f)
-    }
+private const val StopCount = 12
+
+private fun fadeStops(edge: ScrollEdge): Array<Pair<Float, Color>> = Array(StopCount) { index ->
+    val t = index.toFloat() / (StopCount - 1)
+    val distanceFromEdge = if (edge == ScrollEdge.Top) t else 1f - t
+    val alpha = PeakAlpha * easeOut(1f - distanceFromEdge)
+    t to BridgeColors.Ground.copy(alpha = alpha)
 }
+
+/** Holds density near the edge, then falls away — a shadow rather than a linear ramp. */
+private fun easeOut(value: Float): Float = value * value * (3f - 2f * value)
