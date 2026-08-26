@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [ master ]
   pull_request:
 
 concurrency:
@@ -47,6 +47,11 @@ jobs:
           java-version: 21
 
       - uses: gradle/actions/setup-gradle@v4
+
+      # The shared Compose UI tests only exist here: the Linux job disables every Apple target,
+      # so on that runner the suite is skipped rather than run.
+      - name: Native tests
+        run: ./gradlew iosSimulatorArm64Test --no-daemon
 
       - name: Link framework
         run: ./gradlew :shared:linkDebugFrameworkIosSimulatorArm64 --no-daemon
