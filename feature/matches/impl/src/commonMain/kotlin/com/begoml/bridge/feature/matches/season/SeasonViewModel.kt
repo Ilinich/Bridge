@@ -107,7 +107,8 @@ internal class SeasonViewModel(
                         ?.let { getString(Res.string.fixture_score, it.home, it.away) }
                         ?: match.kickoff.formatTime(),
                     hasScore = score != null,
-                    highlighted = matchRepository.isOurs(match.home.name, match.away.name),
+                    highlighted = matchRepository.isOurClub(match.home.name) ||
+                        matchRepository.isOurClub(match.away.name),
                 )
             }.toImmutableList(),
         )

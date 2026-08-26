@@ -46,7 +46,8 @@ interface MatchRepository {
 
     fun season(): Flow<Loadable<Season>>
 
-    fun isOurs(homeName: String, awayName: String): Boolean
+    /** Whether this is the club the build follows; the feed spells names inconsistently. */
+    fun isOurClub(teamName: String): Boolean
 
     fun match(id: String): Flow<Loadable<SeasonMatch?>>
 }
@@ -109,8 +110,7 @@ internal class MatchRepositoryImpl(
         )
     }
 
-    override fun isOurs(homeName: String, awayName: String): Boolean =
-        TeamNames.matches(homeName, clubName) || TeamNames.matches(awayName, clubName)
+    override fun isOurClub(teamName: String): Boolean = TeamNames.matches(teamName, clubName)
 
     override fun match(id: String): Flow<Loadable<SeasonMatch?>> = seasonDao.observeMatch(id)
         .map<SeasonMatchEntity?, Loadable<SeasonMatch?>> { entity ->

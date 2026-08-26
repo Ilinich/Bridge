@@ -27,4 +27,9 @@
     <string name="matchday_loading_fixture">Looking up the next fixture…</string>
     <string name="matchday_fixture_failed">Could not reach the fixture list</string>
     <string name="match_back">Back</string>
+    <string name="match_home">Home</string>
+    <string name="match_away">Away</string>
+    <string name="match_win">Won</string>
+    <string name="match_draw">Drawn</string>
+    <string name="match_loss">Lost</string>
 </resources>

@@ -35,6 +35,9 @@ import com.begoml.bridge.uikit.shader.rememberAnimatedShader
 import com.begoml.bridge.uikit.shader.shaded
 import com.begoml.bridge.uikit.theme.BridgeColors
 import com.begoml.bridge.uikit.theme.FigureStyle
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.graphics.Color
 import com.begoml.bridge.uikit.theme.LabelStyle
 
 /** The side gutter of this screen. */
@@ -111,6 +114,7 @@ private fun GlassScope.FixtureCard(match: MatchDetailUi, labels: MatchDetailLabe
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(3.dp),
             ) {
+                MatchFacts(match = match, labels = labels)
                 Text(
                     text = labels.kickoff,
                     style = LabelStyle,
@@ -125,6 +129,48 @@ private fun GlassScope.FixtureCard(match: MatchDetailUi, labels: MatchDetailLabe
         }
     }
 }
+
+/** Round, which side we are on, and how it ended — everything the calendar feed actually carries. */
+@Composable
+private fun MatchFacts(match: MatchDetailUi, labels: MatchDetailLabels) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Chip(text = match.round)
+        match.side?.let { side ->
+            Chip(text = if (side == MatchSide.Home) labels.homeLabel else labels.awayLabel)
+        }
+        match.outcome?.let { outcome ->
+            Chip(
+                text = when (outcome) {
+                    MatchOutcome.Win -> labels.win
+                    MatchOutcome.Draw -> labels.draw
+                    MatchOutcome.Loss -> labels.loss
+                },
+                color = when (outcome) {
+                    MatchOutcome.Win -> BridgeColors.Win
+                    MatchOutcome.Draw -> BridgeColors.Draw
+                    MatchOutcome.Loss -> BridgeColors.Loss
+                },
+            )
+        }
+    }
+}
+
+@Composable
+private fun Chip(text: String, color: Color = BridgeColors.TextMuted) {
+    Text(
+        text = text,
+        style = LabelStyle,
+        color = color,
+        modifier = Modifier
+            .background(color.copy(alpha = ChipTintAlpha), CircleShape)
+            .padding(horizontal = 10.dp, vertical = 5.dp),
+    )
+}
+
+private const val ChipTintAlpha = 0.16f
 
 @Composable
 private fun Side(name: String, code: String) {
