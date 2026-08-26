@@ -51,11 +51,38 @@ profile.
 
 ## What is interesting here
 
-**One shader source, two runtimes.** The club-blue background behind the squad and player screens
-is a runtime shader written once and executed as AGSL on Android and SkSL on iOS. No dialect
-difference was needed. The program is compiled once per spec and only its uniforms change per
-frame — compiling inside the frame cost 9 ms of the budget, measured with `gfxinfo`. Where no
-runtime shader exists the same call returns a still gradient, so callers never branch.
+**One shader source, two runtimes.** Two runtime shaders drive the app's surfaces: a club-blue
+wash behind the squad cards and the player pager, and sweeping floodlights on the club screen —
+three cones aiming on independent sine phases with per-pixel grain, which is there precisely
+because a `Brush` cannot express it. Both are written once in the dialect AGSL and SkSL share and
+run unmodified on Android and iOS; no dialect difference was needed.
+
+```glsl
+uniform float uTime;
+uniform float2 uResolution;
+
+half4 main(float2 fragCoord) {
+    float2 uv = fragCoord / uResolution;
+    float light = beam(uv, 0.18, 0.0, 0.55) + beam(uv, 0.50, 2.1, 0.42) + beam(uv, 0.82, 4.2, 0.63);
+    ...
+}
+```
+
+Three things this costs if you get them wrong, each of which failed silently here first:
+
+- **`ShaderBrush` caches.** It calls `createShader` once and rebuilds only when the draw size
+  changes, so an animated shader handed out as a `Brush` renders its first frame forever. The
+  program and its clock are a handle, and `Modifier.shaded` draws them.
+- **Where the clock is read decides what recomposes.** Read in composition, a per-frame value puts
+  a snapshot read in the caller's restart scope and recomposes the whole screen sixty times a
+  second. It is read inside the draw lambda, so a frame invalidates drawing alone.
+- **Compilation is the expensive half.** One program per spec, not per list item: the squad grid
+  shares a single compiled program across every card. Compiling inside the frame cost 9 ms of the
+  budget, measured with `gfxinfo`.
+
+The club screen frosts a live shader — the light travels *under* the glass, which only works
+because the shader is the layer directly beneath the panels. Where no runtime shader exists the
+same call returns a still gradient, so callers never branch.
 
 **Glass that cannot be wired wrong.** A `hazeEffect` nested inside its own `hazeSource` is a silent
 no-op on iOS — no error, no log. `GlassBackdrop` makes the two siblings by construction and
