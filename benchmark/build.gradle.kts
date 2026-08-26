@@ -14,6 +14,15 @@ android {
         minSdk = 28
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // Macrobenchmark refuses to measure on an emulator, and it is right: a virtualised CPU and
+        // a host GPU do not predict a phone, and an improvement seen here can be a regression
+        // there. The refusal is left in place by default. Passing
+        // -Pbridge.benchmark.allowEmulator=true turns it into a warning, which is worth doing only
+        // to prove the pipeline runs -- the numbers it then prints are relative, not device truth.
+        if (providers.gradleProperty("bridge.benchmark.allowEmulator").orNull == "true") {
+            testInstrumentationRunnerArguments["androidx.benchmark.suppressErrors"] = "EMULATOR"
+        }
     }
 
     compileOptions {
