@@ -11,7 +11,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.begoml.bridge.uikit.shader.ShaderSpec
-import com.begoml.bridge.uikit.shader.rememberAnimatedShaderBrush
+import com.begoml.bridge.uikit.shader.rememberAnimatedShader
+import com.begoml.bridge.uikit.shader.shaded
 
 private val PanelShape = RoundedCornerShape(16.dp)
 
@@ -27,12 +28,12 @@ fun ShaderPanel(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
-    val brush = rememberAnimatedShaderBrush(spec)
+    val shader = rememberAnimatedShader(spec)
 
     Box(
         modifier = modifier
             .clip(PanelShape)
-            .background(brush)
+            .shaded(shader)
             .border(1.dp, Color.White.copy(alpha = 0.14f), PanelShape)
             .padding(14.dp),
     ) {

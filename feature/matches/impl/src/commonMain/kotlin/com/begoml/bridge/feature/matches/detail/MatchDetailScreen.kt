@@ -31,7 +31,8 @@ import com.begoml.bridge.uikit.component.TeamMonogram
 import com.begoml.bridge.uikit.glass.GlassBackdrop
 import com.begoml.bridge.uikit.glass.GlassScope
 import com.begoml.bridge.uikit.shader.ClubBackgroundShader
-import com.begoml.bridge.uikit.shader.rememberAnimatedShaderBrush
+import com.begoml.bridge.uikit.shader.rememberAnimatedShader
+import com.begoml.bridge.uikit.shader.shaded
 import com.begoml.bridge.uikit.theme.BridgeColors
 import com.begoml.bridge.uikit.theme.FigureStyle
 import com.begoml.bridge.uikit.theme.LabelStyle
@@ -42,12 +43,12 @@ private val ScreenGutter = 14.dp
 @Composable
 internal fun MatchDetailScreen(viewModel: MatchDetailViewModel, modifier: Modifier = Modifier) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val brush = rememberAnimatedShaderBrush(ClubBackgroundShader)
+    val shader = rememberAnimatedShader(ClubBackgroundShader)
     val contentPadding = LocalScreenPadding.current
 
     GlassBackdrop(
         modifier = modifier.fillMaxSize(),
-        backdrop = { Box(Modifier.fillMaxSize().background(brush)) },
+        backdrop = { Box(Modifier.fillMaxSize().shaded(shader)) },
     ) {
         val glass = this
         Column(

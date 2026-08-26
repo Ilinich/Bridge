@@ -36,7 +36,8 @@ import com.begoml.bridge.uikit.component.GlassPanel
 import com.begoml.bridge.uikit.glass.GlassBackdrop
 import com.begoml.bridge.uikit.glass.GlassScope
 import com.begoml.bridge.uikit.shader.ClubBackgroundShader
-import com.begoml.bridge.uikit.shader.rememberAnimatedShaderBrush
+import com.begoml.bridge.uikit.shader.rememberAnimatedShader
+import com.begoml.bridge.uikit.shader.shaded
 import com.begoml.bridge.uikit.theme.BridgeColors
 import com.begoml.bridge.uikit.theme.FigureStyle
 import com.begoml.bridge.uikit.theme.LabelStyle
@@ -65,12 +66,12 @@ internal fun PlayerScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val players = state.squad.players
     val labels = state.labels
-    val brush = rememberAnimatedShaderBrush(ClubBackgroundShader)
+    val shader = rememberAnimatedShader(ClubBackgroundShader)
     val contentPadding = LocalScreenPadding.current
 
     GlassBackdrop(
         modifier = modifier.fillMaxSize(),
-        backdrop = { Box(Modifier.fillMaxSize().background(brush)) },
+        backdrop = { Box(Modifier.fillMaxSize().shaded(shader)) },
     ) {
         val glass = this
         if (labels == null) return@GlassBackdrop

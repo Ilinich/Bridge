@@ -21,7 +21,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.begoml.bridge.core.data.model.Player
@@ -35,7 +34,9 @@ import com.begoml.bridge.uikit.glass.ScrollEdge
 import com.begoml.bridge.uikit.glass.EdgeFadeOverhang
 import com.begoml.bridge.uikit.glass.ScrollEdgeFade
 import com.begoml.bridge.uikit.shader.ClubBackgroundShader
-import com.begoml.bridge.uikit.shader.rememberAnimatedShaderBrush
+import com.begoml.bridge.uikit.shader.AnimatedShader
+import com.begoml.bridge.uikit.shader.rememberAnimatedShader
+import com.begoml.bridge.uikit.shader.shaded
 import com.begoml.bridge.uikit.theme.BridgeColors
 import com.begoml.bridge.uikit.theme.FigureStyle
 import com.begoml.bridge.uikit.theme.LabelStyle
@@ -50,7 +51,7 @@ internal fun SquadScreen(viewModel: SquadViewModel, modifier: Modifier = Modifie
 
     // One program for the whole grid: building it per card compiles a shader per visible cell on
     // the first frame, and again for every card that scrolls in.
-    val cardBrush = rememberAnimatedShaderBrush(ClubBackgroundShader)
+    val cardShader = rememberAnimatedShader(ClubBackgroundShader)
 
     Box(modifier = modifier.fillMaxSize()) {
         LoadableContent(
@@ -78,7 +79,7 @@ internal fun SquadScreen(viewModel: SquadViewModel, modifier: Modifier = Modifie
                 ) { player ->
                     PlayerCard(
                         player = player,
-                        brush = cardBrush,
+                        shader = cardShader,
                         onClick = { viewModel.onPlayerClick(player.id) },
                     )
                 }
@@ -97,13 +98,13 @@ internal fun SquadScreen(viewModel: SquadViewModel, modifier: Modifier = Modifie
 }
 
 @Composable
-private fun PlayerCard(player: Player, brush: Brush, onClick: () -> Unit) {
+private fun PlayerCard(player: Player, shader: AnimatedShader, onClick: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .height(168.dp)
             .clip(RoundedCornerShape(13.dp))
-            .background(brush)
+            .shaded(shader)
             .clickable(onClick = onClick),
     ) {
         player.shirtNumber?.let { number ->
