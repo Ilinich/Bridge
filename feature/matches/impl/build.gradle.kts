@@ -11,7 +11,7 @@ kotlin {
             implementation(projects.feature.club.api)
 
             implementation(projects.core.data)
-            implementation(projects.navigation)
+            implementation(projects.navigation.core)
             implementation(projects.uikit)
 
             implementation(libs.compose.components.resources)

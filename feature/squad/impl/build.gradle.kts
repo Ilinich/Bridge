@@ -8,7 +8,7 @@ kotlin {
             api(projects.feature.squad.api)
 
             implementation(projects.core.data)
-            implementation(projects.navigation)
+            implementation(projects.navigation.core)
             implementation(projects.uikit)
 
             implementation(libs.compose.components.resources)

@@ -24,7 +24,7 @@ kotlin {
             implementation(projects.feature.matches.impl)
             implementation(projects.feature.squad.api)
             implementation(projects.feature.squad.impl)
-            implementation(projects.navigation)
+            implementation(projects.navigation.core)
             implementation(projects.uikit)
 
             implementation(libs.compose.components.resources)

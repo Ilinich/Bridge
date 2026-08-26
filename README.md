@@ -91,7 +91,8 @@ everywhere else.
 | `foundation:cache` | in-memory cache with soft and hard TTL |
 | `core:data` | HTTP clients, DTOs, domain models, repositories |
 | `uikit` | theme, glass surfaces, runtime-shader brushes, components |
-| `navigation` | the routing contract, per-tab stacks, swipe-to-dismiss ([readme](navigation/README.md)) |
+| `navigation:core` | the routing contract, the router, per-tab stacks ([readme](navigation/core/README.md)) |
+| `navigation:swipe` | swipe-to-dismiss, knowing nothing about this app ([readme](navigation/swipe/README.md)) |
 | `feature:club:api` / `:impl` | club profile and its ground |
 | `feature:matches:api` / `:impl` | matchday, season calendar, match detail |
 | `feature:squad:api` / `:impl` | squad grid, player pager |
