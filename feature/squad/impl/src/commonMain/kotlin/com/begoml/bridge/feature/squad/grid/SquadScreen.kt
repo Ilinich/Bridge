@@ -29,9 +29,8 @@ import com.begoml.bridge.feature.squad.SquadViewModel
 import com.begoml.bridge.uikit.LocalScreenPadding
 import com.begoml.bridge.uikit.component.CutoutImage
 import com.begoml.bridge.uikit.component.LoadableContent
-import com.begoml.bridge.uikit.glass.GlassBackdrop
 import com.begoml.bridge.uikit.glass.ScrollEdge
-import com.begoml.bridge.uikit.glass.ScrollEdgeFade
+import com.begoml.bridge.uikit.component.ScrollEdgeFade
 import com.begoml.bridge.uikit.shader.ClubBackgroundShader
 import com.begoml.bridge.uikit.shader.rememberAnimatedShaderBrush
 import com.begoml.bridge.uikit.theme.BridgeColors
@@ -48,15 +47,13 @@ internal fun SquadScreen(viewModel: SquadViewModel, modifier: Modifier = Modifie
     val state by viewModel.state.collectAsStateWithLifecycle()
     val contentPadding = LocalScreenPadding.current
 
-    GlassBackdrop(
-        modifier = modifier.fillMaxSize(),
-        backdrop = {
-            LoadableContent(
-                isLoading = state.isLoading && state.players.isEmpty(),
-                error = state.error.takeIf { state.players.isEmpty() },
-                onRetry = viewModel::retry,
-                modifier = Modifier.fillMaxSize().background(BridgeColors.Ground),
-            ) {
+    Box(modifier = modifier.fillMaxSize()) {
+        LoadableContent(
+            isLoading = state.isLoading && state.players.isEmpty(),
+            error = state.error.takeIf { state.players.isEmpty() },
+            onRetry = viewModel::retry,
+            modifier = Modifier.fillMaxSize().background(BridgeColors.Ground),
+        ) {
             LazyVerticalGrid(
                 columns = GridCells.Fixed(GridColumns),
                 modifier = Modifier.fillMaxSize(),
@@ -78,15 +75,16 @@ internal fun SquadScreen(viewModel: SquadViewModel, modifier: Modifier = Modifie
                 }
             }
         }
-        },
-    ) {
+
         ScrollEdgeFade(
             edge = ScrollEdge.Top,
-            height = contentPadding.calculateTopPadding() + EdgeFadeOverhang,
+            solid = contentPadding.calculateTopPadding(),
+            fade = EdgeFadeOverhang,
         )
         ScrollEdgeFade(
             edge = ScrollEdge.Bottom,
-            height = contentPadding.calculateBottomPadding() + EdgeFadeOverhang,
+            solid = contentPadding.calculateBottomPadding(),
+            fade = EdgeFadeOverhang,
         )
     }
 }
