@@ -45,7 +45,7 @@ fun GlassBackdrop(
 }
 
 class GlassScope internal constructor(
-    private val hazeState: HazeState,
+    internal val hazeState: HazeState,
     boxScope: BoxScope,
 ) : BoxScope by boxScope {
 
