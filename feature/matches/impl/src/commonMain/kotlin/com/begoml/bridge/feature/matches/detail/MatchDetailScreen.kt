@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -43,6 +42,9 @@ import com.begoml.bridge.uikit.theme.FigureStyle
 import com.begoml.bridge.uikit.theme.LabelStyle
 import org.jetbrains.compose.resources.stringResource
 
+/** The side gutter every screen shares, so cards line up across the app. */
+private val ScreenGutter = 14.dp
+
 @Composable
 fun MatchDetailScreen(
     matchId: String,
@@ -60,7 +62,7 @@ fun MatchDetailScreen(
     ) {
         val glass = this
         Column(
-            modifier = Modifier.fillMaxSize().safeContentPadding().padding(contentPadding),
+            modifier = Modifier.fillMaxSize().padding(contentPadding),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             BridgeTopBar(
@@ -93,7 +95,7 @@ fun MatchDetailScreen(
 
 @Composable
 private fun GlassScope.FixtureCard(match: SeasonMatch) {
-    GlassPanel(modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp)) {
+    GlassPanel(modifier = Modifier.fillMaxWidth().padding(horizontal = ScreenGutter)) {
         Column(
             verticalArrangement = Arrangement.spacedBy(14.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
