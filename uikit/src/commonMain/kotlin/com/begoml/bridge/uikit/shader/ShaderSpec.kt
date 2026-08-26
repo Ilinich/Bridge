@@ -120,12 +120,17 @@ float hash(float2 p) {
 half4 main(float2 fragCoord) {
     float2 uv = fragCoord / uResolution;
 
-    float alpha = 1.0 - smoothstep(0.0, 1.0, uv.y);
+    // Shadow falloff rather than a linear ramp: most of the density sits against the edge and the
+    // tail runs long and thin, so there is no distance at which the band reads as having a border.
+    float alpha = pow(1.0 - uv.y, 1.8);
 
     // A ramp this shallow lands on the same 8-bit value for several rows at a time, which reads as
     // banding. Half a quantisation step of noise per pixel scatters the boundary instead.
     float dither = (hash(fragCoord + uTime) - 0.5) / 255.0;
     alpha = clamp(alpha + dither, 0.0, 1.0);
+
+    // Translucent, not a cover: the blurred content stays readable through it.
+    alpha *= 0.58;
 
     half3 ground = half3(0.008, 0.035, 0.071);
     return half4(ground * half(alpha), half(alpha));

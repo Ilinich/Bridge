@@ -37,8 +37,8 @@ import com.begoml.bridge.uikit.component.BackdropImage
 import com.begoml.bridge.uikit.component.BadgeImage
 import com.begoml.bridge.uikit.component.GlassPanel
 import com.begoml.bridge.uikit.component.LoadableContent
-import com.begoml.bridge.uikit.component.ScrollEdgeFade
 import com.begoml.bridge.uikit.glass.ScrollEdge
+import com.begoml.bridge.uikit.glass.ScrollEdgeFade
 import com.begoml.bridge.uikit.component.ShaderPanel
 import com.begoml.bridge.uikit.glass.GlassBackdrop
 import com.begoml.bridge.uikit.glass.GlassScope
@@ -96,19 +96,17 @@ internal fun ClubScreen(viewModel: ClubViewModel, modifier: Modifier = Modifier)
 
         ScrollEdgeFade(
             edge = ScrollEdge.Top,
-            solid = contentPadding.calculateTopPadding(),
-            fade = EdgeFadeOverhang,
+            height = contentPadding.calculateTopPadding() + EdgeFadeOverhang,
         )
         ScrollEdgeFade(
             edge = ScrollEdge.Bottom,
-            solid = contentPadding.calculateBottomPadding(),
-            fade = EdgeFadeOverhang,
+            height = contentPadding.calculateBottomPadding() + EdgeFadeOverhang,
         )
     }
 }
 
-/** How far the fade reaches past the inset, so the band is a gradient rather than a strip. */
-private val EdgeFadeOverhang = 26.dp
+/** How far the fade runs past the inset. Short enough and the eye reads the end as a border. */
+private val EdgeFadeOverhang = 64.dp
 
 @Composable
 private fun Header(club: Club, labels: ClubLabels) {
