@@ -36,6 +36,7 @@ import bridge.feature.club.impl.generated.resources.club_founded
 import bridge.feature.club.impl.generated.resources.club_ground
 import bridge.feature.club.impl.generated.resources.club_instagram
 import bridge.feature.club.impl.generated.resources.club_links
+import bridge.feature.club.impl.generated.resources.club_media
 import bridge.feature.club.impl.generated.resources.club_location
 import bridge.feature.club.impl.generated.resources.club_opened
 import bridge.feature.club.impl.generated.resources.club_twitter
@@ -46,7 +47,6 @@ import com.begoml.bridge.core.data.model.Venue
 import com.begoml.bridge.foundation.tessera.collectUiState
 import com.begoml.bridge.uikit.LocalScreenPadding
 import com.begoml.bridge.uikit.component.BackdropImage
-import com.begoml.bridge.uikit.component.BackdropVideo
 import com.begoml.bridge.uikit.component.BadgeImage
 import com.begoml.bridge.uikit.component.GlassPanel
 import com.begoml.bridge.uikit.component.LoadableContent
@@ -57,17 +57,19 @@ import com.begoml.bridge.uikit.shader.FloodlightShader
 import com.begoml.bridge.uikit.rememberUrlOpener
 import com.begoml.bridge.uikit.theme.BridgeColors
 import com.begoml.bridge.uikit.theme.LabelStyle
+import com.begoml.bridge.uikit.video.VideoControls
+import com.begoml.bridge.uikit.video.VideoSurface
+import com.begoml.bridge.uikit.video.rememberVideoPlayback
 import org.jetbrains.compose.resources.stringResource
 
 /**
- * The clip behind this screen.
+ * The clip the media section plays.
  *
- * Abstract on purpose. A backdrop has to survive being blended over a photograph, and anything
- * with a subject does not: tried on device, narrative footage stays recognisable at any opacity.
- * A night sky has nothing to recognise, so it reads as weather over the crest rather than as a
- * video someone left running.
+ * It is the only video on the screen. An earlier build also ran it blended into the backdrop,
+ * which meant two decoders for one clip and made the player look like a duplicate of the wallpaper
+ * rather than the thing the user drives.
  */
-private const val AmbientClipUrl =
+private const val ClipUrl =
     "https://videos.pexels.com/video-files/2611250/2611250-hd_1920_1080_30fps.mp4"
 
 @Composable
@@ -78,13 +80,9 @@ fun ClubScreen(delegate: ClubDelegate, modifier: Modifier = Modifier) {
     GlassBackdrop(
         modifier = modifier.fillMaxSize(),
         backdrop = {
-            BackdropVideo(
-                videoUrl = AmbientClipUrl,
-                posterUrl = state.club?.media?.fanartUrls?.lastOrNull(),
-            )
+            BackdropImage(url = state.club?.media?.fanartUrls?.lastOrNull())
         },
     ) {
-        val glass = this
         LoadableContent(
             isLoading = state.isLoading && state.club == null,
             error = state.error.takeIf { state.club == null },
@@ -100,6 +98,7 @@ fun ClubScreen(delegate: ClubDelegate, modifier: Modifier = Modifier) {
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
                 Header(club = club)
+                MediaSection()
                 club.description?.let { Section(title = stringResource(Res.string.club_about)) { Prose(it) } }
                 state.venue?.let { GroundSection(venue = it) }
                 LinksSection(club = club)
@@ -168,6 +167,38 @@ private fun ColourStrip(club: Club) {
                         .border(1.dp, Color.White.copy(alpha = 0.25f), CircleShape),
                 )
             }
+        }
+    }
+}
+
+/**
+ * The clip with its transport controls.
+ *
+ * It does not auto-play and it does not loop: a backdrop should start on its own, but a player the
+ * user is meant to drive should be waiting for them, and a clip that silently restarts makes the
+ * position readout look broken.
+ */
+@Composable
+private fun MediaSection() {
+    val playback = rememberVideoPlayback(
+        url = ClipUrl,
+        autoPlay = false,
+        loop = false,
+        muted = true,
+    )
+
+    Section(title = stringResource(Res.string.club_media)) {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(180.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(BridgeColors.Ground),
+            ) {
+                VideoSurface(playback = playback, modifier = Modifier.fillMaxSize())
+            }
+            VideoControls(playback = playback)
         }
     }
 }
