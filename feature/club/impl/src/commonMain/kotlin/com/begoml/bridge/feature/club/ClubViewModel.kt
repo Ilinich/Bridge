@@ -19,6 +19,8 @@ import bridge.feature.club.impl.generated.resources.club_youtube
 import com.begoml.bridge.core.data.model.Club
 import com.begoml.bridge.core.data.model.Venue
 import com.begoml.bridge.core.data.repository.ClubRepository
+import com.begoml.bridge.foundation.analytics.Analytics
+import com.begoml.bridge.foundation.analytics.AnalyticsEvent
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -66,6 +68,7 @@ private const val SubscriptionTimeoutMillis = 5_000L
 internal class ClubViewModel(
     repository: ClubRepository,
     private val ioDispatcher: CoroutineDispatcher,
+    private val analytics: Analytics,
 ) : ViewModel() {
 
     private val delegate = ClubDelegate(scope = viewModelScope, repository = repository)
@@ -84,6 +87,10 @@ internal class ClubViewModel(
 
     init {
         viewModelScope.launch { labels.value = withContext(ioDispatcher) { readLabels() } }
+    }
+
+    fun onVideoStarted() {
+        analytics.track(AnalyticsEvent.VideoStarted(source = "club_media"))
     }
 
     fun retry() {

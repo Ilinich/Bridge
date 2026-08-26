@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -29,6 +30,8 @@ import com.begoml.bridge.feature.club.api.ClubRoute
 import com.begoml.bridge.feature.matches.api.MatchdayRoute
 import com.begoml.bridge.feature.matches.api.SeasonRoute
 import com.begoml.bridge.feature.squad.api.SquadRoute
+import com.begoml.bridge.foundation.analytics.Analytics
+import com.begoml.bridge.foundation.analytics.AnalyticsEvent
 import com.begoml.bridge.navigation.BridgeTabPager
 import com.begoml.bridge.navigation.FeatureNavigationEntry
 import com.begoml.bridge.navigation.router.NavigationHost
@@ -75,6 +78,9 @@ fun App() {
         val codecs: List<RouteCodec> = remember(koin) { koin.getAll() }
         val entries: List<FeatureNavigationEntry> = remember(koin) { koin.getAll() }
         val host: NavigationHost = koinInject()
+        val analytics: Analytics = koinInject()
+
+        LaunchedEffect(analytics) { analytics.track(AnalyticsEvent.AppOpened) }
 
         val backStack = rememberTabbedBackStack(roots = TabRoutes, codecs = codecs)
         DisposableEffect(backStack) {
@@ -101,7 +107,10 @@ fun App() {
                 BridgeTabBar(
                     tabs = tabs,
                     selectedIndex = backStack.selectedTab,
-                    onSelect = backStack::selectTab,
+                    onSelect = { index ->
+                        analytics.track(AnalyticsEvent.TabSelected(tabs[index].label))
+                        backStack.selectTab(index)
+                    },
                 )
             }
         }

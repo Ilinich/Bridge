@@ -31,6 +31,7 @@ fun matchesModule() = module {
             nowMillis = ::nowMillis,
             router = get(),
             ioDispatcher = get(IoDispatcher),
+            analytics = get(),
         )
     }
     viewModel { (matchId: String) ->

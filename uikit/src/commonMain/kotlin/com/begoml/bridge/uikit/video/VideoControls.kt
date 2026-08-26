@@ -49,7 +49,11 @@ private const val SecondsPerMinute = 60L
  * finger on every frame.
  */
 @Composable
-fun VideoControls(playback: VideoPlayback, modifier: Modifier = Modifier) {
+fun VideoControls(
+    playback: VideoPlayback,
+    modifier: Modifier = Modifier,
+    onPlay: () -> Unit = {},
+) {
     var scrubbingFraction by remember { mutableStateOf<Float?>(null) }
     val duration = playback.durationMillis
     val fraction = scrubbingFraction
@@ -63,7 +67,14 @@ fun VideoControls(playback: VideoPlayback, modifier: Modifier = Modifier) {
     ) {
         TransportButton(
             playing = playback.isPlaying,
-            onClick = { if (playback.isPlaying) playback.pause() else playback.play() },
+            onClick = {
+                if (playback.isPlaying) {
+                    playback.pause()
+                } else {
+                    playback.play()
+                    onPlay()
+                }
+            },
         )
         Text(
             text = formatClock(shownPosition),

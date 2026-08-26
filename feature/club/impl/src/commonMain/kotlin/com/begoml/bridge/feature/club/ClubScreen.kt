@@ -108,7 +108,7 @@ internal fun ClubScreen(viewModel: ClubViewModel, modifier: Modifier = Modifier)
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
                 with(this@GlassBackdrop) { Header(club = club, labels = labels) }
-                MediaSection(title = labels.media)
+                MediaSection(title = labels.media, onStarted = viewModel::onVideoStarted)
                 club.description?.let { Section(title = labels.about) { Prose(it) } }
                 state.venue?.let { GroundSection(venue = it, labels = labels) }
                 LinksSection(club = club, labels = labels)
@@ -199,7 +199,7 @@ private fun ColourStrip(club: Club, label: String) {
  * position readout look broken.
  */
 @Composable
-private fun MediaSection(title: String) {
+private fun MediaSection(title: String, onStarted: () -> Unit) {
     val playback = rememberVideoPlayback(
         url = ClipUrl,
         autoPlay = false,
@@ -218,7 +218,10 @@ private fun MediaSection(title: String) {
             ) {
                 VideoSurface(playback = playback, modifier = Modifier.fillMaxSize())
             }
-            VideoControls(playback = playback)
+            VideoControls(
+                playback = playback,
+                onPlay = onStarted,
+            )
         }
     }
 }

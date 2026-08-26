@@ -11,7 +11,7 @@ import org.koin.dsl.bind
 import org.koin.dsl.module
 
 fun clubModule() = module {
-    viewModel { ClubViewModel(repository = get(), ioDispatcher = get(IoDispatcher)) }
+    viewModel { ClubViewModel(repository = get(), ioDispatcher = get(IoDispatcher), analytics = get()) }
     single { ClubNavigationEntry() } bind FeatureNavigationEntry::class
     single { ClubRouteCodec() } bind RouteCodec::class
 }

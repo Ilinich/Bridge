@@ -8,6 +8,8 @@ import bridge.feature.matches.impl.generated.resources.fixture_teams
 import bridge.feature.matches.impl.generated.resources.season_round
 import com.begoml.bridge.core.data.model.SeasonRound
 import com.begoml.bridge.core.data.repository.MatchRepository
+import com.begoml.bridge.foundation.analytics.Analytics
+import com.begoml.bridge.foundation.analytics.AnalyticsEvent
 import com.begoml.bridge.feature.matches.api.MatchDetailRoute
 import com.begoml.bridge.feature.matches.formatDay
 import com.begoml.bridge.feature.matches.formatTime
@@ -61,6 +63,7 @@ internal class SeasonViewModel(
     nowMillis: () -> Long,
     private val router: AppRouter,
     private val ioDispatcher: CoroutineDispatcher,
+    private val analytics: Analytics,
 ) : ViewModel() {
 
     private val feature = SeasonFeature(
@@ -85,6 +88,7 @@ internal class SeasonViewModel(
     }
 
     fun onMatchClick(matchId: String) {
+        analytics.track(AnalyticsEvent.MatchOpened(matchId))
         router.navigateTo(MatchDetailRoute(matchId))
     }
 

@@ -12,7 +12,7 @@ import org.koin.dsl.bind
 import org.koin.dsl.module
 
 fun squadModule() = module {
-    viewModel { SquadViewModel(repository = get(), router = get()) }
+    viewModel { SquadViewModel(repository = get(), router = get(), analytics = get()) }
     viewModel { PlayerViewModel(repository = get(), router = get(), ioDispatcher = get(IoDispatcher)) }
     single { SquadNavigationEntry() } bind FeatureNavigationEntry::class
     single { SquadRouteCodec() } bind RouteCodec::class

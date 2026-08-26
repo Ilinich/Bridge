@@ -1,6 +1,8 @@
 package com.begoml.bridge.di
 
 import com.begoml.bridge.core.data.di.dataModules
+import com.begoml.bridge.foundation.analytics.impl.analyticsModule
+import com.begoml.bridge.foundation.logger.impl.loggerModule
 import com.begoml.bridge.feature.club.di.clubModule
 import com.begoml.bridge.navigation.di.navigationModule
 import com.begoml.bridge.feature.matches.di.matchesModule
@@ -16,10 +18,14 @@ import org.koin.dsl.KoinAppDeclaration
  * Both platforms call this, and iOS calls it from its own entry point rather than inheriting one,
  * which is why it lives here instead of inside the Android application class.
  */
-fun startBridge(declaration: KoinAppDeclaration = {}): KoinApplication = startKoin {
+fun startBridge(
+    isLoggingEnabled: Boolean = true,
+    declaration: KoinAppDeclaration = {},
+): KoinApplication = startKoin {
     declaration()
     modules(
-        dataModules(ioDispatcher) + navigationModule() +
+        listOf(loggerModule(isLoggingEnabled), analyticsModule()) +
+            dataModules(ioDispatcher) + navigationModule() +
             matchesModule() + squadModule() + clubModule(),
     )
 }

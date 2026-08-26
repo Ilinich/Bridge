@@ -3,6 +3,8 @@ package com.begoml.bridge.feature.squad
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.begoml.bridge.core.data.repository.SquadRepository
+import com.begoml.bridge.foundation.analytics.Analytics
+import com.begoml.bridge.foundation.analytics.AnalyticsEvent
 import com.begoml.bridge.feature.squad.api.PlayerDetailRoute
 import com.begoml.bridge.feature.squad.grid.SquadDelegate
 import com.begoml.bridge.feature.squad.grid.SquadEvent
@@ -40,6 +42,7 @@ private const val SubscriptionTimeoutMillis = 5_000L
 internal class SquadViewModel(
     repository: SquadRepository,
     private val router: AppRouter,
+    private val analytics: Analytics,
 ) : ViewModel() {
 
     private val delegate = SquadDelegate(scope = viewModelScope, repository = repository)
@@ -50,7 +53,10 @@ internal class SquadViewModel(
         viewModelScope.launch {
             delegate.singleEvents.collect { event ->
                 when (event) {
-                    is SquadEvent.OpenPlayer -> router.navigateTo(PlayerDetailRoute(event.playerId))
+                    is SquadEvent.OpenPlayer -> {
+                        analytics.track(AnalyticsEvent.PlayerOpened(event.playerId))
+                        router.navigateTo(PlayerDetailRoute(event.playerId))
+                    }
                 }
             }
         }
