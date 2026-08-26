@@ -27,22 +27,31 @@ import kotlin.time.Duration.Companion.days
  * only the club screen needs, and it is only made once the club record has told us which ground
  * to ask about.
  */
-class ClubRepository internal constructor(
+interface ClubRepository {
+
+    fun club(): Flow<Loadable<Club>>
+
+    fun venue(): Flow<Loadable<Venue>>
+
+    suspend fun refresh()
+}
+
+internal class ClubRepositoryImpl(
     private val teamId: String,
     private val api: SportsDbApi,
     private val dao: ClubDao,
     private val venueDao: VenueDao,
     private val syncer: Syncer,
-) {
+) : ClubRepository {
 
-    fun club(): Flow<Loadable<Club>> = persistedResource(
+    override fun club(): Flow<Loadable<Club>> = persistedResource(
         stored = dao.observe(teamId).map { entity -> entity?.toClub() },
     ) {
         syncer.sync(key = clubKey, ttl = ClubTtl) { fetchClub() }
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    fun venue(): Flow<Loadable<Venue>> = club().flatMapLatest { loadable ->
+    override fun venue(): Flow<Loadable<Venue>> = club().flatMapLatest { loadable ->
         val venueId = (loadable as? Loadable.Content)?.value?.details?.venueId
             ?: return@flatMapLatest flowOf(Loadable.Loading)
 
@@ -51,7 +60,7 @@ class ClubRepository internal constructor(
         }
     }
 
-    suspend fun refresh() {
+    override suspend fun refresh() {
         syncer.sync(key = clubKey, ttl = null, force = true) { fetchClub() }
         val venueId = dao.observe(teamId).first()?.venueId ?: return
         syncer.sync(key = "venue:$venueId", ttl = null, force = true) { fetchVenue(venueId) }

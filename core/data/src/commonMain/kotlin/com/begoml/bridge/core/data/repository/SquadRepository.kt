@@ -18,14 +18,19 @@ import kotlin.time.Duration.Companion.hours
  * A squad changes on transfer days, not on minutes, so a cold start draws the stored one
  * immediately and the network only confirms it.
  */
-class SquadRepository internal constructor(
+interface SquadRepository {
+
+    fun squad(): Flow<Loadable<List<Player>>>
+}
+
+internal class SquadRepositoryImpl(
     private val teamId: String,
     private val api: SportsDbApi,
     private val dao: PlayerDao,
     private val syncer: Syncer,
-) {
+) : SquadRepository {
 
-    fun squad(): Flow<Loadable<List<Player>>> = persistedResource(
+    override fun squad(): Flow<Loadable<List<Player>>> = persistedResource(
         stored = dao.observeAll().map { rows ->
             rows.takeIf { it.isNotEmpty() }?.map { it.toPlayer() }
         },

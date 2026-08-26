@@ -32,14 +32,24 @@ import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
 /**
- * Fixtures from two sources, each held for as long as its nature allows.
- *
- * The next match and the last result sit under a countdown, so they live in memory with a short
- * time to live and are re-fetched often. A season is the opposite: 380 fixtures that stop changing
- * the moment the last one is played, so they go to disk — a **finished** season is fetched exactly
- * once ever, and the season in progress is refreshed a few times a day as scores land.
+ * Fixtures, results and the season calendar.
  */
-class MatchRepository internal constructor(
+interface MatchRepository {
+
+    fun nextMatch(): Flow<Loadable<Match?>>
+
+    fun lastResult(): Flow<Loadable<Match?>>
+
+    fun season(): Flow<Loadable<Season>>
+
+    fun isOurs(homeName: String, awayName: String): Boolean
+
+    fun currentRound(season: Season, nowMillis: Long): SeasonRound?
+
+    fun match(id: String): Flow<SeasonMatch?>
+}
+
+internal class MatchRepositoryImpl(
     private val teamId: String,
     private val clubName: String,
     sportsDb: SportsDbApi,
@@ -49,7 +59,7 @@ class MatchRepository internal constructor(
     dispatcher: CoroutineDispatcher,
     private val backgroundScope: CoroutineScope,
     private val nowMillis: () -> Long,
-) {
+) : MatchRepository {
 
     private val nextMatchCache = InMemoryCache<String, List<Match>>(
         loader = { id -> sportsDb.nextEvents(id).mapNotNull { it.toMatch() } },
@@ -69,18 +79,18 @@ class MatchRepository internal constructor(
         backgroundScope = backgroundScope,
     )
 
-    fun nextMatch(): Flow<Loadable<Match?>> =
+    override fun nextMatch(): Flow<Loadable<Match?>> =
         nextMatchCache.loadable(teamId).map { loadable ->
             loadable.map { matches -> matches.minByOrNull { it.kickoff } }
         }
 
-    fun lastResult(): Flow<Loadable<Match?>> =
+    override fun lastResult(): Flow<Loadable<Match?>> =
         lastResultCache.loadable(teamId).map { loadable ->
             loadable.map { matches -> matches.maxByOrNull { it.kickoff } }
         }
 
     /** The season now being played, falling back to the last one while the new one is unpublished. */
-    fun season(): Flow<Loadable<Season>> = flow {
+    override fun season(): Flow<Loadable<Season>> = flow {
         val seasonId = resolveSeasonId()
         backgroundScope.launch { runCatching { cacheFinishedSeason(previousSeasonId(seasonId)) } }
 
@@ -94,12 +104,12 @@ class MatchRepository internal constructor(
         )
     }
 
-    fun isOurs(homeName: String, awayName: String): Boolean =
+    override fun isOurs(homeName: String, awayName: String): Boolean =
         TeamNames.matches(homeName, clubName) || TeamNames.matches(awayName, clubName)
 
-    fun currentRound(season: Season, nowMillis: Long): SeasonRound? = season.roundAt(nowMillis)
+    override fun currentRound(season: Season, nowMillis: Long): SeasonRound? = season.roundAt(nowMillis)
 
-    fun match(id: String): Flow<SeasonMatch?> = seasonDao.observeMatch(id).map { entity ->
+    override fun match(id: String): Flow<SeasonMatch?> = seasonDao.observeMatch(id).map { entity ->
         entity?.let { listOf(it).toSeason("").rounds.first().matches.first() }
     }
 

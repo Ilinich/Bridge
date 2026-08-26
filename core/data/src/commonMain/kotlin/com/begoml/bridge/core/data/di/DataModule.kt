@@ -12,8 +12,11 @@ import com.begoml.bridge.core.data.db.platformDatabaseModule
 import com.begoml.bridge.core.data.network.createHttpClient
 import com.begoml.bridge.core.data.openfootball.SeasonApi
 import com.begoml.bridge.core.data.repository.ClubRepository
+import com.begoml.bridge.core.data.repository.ClubRepositoryImpl
 import com.begoml.bridge.core.data.repository.MatchRepository
+import com.begoml.bridge.core.data.repository.MatchRepositoryImpl
 import com.begoml.bridge.core.data.repository.SquadRepository
+import com.begoml.bridge.core.data.repository.SquadRepositoryImpl
 import com.begoml.bridge.core.data.sportsdb.SportsDbApi
 import io.ktor.client.HttpClient
 import kotlinx.coroutines.CoroutineDispatcher
@@ -60,8 +63,8 @@ private fun dataModule(ioDispatcher: CoroutineDispatcher) = module {
         )
     }
 
-    single {
-        ClubRepository(
+    single<ClubRepository> {
+        ClubRepositoryImpl(
             teamId = TeamId,
             api = get(),
             dao = get(),
@@ -69,9 +72,9 @@ private fun dataModule(ioDispatcher: CoroutineDispatcher) = module {
             syncer = get(),
         )
     }
-    single { SquadRepository(teamId = TeamId, api = get(), dao = get(), syncer = get()) }
-    single {
-        MatchRepository(
+    single<SquadRepository> { SquadRepositoryImpl(teamId = TeamId, api = get(), dao = get(), syncer = get()) }
+    single<MatchRepository> {
+        MatchRepositoryImpl(
             teamId = TeamId,
             clubName = ClubName,
             sportsDb = get(),
