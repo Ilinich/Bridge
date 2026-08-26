@@ -108,3 +108,40 @@ val FloodlightShader: ShaderSpec = ShaderSpec(
         ),
     ),
 )
+
+private const val EdgeFadeSource = """
+uniform float uTime;
+uniform float2 uResolution;
+
+float hash(float2 p) {
+    return fract(sin(dot(p, float2(127.1, 311.7))) * 43758.5453);
+}
+
+half4 main(float2 fragCoord) {
+    float2 uv = fragCoord / uResolution;
+
+    float alpha = 1.0 - smoothstep(0.0, 1.0, uv.y);
+
+    // A ramp this shallow lands on the same 8-bit value for several rows at a time, which reads as
+    // banding. Half a quantisation step of noise per pixel scatters the boundary instead.
+    float dither = (hash(fragCoord + uTime) - 0.5) / 255.0;
+    alpha = clamp(alpha + dither, 0.0, 1.0);
+
+    half3 ground = half3(0.008, 0.035, 0.071);
+    return half4(ground * half(alpha), half(alpha));
+}
+"""
+
+/**
+ * An opaque-to-clear ramp with the banding dithered out.
+ *
+ * Fades downwards; draw it rotated for the other end. `uTime` is fed to the noise rather than left
+ * unused so the compiler cannot fold the uniform away, and it is passed as a constant, so nothing
+ * here animates or asks for a frame.
+ */
+val EdgeFadeShader: ShaderSpec = ShaderSpec(
+    source = EdgeFadeSource,
+    fallback = Brush.verticalGradient(
+        colors = listOf(Color(0xFF02090F), Color.Transparent),
+    ),
+)

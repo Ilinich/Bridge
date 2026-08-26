@@ -52,3 +52,21 @@ fun rememberAnimatedShaderBrush(spec: ShaderSpec, enabled: Boolean = true): Brus
         }
     }
 }
+
+/**
+ * A runtime shader that never changes, or the spec's fallback where none is available.
+ *
+ * The counterpart to [rememberAnimatedShaderBrush] for effects that are a better gradient rather
+ * than an animation: the program is compiled once and no frame is ever requested.
+ */
+@Composable
+fun rememberStaticShaderBrush(spec: ShaderSpec): Brush {
+    if (!isRuntimeShaderSupported()) return spec.fallback
+
+    val program = remember(spec.source) { ShaderProgram(spec.source) }
+    return remember(program) {
+        object : ShaderBrush() {
+            override fun createShader(size: Size): Shader = program.shader(timeSeconds = 0f, size = size)
+        }
+    }
+}

@@ -32,6 +32,7 @@ dependencyResolutionManagement {
 
 include(":detekt-rules")
 include(":androidApp")
+include(":benchmark")
 include(":shared")
 
 include(":foundation:tessera")

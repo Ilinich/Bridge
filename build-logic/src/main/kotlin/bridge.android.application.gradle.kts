@@ -26,6 +26,8 @@ android {
     }
     buildTypes {
         release {
+            // Benchmark variants are built from release and have to be installable on a device.
+            signingConfig = signingConfigs.getByName("debug")
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
