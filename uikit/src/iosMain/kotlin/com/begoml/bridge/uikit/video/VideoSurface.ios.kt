@@ -3,6 +3,7 @@ package com.begoml.bridge.uikit.video
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.RememberObserver
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -53,7 +54,9 @@ private const val SeekTimescale = 600
 private const val MillisPerSecond = 1000.0
 
 @OptIn(ExperimentalForeignApi::class)
-private class AvPlayback(val player: AVPlayer, private val loop: Boolean) : VideoPlayback {
+private class AvPlayback(val player: AVPlayer, private val loop: Boolean) :
+    VideoPlayback,
+    RememberObserver {
 
     override var isPlaying by mutableStateOf(false)
         private set
@@ -94,6 +97,18 @@ private class AvPlayback(val player: AVPlayer, private val loop: Boolean) : Vide
         player.seekToTime(CMTimeMake(value = 0, timescale = 1))
         if (loop) player.play() else pause()
     }
+
+    override fun onRemembered() = Unit
+
+    /**
+     * The player is a resource the composition owns, so it stops on both exits.
+     *
+     * onAbandoned is the one that matters: a remembered value whose composition is discarded before
+     * it is applied never reaches a DisposableEffect.
+     */
+    override fun onForgotten() = pause()
+
+    override fun onAbandoned() = pause()
 
     fun poll() {
         positionMillis = CMTimeGetSeconds(player.currentTime()).toMillis()

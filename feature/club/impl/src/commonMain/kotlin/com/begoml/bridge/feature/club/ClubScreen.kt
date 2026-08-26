@@ -51,11 +51,7 @@ import com.begoml.bridge.uikit.video.VideoSurface
 import com.begoml.bridge.uikit.video.rememberVideoPlayback
 
 /**
- * The clip the media section plays.
- *
- * It is the only video on the screen. An earlier build also ran it blended into the backdrop,
- * which meant two decoders for one clip and made the player look like a duplicate of the wallpaper
- * rather than the thing the user drives.
+ * The clip the media section plays, and the only video on the screen.
  */
 private const val ClipUrl =
     "https://videos.pexels.com/video-files/2611250/2611250-hd_1920_1080_30fps.mp4"

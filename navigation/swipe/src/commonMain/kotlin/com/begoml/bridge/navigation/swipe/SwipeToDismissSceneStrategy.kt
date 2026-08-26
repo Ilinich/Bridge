@@ -13,7 +13,7 @@ class SwipeToDismissSceneStrategy : SceneStrategy<NavKey> {
     ): Scene<NavKey>? {
         if (entries.size < 2) return null
         val currentEntry = entries.last()
-        if (currentEntry.metadata[SWIPE_TO_DISMISS_ENABLED] != true) return null
+        if (currentEntry.metadata[SwipeToDismissEnabledKey] != true) return null
         val previousEntry = entries[entries.size - 2]
         return SwipeToDismissScene(
             key = currentEntry.contentKey,
@@ -29,7 +29,7 @@ class SwipeToDismissSceneStrategy : SceneStrategy<NavKey> {
     }
 
     companion object {
-        internal const val SWIPE_TO_DISMISS_ENABLED = "swipeToDismissEnabled"
-        fun enabled(): Map<String, Any> = mapOf(SWIPE_TO_DISMISS_ENABLED to true)
+        internal const val SwipeToDismissEnabledKey = "swipeToDismissEnabled"
+        fun enabled(): Map<String, Any> = mapOf(SwipeToDismissEnabledKey to true)
     }
 }

@@ -13,7 +13,8 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
 import kotlin.time.Instant
 
-private const val MinutesInDefaultKickoff = 0
+private const val DefaultKickoffHour = 12
+private const val DefaultKickoffMinute = 0
 
 internal fun TeamDto.toClub(): Club? {
     val id = id ?: return null
@@ -158,7 +159,7 @@ private fun parseDate(date: String?, time: String?): Instant? {
     val day = date?.let { runCatching { LocalDate.parse(it) }.getOrNull() } ?: return null
     val clock = time
         ?.let { raw -> runCatching { LocalTime.parse(raw.padTime()) }.getOrNull() }
-        ?: LocalTime(hour = 12, minute = MinutesInDefaultKickoff)
+        ?: LocalTime(hour = DefaultKickoffHour, minute = DefaultKickoffMinute)
     return LocalDateTime(day, clock).toInstant(TimeZone.UTC)
 }
 

@@ -2,8 +2,8 @@ package com.begoml.bridge.uikit.video
 
 import androidx.annotation.OptIn
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.RememberObserver
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -25,7 +25,7 @@ import kotlinx.coroutines.delay
 
 private const val PositionPollMillis = 200L
 
-private class ExoPlayback(val player: ExoPlayer) : VideoPlayback, Player.Listener {
+private class ExoPlayback(val player: ExoPlayer) : VideoPlayback, Player.Listener, RememberObserver {
 
     override var isPlaying by mutableStateOf(false)
         private set
@@ -88,7 +88,20 @@ private class ExoPlayback(val player: ExoPlayer) : VideoPlayback, Player.Listene
         readDuration()
     }
 
-    fun release() {
+    override fun onRemembered() = Unit
+
+    /**
+     * A decoder is a resource the composition owns, so it is released on both exits.
+     *
+     * onAbandoned is the one that matters: a remembered value whose composition is discarded before
+     * it is applied never reaches a DisposableEffect, and the player would have leaked with its
+     * decoder and its socket.
+     */
+    override fun onForgotten() = release()
+
+    override fun onAbandoned() = release()
+
+    private fun release() {
         player.removeListener(this)
         player.release()
     }
@@ -146,10 +159,6 @@ actual fun rememberVideoPlayback(
             playback.poll()
             delay(PositionPollMillis)
         }
-    }
-
-    DisposableEffect(playback) {
-        onDispose { playback.release() }
     }
 
     return playback

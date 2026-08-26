@@ -2,18 +2,18 @@ package com.begoml.bridge.navigation.swipe
 
 import androidx.compose.ui.unit.Dp
 
-internal const val SWIPE_EDGE_WIDTH_DP = "swipeEdgeWidthDp"
-internal const val SWIPE_FROM_ANYWHERE = "swipeFromAnywhere"
+internal const val SwipeEdgeWidthDpKey = "swipeEdgeWidthDp"
+internal const val SwipeFromAnywhereKey = "swipeFromAnywhere"
 
 object SwipeEdgeGate {
     fun metadata(edgeWidthDp: Dp?, swipeFromAnywhere: Boolean): Map<String, Any> = buildMap {
-        if (edgeWidthDp != null) put(SWIPE_EDGE_WIDTH_DP, edgeWidthDp.value)
-        if (swipeFromAnywhere) put(SWIPE_FROM_ANYWHERE, true)
+        if (edgeWidthDp != null) put(SwipeEdgeWidthDpKey, edgeWidthDp.value)
+        if (swipeFromAnywhere) put(SwipeFromAnywhereKey, true)
     }
 
     fun edgeWidthDp(metadata: Map<String, Any?>): Dp? =
-        (metadata[SWIPE_EDGE_WIDTH_DP] as? Float)?.let { Dp(it) }
+        (metadata[SwipeEdgeWidthDpKey] as? Float)?.let { Dp(it) }
 
     fun isSwipeFromAnywhere(metadata: Map<String, Any?>): Boolean =
-        metadata[SWIPE_FROM_ANYWHERE] as? Boolean == true
+        metadata[SwipeFromAnywhereKey] as? Boolean == true
 }

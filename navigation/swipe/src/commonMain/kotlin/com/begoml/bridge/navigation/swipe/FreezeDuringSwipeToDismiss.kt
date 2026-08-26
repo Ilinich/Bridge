@@ -16,7 +16,7 @@ import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 
-private const val SETTLE_TAIL_MS = 350L
+private const val SettleTailMillis = 350L
 
 /**
  * Observes whether a system predictive-back gesture is currently in progress.
@@ -24,7 +24,7 @@ private const val SETTLE_TAIL_MS = 350L
  * Reads the passive [androidx.navigationevent.NavigationEventDispatcher.transitionState] StateFlow,
  * so NavDisplay's own predictive-pop handling is unaffected. The dispatcher reports Idle the moment
  * the finger is lifted — before the commit/cancel settle animation finishes — so the flag is held
- * for an extra [SETTLE_TAIL_MS] after Idle (cancelled if a new gesture starts).
+ * for an extra [SettleTailMillis] after Idle (cancelled if a new gesture starts).
  */
 @Composable
 fun rememberPredictiveBackInProgress(): State<Boolean> {
@@ -37,7 +37,7 @@ fun rememberPredictiveBackInProgress(): State<Boolean> {
                 if (state is NavigationEventTransitionState.InProgress) {
                     value = true
                 } else {
-                    delay(SETTLE_TAIL_MS)
+                    delay(SettleTailMillis)
                     value = false
                 }
             }

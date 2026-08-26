@@ -18,14 +18,14 @@ private const val SwipeEndFraction = 0.30
  * The label is gone from the screen but not from the semantics tree, which is the one handle that
  * survives a change of icon set.
  */
-enum class BridgeTab(val label: String) {
+enum class BenchmarkTab(val label: String) {
     Matchday("Matchday"),
     Season("Season"),
     Squad("Squad"),
     Club("Club"),
 }
 
-fun MacrobenchmarkScope.openTab(tab: BridgeTab) {
+fun MacrobenchmarkScope.openTab(tab: BenchmarkTab) {
     val selector = By.desc(tab.label)
     device.wait(Until.hasObject(selector), TabWaitMillis)
     device.findObject(selector)?.click()

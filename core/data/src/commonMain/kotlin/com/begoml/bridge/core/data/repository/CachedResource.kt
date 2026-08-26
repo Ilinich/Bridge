@@ -15,7 +15,7 @@ import kotlinx.coroutines.flow.map
  * for data separately from observing it. A failure is reported only while nothing is cached; once
  * a value exists, a failed refresh leaves the screen showing what it has.
  */
-internal fun <Key : Any, Value : Any> InMemoryCache<Key, Value>.loadable(
+internal fun <Key : Any, Value : Any> InMemoryCache<Key, Value>.cachedResource(
     key: Key,
 ): Flow<Loadable<Value>> = flow {
     val cached = peek(key)

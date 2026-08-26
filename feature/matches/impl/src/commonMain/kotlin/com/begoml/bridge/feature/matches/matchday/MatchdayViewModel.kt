@@ -22,6 +22,8 @@ import bridge.feature.matches.impl.generated.resources.matchday_recent
 import bridge.feature.matches.impl.generated.resources.matchday_seconds
 import bridge.feature.matches.impl.generated.resources.matchday_stadium
 import com.begoml.bridge.core.data.model.Club
+import com.begoml.bridge.feature.matches.formatKickoff
+import com.begoml.bridge.uikit.groupedThousands
 import com.begoml.bridge.core.data.model.Match
 import com.begoml.bridge.core.data.repository.ClubRepository
 import com.begoml.bridge.core.data.repository.MatchRepository
@@ -63,6 +65,27 @@ data class MatchdayLabels(
     val founded: String,
 )
 
+/** The fixture with its text already built, so the clock cannot make the screen reformat it. */
+data class NextMatchUi(
+    val competition: String,
+    val venue: String?,
+    val kickoffText: String,
+    val kickoffMillis: Long,
+    val homeName: String,
+    val homeCode: String,
+    val homeBadgeUrl: String?,
+    val awayName: String,
+    val awayCode: String,
+    val awayBadgeUrl: String?,
+)
+
+/** The ground facts, formatted once rather than on every tick. */
+data class StadiumUi(
+    val arena: String,
+    val capacity: String,
+    val founded: String,
+)
+
 /** A result row with its text already built, so the list draws strings rather than formats them. */
 data class RecentMatchUi(
     val teams: String,
@@ -73,8 +96,10 @@ data class RecentMatchUi(
 )
 
 data class MatchdayUiState(
-    val club: Club? = null,
-    val nextMatch: Match? = null,
+    val backdropUrl: String? = null,
+    val stadium: StadiumUi? = null,
+    val hasClub: Boolean = false,
+    val nextMatch: NextMatchUi? = null,
     val recent: RecentMatchUi? = null,
     val labels: MatchdayLabels? = null,
     val nextMatchLoaded: Boolean = false,
@@ -121,13 +146,32 @@ internal class MatchdayViewModel(
     private val recent: Flow<RecentMatchUi?> = feature.stateFlow
         .map { it.lastResult }
         .distinctUntilChanged()
-        .map { match -> match?.let { withContext(ioDispatcher) { it.toUi() } } }
+        .map { match -> match?.let { withContext(ioDispatcher) { it.toRecentUi() } } }
+
+    private val nextMatch: Flow<NextMatchUi?> = feature.stateFlow
+        .map { it.nextMatch }
+        .distinctUntilChanged()
+        .map { match -> match?.toUi() }
+
+    private val stadium: Flow<StadiumUi?> = feature.stateFlow
+        .map { it.club }
+        .distinctUntilChanged()
+        .map { club -> club?.toStadiumUi() }
 
     val state: StateFlow<MatchdayUiState> =
-        combine(feature.stateFlow, labels, recent, ticker) { content, resolved, recentUi, now ->
+        combine(
+            feature.stateFlow,
+            labels,
+            recent,
+            ticker,
+            combine(nextMatch, stadium) { next, ground -> next to ground },
+        ) { content, resolved, recentUi, now, fixtureAndGround ->
+            val (nextMatchUi, stadiumUi) = fixtureAndGround
             MatchdayUiState(
-                club = content.club,
-                nextMatch = content.nextMatch,
+                backdropUrl = content.club?.media?.fanartUrls?.firstOrNull(),
+                stadium = stadiumUi,
+                hasClub = content.club != null,
+                nextMatch = nextMatchUi,
                 recent = recentUi,
                 labels = resolved,
                 nextMatchLoaded = content.nextMatchLoaded,
@@ -154,7 +198,26 @@ internal class MatchdayViewModel(
         router.navigateTo(ClubRoute)
     }
 
-    private suspend fun Match.toUi() = RecentMatchUi(
+    private fun Match.toUi() = NextMatchUi(
+        competition = competition,
+        venue = venue,
+        kickoffText = kickoff.formatKickoff(),
+        kickoffMillis = kickoff.toEpochMilliseconds(),
+        homeName = home.name,
+        homeCode = home.code,
+        homeBadgeUrl = home.badgeUrl,
+        awayName = away.name,
+        awayCode = away.code,
+        awayBadgeUrl = away.badgeUrl,
+    )
+
+    private fun Club.toStadiumUi() = StadiumUi(
+        arena = stadium.orEmpty(),
+        capacity = stadiumCapacity?.groupedThousands().orEmpty(),
+        founded = foundedYear?.toString().orEmpty(),
+    )
+
+    private suspend fun Match.toRecentUi() = RecentMatchUi(
         teams = getString(Res.string.fixture_teams, home.name, away.name),
         competition = competition,
         score = score?.let { getString(Res.string.fixture_score, it.home, it.away) },

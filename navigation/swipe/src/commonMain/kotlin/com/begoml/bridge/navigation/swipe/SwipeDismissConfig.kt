@@ -9,12 +9,12 @@ enum class SwipeSensitivity(val distanceFraction: Float, val velocityDp: Int) {
     Conservative(distanceFraction = 0.50f, velocityDp = 2000),
 }
 
-internal const val SWIPE_SENSITIVITY = "swipeSensitivity"
+internal const val SwipeSensitivityKey = "swipeSensitivity"
 
 object SwipeDismissSensitivity {
     fun metadata(sensitivity: SwipeSensitivity): Map<String, Any> =
-        if (sensitivity == SwipeSensitivity.Default) emptyMap() else mapOf(SWIPE_SENSITIVITY to sensitivity)
+        if (sensitivity == SwipeSensitivity.Default) emptyMap() else mapOf(SwipeSensitivityKey to sensitivity)
 
     fun from(metadata: Map<String, Any?>): SwipeSensitivity =
-        metadata[SWIPE_SENSITIVITY] as? SwipeSensitivity ?: SwipeSensitivity.Default
+        metadata[SwipeSensitivityKey] as? SwipeSensitivity ?: SwipeSensitivity.Default
 }

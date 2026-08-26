@@ -1,9 +1,9 @@
 package com.begoml.bridge.navigation.swipe
 
-internal const val FREEZE_BACKGROUND_WHILE_IDLE = "freezeBackgroundWhileIdle"
+internal const val FreezeBackgroundWhileIdleKey = "freezeBackgroundWhileIdle"
 
 object FreezeBackgroundWhileIdle {
-    fun enabled(): Map<String, Any> = mapOf(FREEZE_BACKGROUND_WHILE_IDLE to true)
+    fun enabled(): Map<String, Any> = mapOf(FreezeBackgroundWhileIdleKey to true)
     fun isEnabledIn(metadata: Map<String, Any?>): Boolean =
-        metadata[FREEZE_BACKGROUND_WHILE_IDLE] as? Boolean == true
+        metadata[FreezeBackgroundWhileIdleKey] as? Boolean == true
 }

@@ -82,12 +82,12 @@ internal class MatchRepositoryImpl(
     )
 
     override fun nextMatch(): Flow<Loadable<Match?>> =
-        nextMatchCache.loadable(teamId).map { loadable ->
+        nextMatchCache.cachedResource(teamId).map { loadable ->
             loadable.map { matches -> matches.minByOrNull { it.kickoff } }
         }
 
     override fun lastResult(): Flow<Loadable<Match?>> =
-        lastResultCache.loadable(teamId).map { loadable ->
+        lastResultCache.cachedResource(teamId).map { loadable ->
             loadable.map { matches -> matches.maxByOrNull { it.kickoff } }
         }
 

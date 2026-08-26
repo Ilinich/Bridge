@@ -24,7 +24,7 @@ class BaselineProfileGenerator {
         startActivityAndWait()
         awaitScrollableContent()
 
-        BridgeTab.entries.forEach { tab ->
+        BenchmarkTab.entries.forEach { tab ->
             openTab(tab)
             if (awaitScrollableContent()) scrollDownAndBack()
         }

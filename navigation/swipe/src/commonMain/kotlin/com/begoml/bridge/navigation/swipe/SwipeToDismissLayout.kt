@@ -91,8 +91,16 @@ internal fun SwipeToDismissLayout(
 
     val offsetX = remember { Animatable(0f) }
     val scope = rememberCoroutineScope()
-    val dismissThreshold = screenWidth * sensitivity.distanceFraction
-    val velocityDismissThreshold = with(density) { sensitivity.velocityDp.dp.toPx() }
+
+    // Kept current rather than captured: launchSettleAnimation lives in a remember that is not
+    // re-created on resize, so a screen rotated after the first composition would settle against
+    // the previous width and stop short of the edge.
+    val currentWidth by rememberUpdatedState(screenWidth)
+    val currentOnDismiss by rememberUpdatedState(onDismiss)
+    val dismissThreshold by rememberUpdatedState(screenWidth * sensitivity.distanceFraction)
+    val velocityDismissThreshold by rememberUpdatedState(
+        with(density) { sensitivity.velocityDp.dp.toPx() },
+    )
     val velocityTracker = remember { VelocityTracker() }
 
     var isDragging by remember { mutableStateOf(false) }
@@ -106,9 +114,9 @@ internal fun SwipeToDismissLayout(
         animationJob = scope.launch {
             offsetX.snapTo(targetOffset)
             if (targetOffset > dismissThreshold || velocity > velocityDismissThreshold) {
-                offsetX.animateTo(screenWidth, tween(SETTLE_TWEEN_MS))
+                offsetX.animateTo(currentWidth, tween(SettleTweenMillis))
                 isDismissed = true
-                onDismiss()
+                currentOnDismiss()
             } else {
                 offsetX.animateTo(0f, spring(dampingRatio = Spring.DampingRatioMediumBouncy))
             }
@@ -195,7 +203,7 @@ internal fun SwipeToDismissLayout(
             modifier = Modifier.fillMaxSize().graphicsLayer {
                 val offset = if (isDragging || isNestedScrollDragging) dragOffset else offsetX.value
                 val progress = (offset / screenWidth).coerceIn(0f, 1f)
-                translationX = -(screenWidth / BACKGROUND_PARALLAX_DIVISOR) * (1f - progress)
+                translationX = -(screenWidth / BackgroundParallaxDivisor) * (1f - progress)
             },
         ) {
             if (shouldComposeBackground) {
@@ -294,9 +302,9 @@ internal fun SwipeToDismissLayout(
                     translationX = offset
                     if (progress > 0.05f) {
                         shape = when {
-                            progress >= CORNER_PROGRESS_FULL -> shapeMax
-                            progress >= CORNER_PROGRESS_75 -> shape75
-                            progress >= CORNER_PROGRESS_50 -> shape50
+                            progress >= ShapeMaxAboveProgress -> shapeMax
+                            progress >= Shape75AboveProgress -> shape75
+                            progress >= Shape50AboveProgress -> shape50
                             else -> shape25
                         }
                         clip = true
@@ -330,8 +338,8 @@ internal fun SwipeToDismissLayout(
     }
 }
 
-private const val SETTLE_TWEEN_MS = 200
-private const val BACKGROUND_PARALLAX_DIVISOR = 3f
-private const val CORNER_PROGRESS_FULL = 0.5f
-private const val CORNER_PROGRESS_75 = 0.35f
-private const val CORNER_PROGRESS_50 = 0.20f
+private const val SettleTweenMillis = 200
+private const val BackgroundParallaxDivisor = 3f
+private const val ShapeMaxAboveProgress = 0.5f
+private const val Shape75AboveProgress = 0.35f
+private const val Shape50AboveProgress = 0.20f

@@ -27,7 +27,7 @@ import org.koin.core.qualifier.named
 import org.koin.dsl.module
 import kotlin.time.Clock
 
-/** The club this build follows. Swapping it is the only change a fork of another club needs. */
+/** The club this build follows. Swapping this pair is the only change a fork needs. */
 private const val TeamId = "133610"
 private const val ClubName = "Chelsea"
 

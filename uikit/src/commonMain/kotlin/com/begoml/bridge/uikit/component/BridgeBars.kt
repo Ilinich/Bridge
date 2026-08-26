@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -139,7 +140,8 @@ fun BridgeTopBar(
     leading: @Composable () -> Unit = {},
 ) {
     Row(
-        modifier = modifier.fillMaxWidth().height(44.dp).padding(horizontal = 14.dp),
+        // A minimum, not a fixed height: at a large font scale a fixed bar clips its own title.
+        modifier = modifier.fillMaxWidth().heightIn(min = 44.dp).padding(horizontal = 14.dp),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {

@@ -20,15 +20,15 @@ class ScreenScrollBenchmark {
     val rule = MacrobenchmarkRule()
 
     @Test
-    fun squad() = scrollTab(BridgeTab.Squad)
+    fun squad() = scrollTab(BenchmarkTab.Squad)
 
     @Test
-    fun season() = scrollTab(BridgeTab.Season)
+    fun season() = scrollTab(BenchmarkTab.Season)
 
     @Test
-    fun club() = scrollTab(BridgeTab.Club)
+    fun club() = scrollTab(BenchmarkTab.Club)
 
-    private fun scrollTab(tab: BridgeTab) = rule.measureRepeated(
+    private fun scrollTab(tab: BenchmarkTab) = rule.measureRepeated(
         packageName = BridgePackage,
         metrics = listOf(FrameTimingMetric()),
         compilationMode = CompilationMode.Partial(

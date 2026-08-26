@@ -24,16 +24,13 @@ Each tab owns its own stack. Switching tabs preserves where the user was; select
 already shown returns it to its root, which is what a tab bar is expected to do.
 
 ```kotlin
-val backStack = rememberTabbedBackStack()
+val backStack = rememberTabbedBackStack(roots = TabRoutes, codecs = codecs)
 
 BridgeNavDisplay(
     backStack = backStack.current,
     onBack = backStack::pop,
-) { key ->
-    when (key) {
-        is Route.Squad -> NavEntry(key, metadata = swipeBackMetadata()) { SquadScreen(...) }
-        else -> error("unmapped route")
-    }
+    entries = entries,
+)
 }
 ```
 
