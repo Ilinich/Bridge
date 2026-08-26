@@ -52,9 +52,13 @@ import com.begoml.bridge.uikit.video.rememberVideoPlayback
 
 /**
  * The clip the media section plays, and the only video on the screen.
+ *
+ * Football rather than the club itself, and that is a licensing fact rather than a choice: match
+ * footage is rights-controlled, and this repository is public. The 720p rendition is the one
+ * fetched — a phone gains nothing from 1080p in a card this size.
  */
 private const val ClipUrl =
-    "https://videos.pexels.com/video-files/2611250/2611250-hd_1920_1080_30fps.mp4"
+    "https://videos.pexels.com/video-files/11918917/11918917-hd_1280_720_60fps.mp4"
 
 @Composable
 internal fun ClubScreen(viewModel: ClubViewModel, modifier: Modifier = Modifier) {

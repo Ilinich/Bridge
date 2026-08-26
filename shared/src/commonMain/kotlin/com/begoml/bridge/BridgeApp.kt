@@ -29,7 +29,7 @@ import com.begoml.bridge.feature.club.api.ClubRoute
 import com.begoml.bridge.feature.matches.api.MatchdayRoute
 import com.begoml.bridge.feature.matches.api.SeasonRoute
 import com.begoml.bridge.feature.squad.api.SquadRoute
-import com.begoml.bridge.navigation.BridgeNavDisplay
+import com.begoml.bridge.navigation.BridgeTabPager
 import com.begoml.bridge.navigation.FeatureNavigationEntry
 import com.begoml.bridge.navigation.router.NavigationHost
 import com.begoml.bridge.navigation.Route
@@ -90,9 +90,8 @@ fun App() {
                 modifier = Modifier.fillMaxSize(),
                 backdrop = {
                     Box(modifier = Modifier.fillMaxSize().background(BridgeColors.Ground)) {
-                        BridgeNavDisplay(
-                            backStack = backStack.current,
-                            onBack = backStack::pop,
+                        BridgeTabPager(
+                            backStack = backStack,
                             entries = entries,
                             modifier = Modifier.fillMaxSize(),
                         )

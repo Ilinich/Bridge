@@ -37,6 +37,15 @@ class TabbedBackStack internal constructor(
 
     val current: SnapshotStateList<Route> get() = stacks[selectedTab]
 
+    /** Every tab's stack, so a host can keep them all composed instead of swapping one in. */
+    val allStacks: List<SnapshotStateList<Route>> get() = stacks
+
+    /** Pops the given tab rather than whichever is selected; a page owns its own back. */
+    fun popTab(index: Int) {
+        val stack = stacks.getOrNull(index) ?: return
+        if (stack.size > 1) stack.removeAt(stack.lastIndex)
+    }
+
     val canPop: Boolean get() = current.size > 1
 
     fun push(route: Route) {
