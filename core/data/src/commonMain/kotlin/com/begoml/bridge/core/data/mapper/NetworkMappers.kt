@@ -1,5 +1,19 @@
-package com.begoml.bridge.core.data.model
+package com.begoml.bridge.core.data.mapper
 
+import com.begoml.bridge.core.data.model.Club
+import com.begoml.bridge.core.data.model.ClubColours
+import com.begoml.bridge.core.data.model.ClubDetails
+import com.begoml.bridge.core.data.model.ClubLinks
+import com.begoml.bridge.core.data.model.ClubMedia
+import com.begoml.bridge.core.data.model.Match
+import com.begoml.bridge.core.data.model.MatchScore
+import com.begoml.bridge.core.data.model.MatchStatus
+import com.begoml.bridge.core.data.model.Player
+import com.begoml.bridge.core.data.model.Season
+import com.begoml.bridge.core.data.model.SeasonMatch
+import com.begoml.bridge.core.data.model.SeasonRound
+import com.begoml.bridge.core.data.model.TeamRef
+import com.begoml.bridge.core.data.model.Venue
 import com.begoml.bridge.core.data.TeamNames
 import com.begoml.bridge.core.data.openfootball.SeasonEnvelope
 import com.begoml.bridge.core.data.sportsdb.EventDto

@@ -6,7 +6,7 @@ import com.begoml.bridge.core.data.db.toEntity
 import com.begoml.bridge.core.data.db.toPlayer
 import com.begoml.bridge.core.data.model.Loadable
 import com.begoml.bridge.core.data.model.Player
-import com.begoml.bridge.core.data.model.toPlayer
+import com.begoml.bridge.core.data.mapper.toPlayer
 import com.begoml.bridge.core.data.sportsdb.SportsDbApi
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow

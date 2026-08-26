@@ -14,8 +14,8 @@ import com.begoml.bridge.core.data.model.SeasonMatch
 import com.begoml.bridge.core.data.model.SeasonRound
 import com.begoml.bridge.core.data.model.map
 import com.begoml.bridge.core.data.model.roundAt
-import com.begoml.bridge.core.data.model.toMatch
-import com.begoml.bridge.core.data.model.toSeason
+import com.begoml.bridge.core.data.mapper.toMatch
+import com.begoml.bridge.core.data.mapper.toSeason
 import com.begoml.bridge.core.data.openfootball.SeasonApi
 import com.begoml.bridge.core.data.previousSeasonId
 import com.begoml.bridge.core.data.seasonIdAt

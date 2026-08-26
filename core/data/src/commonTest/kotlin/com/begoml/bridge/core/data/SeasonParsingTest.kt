@@ -1,6 +1,6 @@
 package com.begoml.bridge.core.data
 
-import com.begoml.bridge.core.data.model.toSeason
+import com.begoml.bridge.core.data.mapper.toSeason
 import com.begoml.bridge.core.data.network.BridgeJson
 import com.begoml.bridge.core.data.openfootball.SeasonEnvelope
 import kotlin.test.Test

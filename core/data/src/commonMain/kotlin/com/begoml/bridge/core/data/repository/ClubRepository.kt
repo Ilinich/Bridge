@@ -9,8 +9,8 @@ import com.begoml.bridge.core.data.db.toVenue
 import com.begoml.bridge.core.data.model.Club
 import com.begoml.bridge.core.data.model.Loadable
 import com.begoml.bridge.core.data.model.Venue
-import com.begoml.bridge.core.data.model.toClub
-import com.begoml.bridge.core.data.model.toVenue
+import com.begoml.bridge.core.data.mapper.toClub
+import com.begoml.bridge.core.data.mapper.toVenue
 import com.begoml.bridge.core.data.sportsdb.SportsDbApi
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.CoroutineDispatcher
