@@ -23,10 +23,26 @@ android {
 
     targetProjectPath = ":androidApp"
     experimentalProperties["android.experimental.self-instrumenting"] = true
+
+    // A managed device rather than whatever happens to be plugged in. useConnectedDevices picks up
+    // every attached device, including someone's personal phone, and installs and drives the
+    // benchmark on it. This also makes a run reproducible and available to CI.
+    testOptions {
+        managedDevices {
+            localDevices {
+                create("benchmarkDevice") {
+                    device = "Pixel 6"
+                    apiLevel = 34
+                    systemImageSource = "aosp"
+                }
+            }
+        }
+    }
 }
 
 baselineProfile {
-    useConnectedDevices = true
+    useConnectedDevices = false
+    managedDevices += "benchmarkDevice"
 }
 
 // The generator and the measurements live in the variants that can actually run them: generating a
