@@ -22,6 +22,10 @@ private const val ClubBackgroundSource = """
 uniform float uTime;
 uniform float2 uResolution;
 
+float grain(float2 p) {
+    return fract(sin(dot(p, float2(127.1, 311.7))) * 43758.5453);
+}
+
 half4 main(float2 fragCoord) {
     float2 uv = fragCoord / uResolution;
 
@@ -35,6 +39,11 @@ half4 main(float2 fragCoord) {
 
     half3 color = mix(club, deep, half(depth));
     color += lift * half(sweep * 0.06 * (1.0 - depth));
+
+    // A gradient this shallow lands on one 8-bit value for several rows at a time, which reads as
+    // banding across a full screen. Half a quantisation step of noise scatters the boundary.
+    float dither = (grain(floor(fragCoord) + floor(uTime * 20.0)) - 0.5) / 255.0;
+    color += half3(half(dither));
 
     return half4(color, 1.0);
 }
