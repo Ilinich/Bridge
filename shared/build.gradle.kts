@@ -19,7 +19,7 @@ kotlin {
             implementation(projects.core.background.api)
             implementation(projects.core.background.impl)
             implementation(projects.core.connectivity.impl)
-            implementation(projects.core.favourites.impl)
+            implementation(projects.core.following.impl)
             implementation(projects.core.analytics.impl)
             implementation(projects.foundation.logger.impl)
             implementation(projects.core.data)

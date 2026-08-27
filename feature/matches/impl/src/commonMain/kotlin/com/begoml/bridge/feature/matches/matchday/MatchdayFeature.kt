@@ -7,7 +7,7 @@ import com.begoml.bridge.core.data.model.Player
 import com.begoml.bridge.core.data.repository.ClubRepository
 import com.begoml.bridge.core.data.repository.MatchRepository
 import com.begoml.bridge.core.data.repository.SquadRepository
-import com.begoml.bridge.core.favourites.FavouritesFeature
+import com.begoml.bridge.core.following.FollowingFeature
 import com.begoml.bridge.foundation.tessera.SimpleFeature
 import com.begoml.bridge.foundation.tessera.awaitActionsIn
 import com.begoml.bridge.foundation.tessera.composeState
@@ -58,7 +58,7 @@ class MatchdayFeature(
     private val clubRepository: ClubRepository,
     private val matchRepository: MatchRepository,
     private val squadRepository: SquadRepository,
-    private val favourites: FavouritesFeature,
+    private val following: FollowingFeature,
 ) : SimpleFeature<MatchdayState, MatchdayAction, MatchdayEvent> by feature(MatchdayState(), scope) {
 
     /**
@@ -93,7 +93,7 @@ class MatchdayFeature(
         composeState(
             scope = scope,
             source = combine(
-                favourites.stateFlow,
+                following.stateFlow,
                 squadRepository.squad(),
             ) { followed, squad ->
                 (squad as? Loadable.Content)?.value.orEmpty()

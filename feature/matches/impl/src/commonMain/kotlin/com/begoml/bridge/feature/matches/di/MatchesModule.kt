@@ -25,7 +25,7 @@ fun matchesModule() = module {
                 clubRepository = get(),
                 matchRepository = get(),
                 squadRepository = get(),
-                favourites = get(),
+                following = get(),
             ),
             connectivity = get(),
             clock = get(),

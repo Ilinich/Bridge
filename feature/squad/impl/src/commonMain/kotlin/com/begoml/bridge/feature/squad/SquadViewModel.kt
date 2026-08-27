@@ -2,7 +2,7 @@ package com.begoml.bridge.feature.squad
 
 import androidx.lifecycle.ViewModel
 import com.begoml.bridge.core.data.repository.SquadRepository
-import com.begoml.bridge.core.favourites.FavouritesFeature
+import com.begoml.bridge.core.following.FollowingFeature
 import com.begoml.bridge.core.analytics.Analytics
 import com.begoml.bridge.feature.squad.analytics.PlayerOpened
 import com.begoml.bridge.feature.squad.api.PlayerDetailRoute
@@ -47,14 +47,14 @@ data class SquadUiState(
 internal class SquadViewModel(
     private val scope: CoroutineScope,
     private val delegate: SquadDelegate,
-    private val favourites: FavouritesFeature,
+    private val following: FollowingFeature,
     private val router: AppRouter,
     private val analytics: Analytics,
 ) : ViewModel(), UiStateDelegate<SquadUiState, Nothing> by UiStateDelegateImpl(SquadUiState()) {
 
     init {
         scope.launch {
-            combine(delegate.uiStateFlow, favourites.stateFlow) { squad, followed ->
+            combine(delegate.uiStateFlow, following.stateFlow) { squad, followed ->
                 SquadUiState(squad = squad, followed = followed.playerIds)
             }.collect { built -> updateUiState { built } }
         }
@@ -104,7 +104,7 @@ data class PlayerUiState(
 internal class PlayerViewModel(
     private val scope: CoroutineScope,
     private val delegate: SquadDelegate,
-    private val favourites: FavouritesFeature,
+    private val following: FollowingFeature,
     private val router: AppRouter,
     private val ioDispatcher: CoroutineDispatcher,
 ) : ViewModel(), UiStateDelegate<PlayerUiState, Nothing> by UiStateDelegateImpl(PlayerUiState()) {
@@ -112,14 +112,14 @@ internal class PlayerViewModel(
     init {
         scope.launch {
             val labels = withContext(ioDispatcher) { readLabels() }
-            combine(delegate.uiStateFlow, favourites.stateFlow) { squad, followed ->
+            combine(delegate.uiStateFlow, following.stateFlow) { squad, followed ->
                 PlayerUiState(squad = squad, labels = labels, followed = followed.playerIds)
             }.collect { built -> updateUiState { built } }
         }
     }
 
     fun onFollowClick(playerId: String) {
-        favourites.toggle(playerId)
+        following.toggle(playerId)
     }
 
     override fun onCleared() {
