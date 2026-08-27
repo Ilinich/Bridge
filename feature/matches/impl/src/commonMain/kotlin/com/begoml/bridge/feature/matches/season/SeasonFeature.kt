@@ -1,10 +1,10 @@
 package com.begoml.bridge.feature.matches.season
 
-import com.begoml.bridge.core.data.model.Loadable
-import com.begoml.bridge.core.data.model.Season
-import com.begoml.bridge.core.data.model.SeasonRound
-import com.begoml.bridge.core.data.model.roundAt
-import com.begoml.bridge.core.data.repository.MatchRepository
+import com.begoml.bridge.core.domain.model.Loadable
+import com.begoml.bridge.core.domain.model.Season
+import com.begoml.bridge.core.domain.model.SeasonRound
+import com.begoml.bridge.core.domain.model.roundAt
+import com.begoml.bridge.core.domain.repository.MatchRepository
 import com.begoml.bridge.foundation.tessera.SimpleFeature
 import com.begoml.bridge.foundation.tessera.awaitActionsIn
 import com.begoml.bridge.foundation.tessera.composeState

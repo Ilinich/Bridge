@@ -1,4 +1,4 @@
-package com.begoml.bridge.core.data
+package com.begoml.bridge.core.domain
 
 /**
  * Reconciles club names between the two sources and supplies a three-letter code.

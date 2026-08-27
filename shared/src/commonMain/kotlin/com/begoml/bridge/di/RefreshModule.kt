@@ -1,9 +1,9 @@
 package com.begoml.bridge.di
 
-import com.begoml.bridge.core.data.model.FollowedClub
-import com.begoml.bridge.core.data.repository.ClubRepository
-import com.begoml.bridge.core.data.repository.MatchRepository
-import com.begoml.bridge.core.data.repository.SquadRepository
+import com.begoml.bridge.core.domain.model.FollowedClub
+import com.begoml.bridge.core.domain.repository.ClubRepository
+import com.begoml.bridge.core.domain.repository.MatchRepository
+import com.begoml.bridge.core.domain.repository.SquadRepository
 import com.begoml.bridge.core.background.RefreshWork
 import com.begoml.bridge.foundation.logger.Logger
 import com.begoml.bridge.foundation.logger.warn

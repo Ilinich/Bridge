@@ -1,4 +1,4 @@
-package com.begoml.bridge.core.data.model
+package com.begoml.bridge.core.domain.model
 
 /**
  * The club's own colours, as the feed states them.

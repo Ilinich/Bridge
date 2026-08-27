@@ -1,23 +1,25 @@
 package com.begoml.bridge.core.data.repository
 
+import com.begoml.bridge.core.domain.repository.MatchRepository
+
 import com.begoml.bridge.core.data.db.SeasonDao
 import com.begoml.bridge.core.data.db.Syncer
 import com.begoml.bridge.core.data.db.toEntity
 import com.begoml.bridge.core.data.db.SeasonMatchEntity
 import com.begoml.bridge.core.data.db.toSeasonMatch
 import com.begoml.bridge.core.data.db.toSeason
-import com.begoml.bridge.core.data.model.Loadable
-import com.begoml.bridge.core.data.model.Match
-import com.begoml.bridge.core.data.model.Season
-import com.begoml.bridge.core.data.model.SeasonMatch
-import com.begoml.bridge.core.data.model.SeasonRound
-import com.begoml.bridge.core.data.model.map
-import com.begoml.bridge.core.data.model.roundAt
+import com.begoml.bridge.core.domain.model.Loadable
+import com.begoml.bridge.core.domain.model.Match
+import com.begoml.bridge.core.domain.model.Season
+import com.begoml.bridge.core.domain.model.SeasonMatch
+import com.begoml.bridge.core.domain.model.SeasonRound
+import com.begoml.bridge.core.domain.model.map
+import com.begoml.bridge.core.domain.model.roundAt
 import com.begoml.bridge.core.data.mapper.toMatch
 import com.begoml.bridge.core.data.mapper.toSeason
 import com.begoml.bridge.core.data.openfootball.SeasonApi
-import com.begoml.bridge.core.data.previousSeasonId
-import com.begoml.bridge.core.data.seasonIdAt
+import com.begoml.bridge.core.domain.previousSeasonId
+import com.begoml.bridge.core.domain.seasonIdAt
 import com.begoml.bridge.core.data.sportsdb.SportsDbApi
 import com.begoml.bridge.foundation.cache.InMemoryCache
 import kotlinx.coroutines.CoroutineDispatcher
@@ -35,23 +37,6 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
-
-/**
- * Fixtures, results and the season calendar.
- */
-interface MatchRepository {
-
-    fun nextMatch(teamId: String): Flow<Loadable<Match?>>
-
-    fun lastResult(teamId: String): Flow<Loadable<Match?>>
-
-    fun season(): Flow<Loadable<Season>>
-
-    fun match(id: String): Flow<Loadable<SeasonMatch?>>
-
-    /** Revalidates the calendar and the fixture caches now, ignoring their time to live. */
-    suspend fun refresh()
-}
 
 internal class MatchRepositoryImpl(
     sportsDb: SportsDbApi,

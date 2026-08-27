@@ -20,8 +20,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import bridge.feature.matches.impl.generated.resources.Res
-import com.begoml.bridge.core.data.model.SeasonMatch
-import com.begoml.bridge.core.data.repository.MatchRepository
+import com.begoml.bridge.core.domain.model.SeasonMatch
+import com.begoml.bridge.core.domain.repository.MatchRepository
 import com.begoml.bridge.feature.matches.formatKickoff
 import com.begoml.bridge.uikit.LocalScreenPadding
 import com.begoml.bridge.uikit.component.BridgeBackButton

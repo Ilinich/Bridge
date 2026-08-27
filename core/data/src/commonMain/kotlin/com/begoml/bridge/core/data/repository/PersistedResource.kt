@@ -1,6 +1,6 @@
 package com.begoml.bridge.core.data.repository
 
-import com.begoml.bridge.core.data.model.Loadable
+import com.begoml.bridge.core.domain.model.Loadable
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow

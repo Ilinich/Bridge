@@ -25,7 +25,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.begoml.bridge.core.data.model.Player
+import com.begoml.bridge.core.domain.model.Player
 import com.begoml.bridge.foundation.tessera.collectUiState
 import com.begoml.bridge.navigation.swipe.consumeHorizontalSwipeToDismissWhenNotAtStart
 import com.begoml.bridge.uikit.LocalScreenPadding

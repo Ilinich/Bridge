@@ -1,4 +1,4 @@
-package com.begoml.bridge.core.data
+package com.begoml.bridge.core.domain
 
 import kotlin.test.Test
 import kotlin.test.assertEquals

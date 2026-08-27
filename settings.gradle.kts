@@ -41,6 +41,7 @@ include(":foundation:coroutines")
 include(":foundation:logger:api")
 include(":foundation:logger:impl")
 
+include(":core:domain")
 include(":core:data")
 include(":core:analytics:api")
 include(":core:analytics:impl")

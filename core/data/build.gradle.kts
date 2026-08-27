@@ -21,6 +21,7 @@ dependencies {
 kotlin {
     sourceSets {
         commonMain.dependencies {
+            api(projects.core.domain)
             implementation(projects.foundation.cache)
             api(projects.foundation.coroutines)
 

@@ -1,4 +1,4 @@
-package com.begoml.bridge.core.data.model
+package com.begoml.bridge.core.domain.model
 
 import kotlin.time.Instant
 

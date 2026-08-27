@@ -1,11 +1,13 @@
 package com.begoml.bridge.core.data.repository
 
+import com.begoml.bridge.core.domain.repository.SquadRepository
+
 import com.begoml.bridge.core.data.db.PlayerDao
 import com.begoml.bridge.core.data.db.Syncer
 import com.begoml.bridge.core.data.db.toEntity
 import com.begoml.bridge.core.data.db.toPlayer
-import com.begoml.bridge.core.data.model.Loadable
-import com.begoml.bridge.core.data.model.Player
+import com.begoml.bridge.core.domain.model.Loadable
+import com.begoml.bridge.core.domain.model.Player
 import com.begoml.bridge.core.data.mapper.toPlayer
 import com.begoml.bridge.core.data.sportsdb.SportsDbApi
 import kotlinx.coroutines.CoroutineDispatcher
@@ -14,20 +16,6 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import kotlin.time.Duration.Companion.hours
-
-/**
- * The squad, held on disk for four hours before it is revalidated.
- *
- * A squad changes on transfer days, not on minutes, so a cold start draws the stored one
- * immediately and the network only confirms it.
- */
-interface SquadRepository {
-
-    fun squad(teamId: String): Flow<Loadable<List<Player>>>
-
-    /** Revalidates now, ignoring the time to live. */
-    suspend fun refresh(teamId: String)
-}
 
 internal class SquadRepositoryImpl(
     private val api: SportsDbApi,

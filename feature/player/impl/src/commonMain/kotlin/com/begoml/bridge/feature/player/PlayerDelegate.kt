@@ -1,9 +1,9 @@
 package com.begoml.bridge.feature.player
 
-import com.begoml.bridge.core.data.model.Loadable
-import com.begoml.bridge.core.data.model.Player
-import com.begoml.bridge.core.data.model.FollowedClub
-import com.begoml.bridge.core.data.repository.SquadRepository
+import com.begoml.bridge.core.domain.model.Loadable
+import com.begoml.bridge.core.domain.model.Player
+import com.begoml.bridge.core.domain.model.FollowedClub
+import com.begoml.bridge.core.domain.repository.SquadRepository
 import com.begoml.bridge.foundation.tessera.UiStateDelegate
 import com.begoml.bridge.foundation.tessera.UiStateDelegateImpl
 import kotlinx.collections.immutable.ImmutableList

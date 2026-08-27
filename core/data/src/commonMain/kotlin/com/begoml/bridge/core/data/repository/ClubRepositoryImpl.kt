@@ -1,14 +1,16 @@
 package com.begoml.bridge.core.data.repository
 
+import com.begoml.bridge.core.domain.repository.ClubRepository
+
 import com.begoml.bridge.core.data.db.ClubDao
 import com.begoml.bridge.core.data.db.Syncer
 import com.begoml.bridge.core.data.db.VenueDao
 import com.begoml.bridge.core.data.db.toClub
 import com.begoml.bridge.core.data.db.toEntity
 import com.begoml.bridge.core.data.db.toVenue
-import com.begoml.bridge.core.data.model.Club
-import com.begoml.bridge.core.data.model.Loadable
-import com.begoml.bridge.core.data.model.Venue
+import com.begoml.bridge.core.domain.model.Club
+import com.begoml.bridge.core.domain.model.Loadable
+import com.begoml.bridge.core.domain.model.Venue
 import com.begoml.bridge.core.data.mapper.toClub
 import com.begoml.bridge.core.data.mapper.toVenue
 import com.begoml.bridge.core.data.sportsdb.SportsDbApi
@@ -23,22 +25,6 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import kotlin.time.Duration.Companion.days
-
-/**
- * The club profile and the ground it plays on.
- *
- * Both change about once a year, so both are held for a week. The venue is a second request that
- * only the club screen needs, and it is only made once the club record has told us which ground
- * to ask about.
- */
-interface ClubRepository {
-
-    fun club(teamId: String): Flow<Loadable<Club>>
-
-    fun venue(teamId: String): Flow<Loadable<Venue>>
-
-    suspend fun refresh(teamId: String)
-}
 
 internal class ClubRepositoryImpl(
     private val api: SportsDbApi,

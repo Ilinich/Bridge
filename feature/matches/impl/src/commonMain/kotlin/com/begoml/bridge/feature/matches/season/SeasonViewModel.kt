@@ -5,11 +5,11 @@ import bridge.feature.matches.impl.generated.resources.Res
 import bridge.feature.matches.impl.generated.resources.fixture_score
 import bridge.feature.matches.impl.generated.resources.fixture_teams
 import bridge.feature.matches.impl.generated.resources.season_round
-import com.begoml.bridge.core.data.model.SeasonRound
+import com.begoml.bridge.core.domain.model.SeasonRound
 import com.begoml.bridge.core.connectivity.Connectivity
 import com.begoml.bridge.core.connectivity.NetworkStatus
-import com.begoml.bridge.core.data.TeamNames
-import com.begoml.bridge.core.data.model.FollowedClub
+import com.begoml.bridge.core.domain.TeamNames
+import com.begoml.bridge.core.domain.model.FollowedClub
 import kotlin.time.Clock
 import com.begoml.bridge.core.analytics.Analytics
 import com.begoml.bridge.feature.matches.analytics.MatchOpened

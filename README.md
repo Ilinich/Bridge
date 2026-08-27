@@ -138,6 +138,19 @@ only a genuine failure shows a retry. There is no full badge map on the free tie
 club shows its real crest where the feed supplies one per fixture and a three-letter monogram
 everywhere else.
 
+## Layers
+
+`core:domain` holds the models and the repository contracts; `core:data` holds Room, the HTTP
+clients and the implementations. Features depend on the domain only, so a DAO in a ViewModel is
+not a matter of discipline — it does not compile. Only the composition root depends on `core:data`,
+which is also what keeps Room's annotation processor out of every feature's build.
+
+There is no use-case layer, and that is a decision rather than an omission. Between a screen and a
+repository in this app there is no rule that needs a home: the interesting logic is a time to live,
+a season id and a name reconciliation, and each of those already lives with the data it governs. A
+`GetSquadUseCase` forwarding one call to one repository would add a layer that decides nothing. If a
+rule appears that two screens must agree on, that is when the layer earns its place.
+
 ## Modules
 
 | Module | Contains |
@@ -149,7 +162,8 @@ everywhere else.
 | `core:background:api` / `:impl` | daily refresh: WorkManager and `BGTaskScheduler` |
 | `core:connectivity:api` / `:impl` | `ConnectivityManager` and `NWPathMonitor` behind one state flow |
 | `core:following:api` / `:impl` | followed players: a state holder with no screen, shared by two feature modules |
-| `core:data` | HTTP clients, DTOs, domain models, repositories |
+| `core:domain` | what the app is about: models, `Loadable`, the repository contracts |
+| `core:data` | how it is fetched: HTTP clients, DTOs, Room, mappers, the repository implementations |
 | `uikit` | theme, glass surfaces, runtime-shader brushes, components |
 | `navigation:core` | the routing contract, the router, per-tab stacks ([readme](navigation/core/README.md)) |
 | `navigation:swipe` | swipe-to-dismiss, knowing nothing about this app ([readme](navigation/swipe/README.md)) |

@@ -26,7 +26,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.dp
-import com.begoml.bridge.core.data.model.Player
+import com.begoml.bridge.core.domain.model.Player
 import com.begoml.bridge.foundation.tessera.collectUiState
 import com.begoml.bridge.feature.squad.SquadViewModel
 import com.begoml.bridge.uikit.LocalScreenPadding

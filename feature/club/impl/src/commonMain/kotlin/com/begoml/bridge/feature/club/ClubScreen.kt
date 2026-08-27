@@ -30,8 +30,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import bridge.feature.club.impl.generated.resources.Res
-import com.begoml.bridge.core.data.model.Club
-import com.begoml.bridge.core.data.model.Venue
+import com.begoml.bridge.core.domain.model.Club
+import com.begoml.bridge.core.domain.model.Venue
 import com.begoml.bridge.foundation.tessera.collectUiState
 import com.begoml.bridge.uikit.LocalScreenPadding
 import com.begoml.bridge.uikit.groupedThousands

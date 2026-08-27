@@ -1,10 +1,10 @@
-package com.begoml.bridge.core.data
+package com.begoml.bridge.core.domain
 
-import com.begoml.bridge.core.data.model.Season
-import com.begoml.bridge.core.data.model.SeasonMatch
-import com.begoml.bridge.core.data.model.SeasonRound
-import com.begoml.bridge.core.data.model.TeamRef
-import com.begoml.bridge.core.data.model.roundAt
+import com.begoml.bridge.core.domain.model.Season
+import com.begoml.bridge.core.domain.model.SeasonMatch
+import com.begoml.bridge.core.domain.model.SeasonRound
+import com.begoml.bridge.core.domain.model.TeamRef
+import com.begoml.bridge.core.domain.model.roundAt
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull

@@ -1,13 +1,13 @@
 package com.begoml.bridge.feature.matches.matchday
 
-import com.begoml.bridge.core.data.model.Club
-import com.begoml.bridge.core.data.model.Loadable
-import com.begoml.bridge.core.data.model.Match
-import com.begoml.bridge.core.data.model.Player
-import com.begoml.bridge.core.data.model.FollowedClub
-import com.begoml.bridge.core.data.repository.ClubRepository
-import com.begoml.bridge.core.data.repository.MatchRepository
-import com.begoml.bridge.core.data.repository.SquadRepository
+import com.begoml.bridge.core.domain.model.Club
+import com.begoml.bridge.core.domain.model.Loadable
+import com.begoml.bridge.core.domain.model.Match
+import com.begoml.bridge.core.domain.model.Player
+import com.begoml.bridge.core.domain.model.FollowedClub
+import com.begoml.bridge.core.domain.repository.ClubRepository
+import com.begoml.bridge.core.domain.repository.MatchRepository
+import com.begoml.bridge.core.domain.repository.SquadRepository
 import com.begoml.bridge.core.following.FollowingFeature
 import com.begoml.bridge.foundation.tessera.SimpleFeature
 import com.begoml.bridge.foundation.tessera.awaitActionsIn

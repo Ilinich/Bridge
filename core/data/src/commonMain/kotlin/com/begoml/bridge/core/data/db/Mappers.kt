@@ -1,17 +1,17 @@
 package com.begoml.bridge.core.data.db
 
-import com.begoml.bridge.core.data.model.Club
-import com.begoml.bridge.core.data.model.ClubColours
-import com.begoml.bridge.core.data.model.ClubDetails
-import com.begoml.bridge.core.data.model.ClubLinks
-import com.begoml.bridge.core.data.model.ClubMedia
-import com.begoml.bridge.core.data.model.MatchScore
-import com.begoml.bridge.core.data.model.Player
-import com.begoml.bridge.core.data.model.Season
-import com.begoml.bridge.core.data.model.SeasonMatch
-import com.begoml.bridge.core.data.model.SeasonRound
-import com.begoml.bridge.core.data.model.TeamRef
-import com.begoml.bridge.core.data.model.Venue
+import com.begoml.bridge.core.domain.model.Club
+import com.begoml.bridge.core.domain.model.ClubColours
+import com.begoml.bridge.core.domain.model.ClubDetails
+import com.begoml.bridge.core.domain.model.ClubLinks
+import com.begoml.bridge.core.domain.model.ClubMedia
+import com.begoml.bridge.core.domain.model.MatchScore
+import com.begoml.bridge.core.domain.model.Player
+import com.begoml.bridge.core.domain.model.Season
+import com.begoml.bridge.core.domain.model.SeasonMatch
+import com.begoml.bridge.core.domain.model.SeasonRound
+import com.begoml.bridge.core.domain.model.TeamRef
+import com.begoml.bridge.core.domain.model.Venue
 import kotlin.time.Instant
 
 private const val ListSeparator = "\n"

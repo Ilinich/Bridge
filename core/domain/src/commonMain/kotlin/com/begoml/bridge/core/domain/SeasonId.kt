@@ -1,4 +1,4 @@
-package com.begoml.bridge.core.data
+package com.begoml.bridge.core.domain
 
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime

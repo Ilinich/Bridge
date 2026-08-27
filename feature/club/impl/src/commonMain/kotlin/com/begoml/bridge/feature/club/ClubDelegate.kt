@@ -1,10 +1,10 @@
 package com.begoml.bridge.feature.club
 
-import com.begoml.bridge.core.data.model.Club
-import com.begoml.bridge.core.data.model.Loadable
-import com.begoml.bridge.core.data.model.Venue
-import com.begoml.bridge.core.data.model.FollowedClub
-import com.begoml.bridge.core.data.repository.ClubRepository
+import com.begoml.bridge.core.domain.model.Club
+import com.begoml.bridge.core.domain.model.Loadable
+import com.begoml.bridge.core.domain.model.Venue
+import com.begoml.bridge.core.domain.model.FollowedClub
+import com.begoml.bridge.core.domain.repository.ClubRepository
 import com.begoml.bridge.foundation.tessera.UiStateDelegate
 import com.begoml.bridge.foundation.tessera.UiStateDelegateImpl
 import kotlinx.coroutines.CoroutineScope

@@ -15,9 +15,9 @@ import bridge.feature.club.impl.generated.resources.club_opened
 import bridge.feature.club.impl.generated.resources.club_twitter
 import bridge.feature.club.impl.generated.resources.club_website
 import bridge.feature.club.impl.generated.resources.club_youtube
-import com.begoml.bridge.core.data.model.Club
-import com.begoml.bridge.core.data.model.Venue
-import com.begoml.bridge.core.data.repository.ClubRepository
+import com.begoml.bridge.core.domain.model.Club
+import com.begoml.bridge.core.domain.model.Venue
+import com.begoml.bridge.core.domain.repository.ClubRepository
 import com.begoml.bridge.core.analytics.Analytics
 import com.begoml.bridge.feature.club.analytics.VideoStarted
 import com.begoml.bridge.foundation.tessera.UiStateDelegate
