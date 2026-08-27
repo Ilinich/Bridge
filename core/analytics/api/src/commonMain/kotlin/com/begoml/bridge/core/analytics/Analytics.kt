@@ -10,6 +10,12 @@ package com.begoml.bridge.core.analytics
  */
 interface Analytics {
 
+    /**
+     * Records that something happened.
+     *
+     * Fire and forget: it never blocks the caller, never throws and never reports delivery — a
+     * screen must not behave differently because analytics was unavailable.
+     */
     fun track(event: AnalyticsEvent)
 }
 

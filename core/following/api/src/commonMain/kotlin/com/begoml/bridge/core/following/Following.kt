@@ -28,5 +28,13 @@ data class FollowingState(
  */
 interface FollowingFeature : FeatureStateDelegate<FollowingState> {
 
+    /**
+     * Follows the player, or stops following them if they already were.
+     *
+     * Returns immediately and does not report the outcome: the write goes to the store, and the
+     * new set comes back through [stateFlow] like any other change, so nothing can be shown that
+     * failed to persist. An id the current squad no longer contains is kept but goes unnamed
+     * wherever names are needed.
+     */
     fun toggle(playerId: String)
 }

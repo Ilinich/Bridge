@@ -18,7 +18,16 @@ enum class NetworkStatus { Unknown, Online, Offline }
  */
 interface Connectivity {
 
+    /**
+     * The current answer, starting at [NetworkStatus.Unknown] until the platform has given one.
+     *
+     * Hot and shared: the platform is watched once for the whole app, and collecting this neither
+     * starts nor stops that. On Android it reports a *validated* network, so a connection that
+     * leads nowhere — a captive portal, a router with no route upstream — reads as offline, which
+     * is what a caller means by the question.
+     */
     val status: StateFlow<NetworkStatus>
 
+    /** A snapshot for a caller that is not collecting; [NetworkStatus.Unknown] is not offline. */
     val isOffline: Boolean get() = status.value == NetworkStatus.Offline
 }
