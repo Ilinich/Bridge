@@ -19,7 +19,6 @@ import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.Job
 
 data class MatchdayState(
     val club: Club? = null,
@@ -63,22 +62,17 @@ class MatchdayFeature(
     private val following: FollowingFeature,
 ) : SimpleFeature<MatchdayState, MatchdayAction, MatchdayEvent> by feature(MatchdayState(), scope) {
 
-    /**
-     * The subscription Retry replaces.
-     *
-     * Without it every Retry left the previous collector running: several chains then wrote to one
-     * state, and a stale one could put a screen that had already rendered back into loading.
-     */
-    private var sourcesJob: Job? = null
-
     init {
         observeSources()
         observeFollowed()
         awaitActionsIn(scope) { action ->
             when (action) {
+                // Retry fetches; it does not resubscribe. Re-collecting was how a fetch used to
+                // be triggered, which meant every retry left another collector writing into one
+                // state and re-seeded the screen with Loading after it had already drawn.
                 MatchdayAction.Retry -> {
                     clubRepository.refresh(club.id)
-                    observeSources()
+                    matchRepository.refreshFixtures(club.id)
                 }
             }
         }
@@ -106,8 +100,7 @@ class MatchdayFeature(
     }
 
     private fun observeSources() {
-        sourcesJob?.cancel()
-        sourcesJob = composeState(
+        composeState(
             scope = scope,
             source1 = clubRepository.club(club.id).withInitial(scope, Loadable.Loading),
             source2 = matchRepository.nextMatch(club.id).withInitial(scope, Loadable.Loading),

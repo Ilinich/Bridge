@@ -1,4 +1,4 @@
-package com.begoml.bridge.core.data.network
+package com.begoml.bridge.core.data.remote
 
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.HttpTimeout

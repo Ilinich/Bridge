@@ -19,10 +19,10 @@ import com.begoml.bridge.foundation.resource.map
 import com.begoml.bridge.core.domain.model.roundAt
 import com.begoml.bridge.core.data.mapper.toMatch
 import com.begoml.bridge.core.data.mapper.toSeason
-import com.begoml.bridge.core.data.openfootball.SeasonApi
+import com.begoml.bridge.core.data.remote.openfootball.SeasonApi
 import com.begoml.bridge.core.domain.previousSeasonId
 import com.begoml.bridge.core.domain.seasonIdAt
-import com.begoml.bridge.core.data.sportsdb.SportsDbApi
+import com.begoml.bridge.core.data.remote.sportsdb.SportsDbApi
 import com.begoml.bridge.foundation.resource.InMemoryCache
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -94,6 +94,14 @@ internal class MatchRepositoryImpl(
                 syncer.sync(key = seasonKey(seasonId), ttl = ttlFor(seasonId)) { fetch(seasonId) }
             },
         )
+    }
+
+    override suspend fun refreshFixtures(teamId: String) = withContext(dispatcher) {
+        // refresh rather than invalidate: invalidating leaves the caches empty until somebody
+        // subscribes again, and the caller is a screen that is already subscribed.
+        nextMatchCache.refresh(teamId)
+        lastResultCache.refresh(teamId)
+        Unit
     }
 
     override suspend fun refresh() = withContext(dispatcher) {

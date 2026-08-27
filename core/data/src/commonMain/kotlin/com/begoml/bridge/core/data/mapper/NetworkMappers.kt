@@ -15,11 +15,11 @@ import com.begoml.bridge.core.domain.model.SeasonRound
 import com.begoml.bridge.core.domain.model.TeamRef
 import com.begoml.bridge.core.domain.model.Venue
 import com.begoml.bridge.core.domain.TeamNames
-import com.begoml.bridge.core.data.openfootball.SeasonEnvelope
-import com.begoml.bridge.core.data.sportsdb.EventDto
-import com.begoml.bridge.core.data.sportsdb.PlayerDto
-import com.begoml.bridge.core.data.sportsdb.TeamDto
-import com.begoml.bridge.core.data.sportsdb.VenueDto
+import com.begoml.bridge.core.data.remote.openfootball.SeasonEnvelope
+import com.begoml.bridge.core.data.remote.sportsdb.EventDto
+import com.begoml.bridge.core.data.remote.sportsdb.PlayerDto
+import com.begoml.bridge.core.data.remote.sportsdb.TeamDto
+import com.begoml.bridge.core.data.remote.sportsdb.VenueDto
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime

@@ -15,7 +15,6 @@ import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlin.time.Clock
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
 
 data class SeasonState(
     val rounds: ImmutableList<SeasonRound> = persistentListOf(),
@@ -43,21 +42,19 @@ class SeasonFeature(
     private val clock: Clock,
 ) : SimpleFeature<SeasonState, SeasonAction, SeasonEvent> by feature(SeasonState(), scope) {
 
-    /** The subscription Retry replaces; see [observeSeason]. */
-    private var seasonJob: Job? = null
-
     init {
         observeSeason()
         awaitActionsIn(scope) { action ->
             when (action) {
-                SeasonAction.Retry -> observeSeason()
+                // Fetch, not resubscribe: the calendar arrives through the subscription that is
+                // already running, and a second one would write into the same state.
+                SeasonAction.Retry -> matchRepository.refresh()
             }
         }
     }
 
     private fun observeSeason() {
-        seasonJob?.cancel()
-        seasonJob = composeState(
+        composeState(
             scope = scope,
             source = matchRepository.season().withInitial(scope, Loadable.Loading),
         ) { state, loadable ->

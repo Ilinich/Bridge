@@ -1,4 +1,4 @@
-package com.begoml.bridge.core.data.sportsdb
+package com.begoml.bridge.core.data.remote.sportsdb
 
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body

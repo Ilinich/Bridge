@@ -14,7 +14,7 @@ import com.begoml.bridge.foundation.resource.Loadable
 import com.begoml.bridge.core.domain.model.Venue
 import com.begoml.bridge.core.data.mapper.toClub
 import com.begoml.bridge.core.data.mapper.toVenue
-import com.begoml.bridge.core.data.sportsdb.SportsDbApi
+import com.begoml.bridge.core.data.remote.sportsdb.SportsDbApi
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow

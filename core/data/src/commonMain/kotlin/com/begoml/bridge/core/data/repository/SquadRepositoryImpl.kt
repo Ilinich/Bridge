@@ -10,7 +10,7 @@ import com.begoml.bridge.core.data.db.toPlayer
 import com.begoml.bridge.foundation.resource.Loadable
 import com.begoml.bridge.core.domain.model.Player
 import com.begoml.bridge.core.data.mapper.toPlayer
-import com.begoml.bridge.core.data.sportsdb.SportsDbApi
+import com.begoml.bridge.core.data.remote.sportsdb.SportsDbApi
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOn

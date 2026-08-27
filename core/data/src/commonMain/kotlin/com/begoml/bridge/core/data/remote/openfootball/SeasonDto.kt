@@ -1,4 +1,4 @@
-package com.begoml.bridge.core.data.openfootball
+package com.begoml.bridge.core.data.remote.openfootball
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

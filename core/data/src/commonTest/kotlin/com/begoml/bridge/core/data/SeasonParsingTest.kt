@@ -1,8 +1,8 @@
 package com.begoml.bridge.core.data
 
 import com.begoml.bridge.core.data.mapper.toSeason
-import com.begoml.bridge.core.data.network.BridgeJson
-import com.begoml.bridge.core.data.openfootball.SeasonEnvelope
+import com.begoml.bridge.core.data.remote.BridgeJson
+import com.begoml.bridge.core.data.remote.openfootball.SeasonEnvelope
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull

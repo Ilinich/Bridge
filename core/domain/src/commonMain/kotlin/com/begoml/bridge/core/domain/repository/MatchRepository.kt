@@ -47,7 +47,16 @@ interface MatchRepository {
     fun match(id: String): Flow<Loadable<SeasonMatch?>>
 
     /**
-     * Revalidates the calendar and drops the fixture caches, however fresh they are.
+     * Fetches this club's next fixture and last result now, however fresh they are.
+     *
+     * The narrow half of [refresh], for a screen that shows the two ends of a schedule and has no
+     * reason to pull 380 calendar rows to redraw them. The new values arrive through [nextMatch]
+     * and [lastResult]; switches to the io dispatcher itself.
+     */
+    suspend fun refreshFixtures(teamId: String)
+
+    /**
+     * Revalidates the calendar and the fixture caches, however fresh they are.
      *
      * Switches to the io dispatcher itself, whatever the caller's context.
      */

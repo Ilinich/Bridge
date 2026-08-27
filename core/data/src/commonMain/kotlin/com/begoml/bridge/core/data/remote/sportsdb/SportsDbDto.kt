@@ -1,4 +1,4 @@
-package com.begoml.bridge.core.data.sportsdb
+package com.begoml.bridge.core.data.remote.sportsdb
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
