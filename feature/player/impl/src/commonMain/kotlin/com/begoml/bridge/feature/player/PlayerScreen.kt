@@ -3,6 +3,7 @@ package com.begoml.bridge.feature.player
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -26,6 +27,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.begoml.bridge.core.data.model.Player
 import com.begoml.bridge.foundation.tessera.collectUiState
+import com.begoml.bridge.navigation.swipe.consumeHorizontalSwipeToDismissWhenNotAtStart
 import com.begoml.bridge.uikit.LocalScreenPadding
 import com.begoml.bridge.uikit.component.BridgeBackButton
 import com.begoml.bridge.uikit.component.BridgeTopBar
@@ -87,7 +89,15 @@ internal fun PlayerScreen(
         val startIndex = players.indexOfFirst { it.id == initialPlayerId }.coerceAtLeast(0)
         val pagerState = rememberPagerState(initialPage = startIndex) { players.size }
 
-        HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { page ->
+        // The dismiss is allowed only from the first player. Leaving it to the pager's leftover
+        // works by accident of how much it consumes; this decides once per gesture, on where the
+        // pager was when the finger went down.
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier
+                .fillMaxSize()
+                .consumeHorizontalSwipeToDismissWhenNotAtStart(pagerState),
+        ) { page ->
             // The offset is passed as a lambda and read inside graphicsLayer: reading the pager
             // fraction here would recompose the page, its cutout and its glass panel on every
             // frame of the swipe instead of leaving the motion on the render thread.
@@ -103,19 +113,12 @@ internal fun PlayerScreen(
             )
         }
 
-        Column(modifier = Modifier.fillMaxWidth().padding(top = contentPadding.calculateTopPadding())) {
-            BridgeTopBar(
-                title = players.getOrNull(pagerState.currentPage)?.name ?: labels.title,
-                leading = {
-                    with(glass) {
-                        BridgeBackButton(
-                            onClick = viewModel::onBack,
-                            contentDescription = labels.back,
-                        )
-                    }
-                },
-            )
-        }
+        PlayerTopBar(
+            glass = glass,
+            title = players.getOrNull(pagerState.currentPage)?.name ?: labels.title,
+            back = labels.back,
+            onBack = viewModel::onBack,
+        )
 
         PageDots(
             count = players.size,
@@ -123,6 +126,24 @@ internal fun PlayerScreen(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(bottom = contentPadding.calculateBottomPadding() + 10.dp),
+        )
+    }
+}
+
+@Composable
+private fun BoxScope.PlayerTopBar(
+    glass: GlassScope,
+    title: String,
+    back: String,
+    onBack: () -> Unit,
+) {
+    val contentPadding = LocalScreenPadding.current
+    Column(modifier = Modifier.fillMaxWidth().padding(top = contentPadding.calculateTopPadding())) {
+        BridgeTopBar(
+            title = title,
+            leading = {
+                with(glass) { BridgeBackButton(onClick = onBack, contentDescription = back) }
+            },
         )
     }
 }

@@ -40,6 +40,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.input.pointer.util.VelocityTracker
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.platform.LocalWindowInfo
@@ -78,12 +79,16 @@ internal fun SwipeToDismissLayout(
 ) {
     val swipeSignal = LocalSwipeDismissSignal.current
     val density = LocalDensity.current
+    val layoutDirection = LocalLayoutDirection.current
     val screenWidth = LocalWindowInfo.current.containerSize.width.toFloat().coerceAtLeast(1f)
     val isPredictiveBackInProgress by rememberPredictiveBackInProgress()
     val predictiveBackActive by rememberUpdatedState(isPredictiveBackInProgress)
     val keyboardController = LocalSoftwareKeyboardController.current
 
-    val maxCornerRadiusDp = remember(screenWidth, density) { with(density) { (screenWidth * 0.05f).toDp().value } }
+    val deviceCornerRadius = deviceCornerRadius()
+    val maxCornerRadiusDp = remember(deviceCornerRadius, screenWidth, density) {
+        deviceCornerRadius?.value ?: with(density) { (screenWidth * 0.05f).toDp().value }
+    }
     val shape25 = remember(maxCornerRadiusDp) { RoundedCornerShape((maxCornerRadiusDp * 0.25f).dp) }
     val shape50 = remember(maxCornerRadiusDp) { RoundedCornerShape((maxCornerRadiusDp * 0.5f).dp) }
     val shape75 = remember(maxCornerRadiusDp) { RoundedCornerShape((maxCornerRadiusDp * 0.75f).dp) }
@@ -149,7 +154,6 @@ internal fun SwipeToDismissLayout(
                 val newOffset = (dragOffset + available.x).coerceAtLeast(0f)
                 val consumed = newOffset - dragOffset
                 dragOffset = newOffset
-                if (dragOffset == 0f) isNestedScrollDragging = false
                 return Offset(consumed, 0f)
             }
 
@@ -197,6 +201,18 @@ internal fun SwipeToDismissLayout(
     val foregroundLayer = rememberGraphicsLayer()
     var hasBackgroundSnapshot by remember { mutableStateOf(false) }
 
+    // A snapshot recorded at another size or density is the wrong picture, and the frozen paths
+    // would keep replaying it. The first pass is not an invalidation: nothing has been recorded.
+    var isInitialMetrics by remember { mutableStateOf(true) }
+    LaunchedEffect(screenWidth, density, layoutDirection) {
+        if (isInitialMetrics) {
+            isInitialMetrics = false
+            return@LaunchedEffect
+        }
+        if (freezeBackgroundWhileIdle) hasBackgroundSnapshot = false
+        foregroundSnapshotInvalid = true
+    }
+
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             when (event) {
@@ -213,7 +229,7 @@ internal fun SwipeToDismissLayout(
     }
 
     val shouldComposeBackground = isResumed && !isDismissed && !isBeingRemoved
-    val isInteracting = isDragging || isNestedScrollDragging || isSwiping || isTouchDown
+    val isInteracting = isSwiping || isTouchDown
     val isFullyCoveredByForeground = freezeBackgroundWhileIdle && isResumed &&
         !isDismissed && !isBeingRemoved && !isInteracting && hasBackgroundSnapshot
 
@@ -324,11 +340,17 @@ internal fun SwipeToDismissLayout(
                     val progress = (offset / screenWidth).coerceIn(0f, 1f)
                     translationX = offset
                     if (progress > 0.05f) {
-                        shape = when {
-                            progress >= ShapeMaxAboveProgress -> shapeMax
-                            progress >= Shape75AboveProgress -> shape75
-                            progress >= Shape50AboveProgress -> shape50
-                            else -> shape25
+                        // With the device's own radius there is nothing to ramp towards — the
+                        // screen already has that radius, so it keeps it the whole way out.
+                        shape = if (deviceCornerRadius != null) {
+                            shapeMax
+                        } else {
+                            when {
+                                progress >= ShapeMaxAboveProgress -> shapeMax
+                                progress >= Shape75AboveProgress -> shape75
+                                progress >= Shape50AboveProgress -> shape50
+                                else -> shape25
+                            }
                         }
                         clip = true
                     } else {
