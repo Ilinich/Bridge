@@ -8,7 +8,7 @@ import com.begoml.bridge.feature.matches.matchday.MatchdayFeature
 import com.begoml.bridge.feature.matches.matchday.MatchdayViewModel
 import com.begoml.bridge.feature.matches.season.SeasonFeature
 import com.begoml.bridge.feature.matches.season.SeasonViewModel
-import com.begoml.bridge.foundation.tessera.stateHolderScope
+import com.begoml.bridge.foundation.coroutines.stateHolderScope
 import com.begoml.bridge.navigation.FeatureNavigationEntry
 import com.begoml.bridge.navigation.RouteCodec
 import org.koin.core.module.dsl.viewModel

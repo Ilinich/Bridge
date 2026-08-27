@@ -22,6 +22,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             implementation(projects.foundation.cache)
+            api(projects.foundation.coroutines)
 
             implementation(libs.ktor.client.core)
             implementation(libs.ktor.client.contentNegotiation)

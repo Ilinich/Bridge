@@ -1,7 +1,7 @@
 package com.begoml.bridge.feature.squad.di
 
 import com.begoml.bridge.feature.squad.grid.SquadDelegate
-import com.begoml.bridge.foundation.tessera.stateHolderScope
+import com.begoml.bridge.foundation.coroutines.stateHolderScope
 import com.begoml.bridge.feature.squad.SquadNavigationEntry
 import com.begoml.bridge.feature.squad.SquadViewModel
 import com.begoml.bridge.feature.squad.api.SquadRouteCodec

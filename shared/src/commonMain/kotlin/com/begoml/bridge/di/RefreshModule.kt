@@ -6,6 +6,7 @@ import com.begoml.bridge.core.data.repository.SquadRepository
 import com.begoml.bridge.core.background.RefreshWork
 import com.begoml.bridge.foundation.logger.Logger
 import com.begoml.bridge.foundation.logger.warn
+import kotlinx.coroutines.CancellationException
 import org.koin.dsl.module
 
 private const val RefreshTag = "Refresh"
@@ -27,11 +28,13 @@ fun refreshModule() = module {
             // One failure must not cancel the others: a squad that could not be fetched is no
             // reason to leave the calendar stale as well. The run reports success only if every
             // part succeeded, so the platform can retry.
-            val results = listOf(
-                runCatching { club.refresh() },
-                runCatching { squad.refresh() },
-                runCatching { matches.refresh() },
-            )
+            // Cancellation is rethrown rather than counted as a failure: the platform revokes
+            // the window by cancelling, and a swallowed cancellation would let the run carry on
+            // making requests after its time is up and then report a result nobody asked for.
+            val results = listOf(club::refresh, squad::refresh, matches::refresh).map { refresh ->
+                runCatching { refresh() }
+                    .onFailure { error -> if (error is CancellationException) throw error }
+            }
             results.forEach { result ->
                 result.exceptionOrNull()?.let { error ->
                     logger.warn(RefreshTag, "a source failed to refresh", error)

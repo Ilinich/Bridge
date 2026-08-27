@@ -4,7 +4,7 @@ import com.begoml.bridge.core.data.di.IoDispatcher
 import com.begoml.bridge.feature.club.ClubNavigationEntry
 import com.begoml.bridge.feature.club.ClubDelegate
 import com.begoml.bridge.feature.club.ClubViewModel
-import com.begoml.bridge.foundation.tessera.stateHolderScope
+import com.begoml.bridge.foundation.coroutines.stateHolderScope
 import com.begoml.bridge.feature.club.api.ClubRouteCodec
 import com.begoml.bridge.navigation.FeatureNavigationEntry
 import com.begoml.bridge.navigation.RouteCodec

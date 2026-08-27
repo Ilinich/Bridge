@@ -2,13 +2,11 @@ package com.begoml.bridge.core.background.impl
 
 import com.begoml.bridge.core.background.BackgroundRefresh
 import com.begoml.bridge.core.background.RefreshWork
+import com.begoml.bridge.foundation.coroutines.AppScope
 import com.begoml.bridge.foundation.logger.Logger
 import com.begoml.bridge.foundation.logger.info
 import com.begoml.bridge.foundation.logger.warn
 import kotlinx.cinterop.ExperimentalForeignApi
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import org.koin.core.module.Module
 import platform.BackgroundTasks.BGAppRefreshTask
@@ -21,7 +19,7 @@ private const val RefreshTag = "BackgroundRefresh"
 private const val SecondsPerHour = 3600.0
 
 internal actual fun Module.bindBackgroundRefresh() {
-    single<BackgroundRefresh> { BgTaskRefresh(work = get(), logger = get()) }
+    single<BackgroundRefresh> { BgTaskRefresh(scope = get(), work = get(), logger = get()) }
 }
 
 /**
@@ -34,11 +32,10 @@ internal actual fun Module.bindBackgroundRefresh() {
  */
 @OptIn(ExperimentalForeignApi::class)
 private class BgTaskRefresh(
+    private val scope: AppScope,
     private val work: RefreshWork,
     private val logger: Logger,
 ) : BackgroundRefresh {
-
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
     override fun schedule() {
         BGTaskScheduler.sharedScheduler.registerForTaskWithIdentifier(

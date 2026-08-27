@@ -1,4 +1,4 @@
-package com.begoml.bridge.foundation.tessera
+package com.begoml.bridge.foundation.coroutines
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

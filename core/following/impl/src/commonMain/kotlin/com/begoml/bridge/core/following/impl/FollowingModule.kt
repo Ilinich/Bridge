@@ -4,7 +4,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import com.begoml.bridge.core.following.FollowingFeature
-import com.begoml.bridge.foundation.tessera.stateHolderScope
+import com.begoml.bridge.foundation.coroutines.stateHolderScope
 import okio.Path.Companion.toPath
 import org.koin.core.module.Module
 import org.koin.dsl.module

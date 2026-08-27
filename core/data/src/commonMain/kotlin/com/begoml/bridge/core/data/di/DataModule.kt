@@ -19,9 +19,8 @@ import com.begoml.bridge.core.data.repository.SquadRepository
 import com.begoml.bridge.core.data.repository.SquadRepositoryImpl
 import com.begoml.bridge.core.data.sportsdb.SportsDbApi
 import io.ktor.client.HttpClient
+import com.begoml.bridge.foundation.coroutines.AppScope
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
 import org.koin.core.module.Module
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
@@ -32,7 +31,6 @@ private const val TeamId = "133610"
 private const val ClubName = "Chelsea"
 
 val IoDispatcher = named("io")
-val DataScope = named("data")
 
 fun dataModules(ioDispatcher: CoroutineDispatcher): List<Module> =
     listOf(platformDatabaseModule(), dataModule(ioDispatcher))
@@ -40,9 +38,7 @@ fun dataModules(ioDispatcher: CoroutineDispatcher): List<Module> =
 private fun dataModule(ioDispatcher: CoroutineDispatcher) = module {
     single<Clock> { Clock.System }
     single<CoroutineDispatcher>(IoDispatcher) { ioDispatcher }
-    single<CoroutineScope>(DataScope) {
-        CoroutineScope(SupervisorJob() + get<CoroutineDispatcher>(IoDispatcher))
-    }
+    single { AppScope(get<CoroutineDispatcher>(IoDispatcher)) }
 
     single<HttpClient> { createHttpClient() }
     single { SportsDbApi(get()) }
@@ -88,7 +84,7 @@ private fun dataModule(ioDispatcher: CoroutineDispatcher) = module {
             seasonDao = get(),
             syncer = get(),
             dispatcher = get(IoDispatcher),
-            backgroundScope = get(DataScope),
+            backgroundScope = get<AppScope>(),
             clock = get(),
         )
     }

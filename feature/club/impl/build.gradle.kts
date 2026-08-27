@@ -10,6 +10,7 @@ kotlin {
             implementation(projects.core.analytics.api)
             implementation(projects.core.connectivity.api)
             implementation(projects.foundation.tessera)
+            implementation(projects.foundation.coroutines)
             implementation(projects.core.data)
             implementation(projects.navigation.core)
             implementation(projects.uikit)
