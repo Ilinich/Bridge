@@ -3,14 +3,21 @@ package com.begoml.bridge.feature.matches.matchday
 import com.begoml.bridge.core.data.model.Club
 import com.begoml.bridge.core.data.model.Loadable
 import com.begoml.bridge.core.data.model.Match
+import com.begoml.bridge.core.data.model.Player
 import com.begoml.bridge.core.data.repository.ClubRepository
 import com.begoml.bridge.core.data.repository.MatchRepository
+import com.begoml.bridge.core.data.repository.SquadRepository
+import com.begoml.bridge.core.favourites.FavouritesFeature
 import com.begoml.bridge.foundation.tessera.SimpleFeature
 import com.begoml.bridge.foundation.tessera.awaitActionsIn
 import com.begoml.bridge.foundation.tessera.composeState
 import com.begoml.bridge.foundation.tessera.feature
 import com.begoml.bridge.foundation.tessera.withInitial
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.Job
 
 data class MatchdayState(
@@ -24,6 +31,8 @@ data class MatchdayState(
      * is still on the network: without this the screen would announce "no fixture" for a second
      * every cold start, which is a different statement from "still asking".
      */
+    /** The followed players who are in the current squad, in squad order. */
+    val followedPlayers: ImmutableList<Player> = persistentListOf(),
     val nextMatchLoaded: Boolean = false,
     /** A fixture that failed to load is not the same statement as a club with no fixture. */
     val nextMatchFailed: Boolean = false,
@@ -48,6 +57,8 @@ class MatchdayFeature(
     private val scope: CoroutineScope,
     private val clubRepository: ClubRepository,
     private val matchRepository: MatchRepository,
+    private val squadRepository: SquadRepository,
+    private val favourites: FavouritesFeature,
 ) : SimpleFeature<MatchdayState, MatchdayAction, MatchdayEvent> by feature(MatchdayState(), scope) {
 
     /**
@@ -60,6 +71,7 @@ class MatchdayFeature(
 
     init {
         observeSources()
+        observeFollowed()
         awaitActionsIn(scope) { action ->
             when (action) {
                 MatchdayAction.Retry -> {
@@ -68,6 +80,27 @@ class MatchdayFeature(
                 }
             }
         }
+    }
+
+    /**
+     * Who the person follows, named.
+     *
+     * The set is written on another screen in another feature module and outlives both, so it
+     * arrives as a feature rather than as this screen's state. Only the squad turns ids into
+     * players, so an id no longer in the squad simply drops out.
+     */
+    private fun observeFollowed() {
+        composeState(
+            scope = scope,
+            source = combine(
+                favourites.stateFlow,
+                squadRepository.squad(),
+            ) { followed, squad ->
+                (squad as? Loadable.Content)?.value.orEmpty()
+                    .filter { player -> followed.contains(player.id) }
+                    .toImmutableList()
+            }.withInitial(scope, persistentListOf()),
+        ) { state, players -> state.copy(followedPlayers = players) }
     }
 
     private fun observeSources() {

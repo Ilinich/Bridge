@@ -32,6 +32,7 @@ import com.begoml.bridge.uikit.LocalScreenPadding
 import com.begoml.bridge.uikit.component.BridgeBackButton
 import com.begoml.bridge.uikit.component.BridgeTopBar
 import com.begoml.bridge.uikit.component.CutoutImage
+import com.begoml.bridge.uikit.component.FollowButton
 import com.begoml.bridge.uikit.component.GlassPanel
 import com.begoml.bridge.uikit.glass.GlassBackdrop
 import com.begoml.bridge.uikit.glass.GlassScope
@@ -96,6 +97,8 @@ internal fun PlayerScreen(
                 glass = glass,
                 player = players[page],
                 labels = labels,
+                followed = players[page].id in state.followed,
+                onFollowClick = viewModel::onFollowClick,
                 offset = {
                     (pagerState.currentPage - page) + pagerState.currentPageOffsetFraction
                 },
@@ -131,6 +134,8 @@ private fun PlayerPage(
     glass: GlassScope,
     player: Player,
     labels: PlayerLabels,
+    followed: Boolean,
+    onFollowClick: (String) -> Unit,
     offset: () -> Float,
 ) {
     val contentPadding = LocalScreenPadding.current
@@ -158,25 +163,43 @@ private fun PlayerPage(
                         bottom = contentPadding.calculateBottomPadding() + 34.dp,
                     ),
             ) {
-                PlayerFacts(player = player, labels = labels)
+                PlayerFacts(
+                    player = player,
+                    labels = labels,
+                    followed = followed,
+                    onFollowClick = { onFollowClick(player.id) },
+                )
             }
         }
     }
 }
 
 @Composable
-private fun PlayerFacts(player: Player, labels: PlayerLabels) {
+private fun PlayerFacts(
+    player: Player,
+    labels: PlayerLabels,
+    followed: Boolean,
+    onFollowClick: () -> Unit,
+) {
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(9.dp),
     ) {
-        Text(
-            text = player.name,
-            style = MaterialTheme.typography.titleLarge,
-            color = BridgeColors.TextPrimary,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text(
+                text = player.name,
+                style = MaterialTheme.typography.titleLarge,
+                color = BridgeColors.TextPrimary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f, fill = false),
+            )
+            FollowButton(followed = followed, onClick = onFollowClick)
+        }
         Row(modifier = Modifier.fillMaxWidth()) {
             Fact(labels.number, player.shirtNumber, Modifier.weight(1f))
             Fact(labels.position, player.position, Modifier.weight(1.6f))

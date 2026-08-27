@@ -147,7 +147,8 @@ everywhere else.
 | `foundation:logger:api` / `:impl` | the logging contract, and the platform sink behind it |
 | `core:analytics:api` / `:impl` | the `track` entry point; each feature declares its own events |
 | `core:background:api` / `:impl` | daily refresh: WorkManager and `BGTaskScheduler` |
-| `core:connectivity:api` / `:impl` | a headless feature: `ConnectivityManager` and `NWPathMonitor` behind one state flow |
+| `core:connectivity:api` / `:impl` | `ConnectivityManager` and `NWPathMonitor` behind one state flow |
+| `core:favourites:api` / `:impl` | followed players: a state holder with no screen, shared by two feature modules |
 | `core:data` | HTTP clients, DTOs, domain models, repositories |
 | `uikit` | theme, glass surfaces, runtime-shader brushes, components |
 | `navigation:core` | the routing contract, the router, per-tab stacks ([readme](navigation/core/README.md)) |

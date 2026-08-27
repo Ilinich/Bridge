@@ -1,6 +1,6 @@
 package com.begoml.bridge.core.connectivity
 
-import com.begoml.bridge.foundation.tessera.FeatureStateDelegate
+import kotlinx.coroutines.flow.StateFlow
 
 /**
  * Whether the device currently has a usable network.
@@ -10,15 +10,15 @@ import com.begoml.bridge.foundation.tessera.FeatureStateDelegate
  */
 enum class NetworkStatus { Unknown, Online, Offline }
 
-data class ConnectivityState(val status: NetworkStatus = NetworkStatus.Unknown) {
-
-    val isOffline: Boolean get() = status == NetworkStatus.Offline
-}
-
 /**
- * A state holder with no screen of its own.
+ * What the platform says about the network, and nothing about what to do with it.
  *
- * It is a singleton the whole app shares, so every consumer sees the same answer and the platform
- * is watched once. Screens fold [stateFlow] into their own ui state instead of owning a copy.
+ * Deliberately not a state holder: there is no state of ours to keep here and nothing to dispatch
+ * into it. It reports an outside fact, so consumers fold it into their own state.
  */
-interface ConnectivityFeature : FeatureStateDelegate<ConnectivityState>
+interface Connectivity {
+
+    val status: StateFlow<NetworkStatus>
+
+    val isOffline: Boolean get() = status.value == NetworkStatus.Offline
+}

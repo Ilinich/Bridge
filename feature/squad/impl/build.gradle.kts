@@ -8,6 +8,7 @@ kotlin {
             api(projects.feature.squad.api)
 
             implementation(projects.core.analytics.api)
+            implementation(projects.core.favourites.api)
             implementation(projects.foundation.tessera)
             implementation(projects.core.data)
             implementation(projects.navigation.core)

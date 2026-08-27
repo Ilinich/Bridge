@@ -6,7 +6,8 @@ import bridge.feature.matches.impl.generated.resources.fixture_score
 import bridge.feature.matches.impl.generated.resources.fixture_teams
 import bridge.feature.matches.impl.generated.resources.season_round
 import com.begoml.bridge.core.data.model.SeasonRound
-import com.begoml.bridge.core.connectivity.ConnectivityFeature
+import com.begoml.bridge.core.connectivity.Connectivity
+import com.begoml.bridge.core.connectivity.NetworkStatus
 import com.begoml.bridge.core.data.repository.MatchRepository
 import kotlin.time.Clock
 import com.begoml.bridge.core.analytics.Analytics
@@ -70,7 +71,7 @@ data class SeasonUiState(
 internal class SeasonViewModel(
     private val scope: CoroutineScope,
     private val feature: SeasonFeature,
-    private val connectivity: ConnectivityFeature,
+    private val connectivity: Connectivity,
     private val matchRepository: MatchRepository,
     private val router: AppRouter,
     private val ioDispatcher: CoroutineDispatcher,
@@ -80,13 +81,13 @@ internal class SeasonViewModel(
 
     init {
         scope.launch {
-            combine(feature.stateFlow, connectivity.stateFlow) { content, network ->
+            combine(feature.stateFlow, connectivity.status) { content, network ->
                 SeasonUiState(
                     rounds = withContext(ioDispatcher) { content.rounds.toUi() },
                     initialRoundIndex = content.initialRoundIndex,
                     isLoading = content.isLoading,
                     error = content.error,
-                    isOffline = network.isOffline,
+                    isOffline = network == NetworkStatus.Offline,
                 )
             }.collect { built -> updateUiState { built } }
         }

@@ -9,6 +9,7 @@ import bridge.feature.matches.impl.generated.resources.matchday_arena
 import bridge.feature.matches.impl.generated.resources.matchday_capacity
 import bridge.feature.matches.impl.generated.resources.matchday_days
 import bridge.feature.matches.impl.generated.resources.matchday_fixture_failed
+import bridge.feature.matches.impl.generated.resources.matchday_following
 import bridge.feature.matches.impl.generated.resources.matchday_founded
 import bridge.feature.matches.impl.generated.resources.matchday_hours
 import bridge.feature.matches.impl.generated.resources.matchday_kickoff_local
@@ -27,7 +28,8 @@ import com.begoml.bridge.uikit.groupedThousands
 import com.begoml.bridge.core.data.model.Match
 import com.begoml.bridge.foundation.tessera.UiStateDelegate
 import com.begoml.bridge.foundation.tessera.UiStateDelegateImpl
-import com.begoml.bridge.core.connectivity.ConnectivityFeature
+import com.begoml.bridge.core.connectivity.Connectivity
+import com.begoml.bridge.core.connectivity.NetworkStatus
 import com.begoml.bridge.core.data.repository.ClubRepository
 import com.begoml.bridge.core.data.repository.MatchRepository
 import com.begoml.bridge.feature.club.api.ClubRoute
@@ -60,6 +62,7 @@ data class MatchdayLabels(
     val minutes: String,
     val seconds: String,
     val recent: String,
+    val following: String,
     val stadium: String,
     val arena: String,
     val capacity: String,
@@ -102,6 +105,8 @@ data class MatchdayUiState(
     val hasClub: Boolean = false,
     val nextMatch: NextMatchUi? = null,
     val recent: RecentMatchUi? = null,
+    /** The followed players' names, as one line; empty when nobody is followed. */
+    val following: String = "",
     val labels: MatchdayLabels? = null,
     val nextMatchLoaded: Boolean = false,
     val nextMatchFailed: Boolean = false,
@@ -115,7 +120,7 @@ private const val TickMillis = 1_000L
 internal class MatchdayViewModel(
     private val scope: CoroutineScope,
     private val feature: MatchdayFeature,
-    private val connectivity: ConnectivityFeature,
+    private val connectivity: Connectivity,
     private val clock: Clock,
     private val router: AppRouter,
     private val ioDispatcher: CoroutineDispatcher,
@@ -160,7 +165,7 @@ internal class MatchdayViewModel(
                 recent,
                 nextMatch,
                 stadium,
-                connectivity.stateFlow,
+                connectivity.status,
             ) { content, recentUi, nextMatchUi, stadiumUi, network ->
                 MatchdayUiState(
                     backdropUrl = content.club?.media?.fanartUrls?.firstOrNull(),
@@ -168,12 +173,13 @@ internal class MatchdayViewModel(
                     hasClub = content.club != null,
                     nextMatch = nextMatchUi,
                     recent = recentUi,
+                    following = content.followedPlayers.joinToString { player -> player.name },
                     labels = resolved,
                     nextMatchLoaded = content.nextMatchLoaded,
                     nextMatchFailed = content.nextMatchFailed,
                     isLoading = content.isLoading,
                     error = content.error,
-                    isOffline = network.isOffline,
+                    isOffline = network == NetworkStatus.Offline,
                 )
             }.collect { built -> updateUiState { built } }
         }
@@ -233,6 +239,7 @@ internal class MatchdayViewModel(
         minutes = getString(Res.string.matchday_minutes),
         seconds = getString(Res.string.matchday_seconds),
         recent = getString(Res.string.matchday_recent),
+        following = getString(Res.string.matchday_following),
         stadium = getString(Res.string.matchday_stadium),
         arena = getString(Res.string.matchday_arena),
         capacity = getString(Res.string.matchday_capacity),

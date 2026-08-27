@@ -31,6 +31,7 @@ import com.begoml.bridge.foundation.tessera.collectUiState
 import com.begoml.bridge.feature.squad.SquadViewModel
 import com.begoml.bridge.uikit.LocalScreenPadding
 import com.begoml.bridge.uikit.component.CutoutImage
+import com.begoml.bridge.uikit.component.FollowStar
 import com.begoml.bridge.uikit.component.LoadableContent
 import com.begoml.bridge.uikit.glass.EdgeFadeOverhang
 import com.begoml.bridge.uikit.glass.ScrollEdge
@@ -60,8 +61,8 @@ internal fun SquadScreen(viewModel: SquadViewModel, modifier: Modifier = Modifie
 
     Box(modifier = modifier.fillMaxSize()) {
         LoadableContent(
-            isLoading = state.isLoading && state.players.isEmpty(),
-            error = state.error.takeIf { state.players.isEmpty() },
+            isLoading = state.squad.isLoading && state.squad.players.isEmpty(),
+            error = state.squad.error.takeIf { state.squad.players.isEmpty() },
             onRetry = viewModel::retry,
             modifier = Modifier.fillMaxSize().background(BridgeColors.Ground),
         ) {
@@ -80,13 +81,14 @@ internal fun SquadScreen(viewModel: SquadViewModel, modifier: Modifier = Modifie
                 verticalArrangement = Arrangement.spacedBy(9.dp),
             ) {
                 items(
-                    items = state.players,
+                    items = state.squad.players,
                     key = { player -> player.id },
                     contentType = { "player-card" },
                 ) { player ->
                     PlayerCard(
                         player = player,
                         shader = cardShader,
+                        followed = player.id in state.followed,
                         onClick = { viewModel.onPlayerClick(player.id) },
                     )
                 }
@@ -105,7 +107,12 @@ internal fun SquadScreen(viewModel: SquadViewModel, modifier: Modifier = Modifie
 }
 
 @Composable
-private fun PlayerCard(player: Player, shader: AnimatedShader, onClick: () -> Unit) {
+private fun PlayerCard(
+    player: Player,
+    shader: AnimatedShader,
+    followed: Boolean,
+    onClick: () -> Unit,
+) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -126,6 +133,12 @@ private fun PlayerCard(player: Player, shader: AnimatedShader, onClick: () -> Un
             url = player.cutoutUrl,
             modifier = Modifier.fillMaxSize().padding(top = 10.dp, bottom = 46.dp),
         )
+        if (followed) {
+            FollowStar(
+                followed = true,
+                modifier = Modifier.align(Alignment.TopStart).padding(8.dp),
+            )
+        }
         Column(
             modifier = Modifier.align(Alignment.BottomStart).padding(8.dp),
             verticalArrangement = Arrangement.spacedBy(2.dp),

@@ -27,4 +27,5 @@
     <string name="match_win">Won</string>
     <string name="match_draw">Drawn</string>
     <string name="match_loss">Lost</string>
+    <string name="matchday_following">Following</string>
 </resources>

@@ -30,6 +30,7 @@ import com.begoml.bridge.uikit.LocalScreenPadding
 import com.begoml.bridge.uikit.component.BackdropImage
 import com.begoml.bridge.uikit.component.BadgeImage
 import com.begoml.bridge.uikit.component.GlassPanel
+import com.begoml.bridge.uikit.component.FollowStar
 import com.begoml.bridge.uikit.component.LoadableContent
 import com.begoml.bridge.uikit.glass.GlassBackdrop
 import com.begoml.bridge.uikit.glass.GlassScope
@@ -69,6 +70,9 @@ internal fun MatchdayScreen(viewModel: MatchdayViewModel, modifier: Modifier = M
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 with(glass) { HeroCard(state = state, labels = labels, nowMillis = nowMillis) }
+                if (state.following.isNotEmpty()) {
+                    FollowingSection(names = state.following, labels = labels)
+                }
                 state.recent?.let { RecentSection(recent = it, labels = labels) }
                 state.stadium?.let {
                     StadiumSection(
@@ -214,6 +218,31 @@ private fun CountdownCell(value: Long, unit: String) {
     ) {
         Text(text = value.pad2(), style = FigureStyle, color = BridgeColors.TextPrimary)
         Text(text = unit, style = LabelStyle, color = BridgeColors.TextMuted, maxLines = 1)
+    }
+}
+
+/** Followed players, written on the squad screen and only read here. */
+@Composable
+private fun FollowingSection(names: String, labels: MatchdayLabels) {
+    Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
+        Text(text = labels.following, style = LabelStyle, color = BridgeColors.TextMuted)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(BridgeColors.Surface, RoundedCornerShape(12.dp))
+                .padding(10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(9.dp),
+        ) {
+            FollowStar(followed = true)
+            Text(
+                text = names,
+                style = MaterialTheme.typography.labelLarge,
+                color = BridgeColors.TextPrimary,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
     }
 }
 

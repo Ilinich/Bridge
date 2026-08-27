@@ -5,7 +5,8 @@ plugins {
 kotlin {
     sourceSets {
         commonMain.dependencies {
-            api(libs.kotlinx.coroutines.core)
+            api(projects.foundation.tessera)
+            api(libs.kotlinx.collections.immutable)
         }
     }
 }

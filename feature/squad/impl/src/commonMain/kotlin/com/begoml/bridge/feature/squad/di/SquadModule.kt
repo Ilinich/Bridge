@@ -19,6 +19,7 @@ fun squadModule() = module {
         SquadViewModel(
             scope = scope,
             delegate = SquadDelegate(scope = scope, repository = get()),
+            favourites = get(),
             router = get(),
             analytics = get(),
         )
@@ -28,6 +29,7 @@ fun squadModule() = module {
         PlayerViewModel(
             scope = scope,
             delegate = SquadDelegate(scope = scope, repository = get()),
+            favourites = get(),
             router = get(),
             ioDispatcher = get(IoDispatcher),
         )
