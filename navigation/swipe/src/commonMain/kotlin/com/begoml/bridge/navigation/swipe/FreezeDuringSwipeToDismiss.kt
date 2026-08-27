@@ -22,11 +22,11 @@ private const val SettleTailMillis = 350L
 /**
  * Replays the last drawn frame of everything downstream while a screen is being dragged away.
  *
- * For a blurred surface this is the difference between a bar that stays still and one that boils:
- * `hazeEffect` samples whatever the source layer holds under it right now, so while a screen slides
- * out from under a bar the bar's blur re-reads a different picture every frame — and at the moment
- * the pop commits it jumps from one screen's colours to the next. Freezing the draw output keeps
- * the last frame until the gesture ends.
+ * Use it for content whose position moves relative to what it samples — a blur inside the screen
+ * being dragged, for instance. It does **not** stop a blur from following live content: a recorded
+ * layer replays draw commands, and a command that samples a source layer samples the source it
+ * finds at replay time. Measured on the app's own tab bar: its colour tracked the screen sliding
+ * underneath it with the freeze applied.
  *
  * Must sit **before** the effect it freezes in the modifier chain, so it intercepts the draw call
  * rather than being intercepted by it.

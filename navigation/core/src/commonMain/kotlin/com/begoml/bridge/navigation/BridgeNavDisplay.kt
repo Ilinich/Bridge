@@ -1,6 +1,14 @@
 package com.begoml.bridge.navigation
 
+import androidx.compose.animation.ContentTransform
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.slideOut
+import androidx.compose.ui.unit.IntOffset
+import androidx.navigationevent.NavigationEvent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
@@ -21,6 +29,8 @@ import com.begoml.bridge.navigation.swipe.SwipeSensitivity
 import com.begoml.bridge.navigation.swipe.SwipeToDismissSceneStrategy
 
 private const val PushDurationMillis = 260
+private const val PredictivePopMillis = 220
+private const val PredictivePopShiftDivisor = 6
 private const val FadeDurationMillis = 180
 private const val EnterOffsetFraction = 0.12f
 private const val ExitOffsetFraction = 0.06f
@@ -85,7 +95,27 @@ fun swipeBackMetadata(
     edgeWidth: Dp? = null,
     swipeFromAnywhere: Boolean = false,
     freezeBackgroundWhileIdle: Boolean = true,
-): Map<String, Any> = SwipeToDismissSceneStrategy.enabled() +
+): Map<String, Any> = NavDisplay.popTransitionSpec {
+    // The dismiss animation belongs to the gesture, which drives the outgoing screen itself. The
+    // display's own pop would slide the revealed screen in at the same time, and the two together
+    // draw the previous screen twice, a fraction of a width apart — a smear that reads as the
+    // screen being dragged back out from under itself.
+    ContentTransform(
+        targetContentEnter = EnterTransition.None,
+        initialContentExit = ExitTransition.None,
+    )
+} + NavDisplay.predictivePopTransitionSpec { edge ->
+    // System back is the exception: nothing of ours moves then, so the display animates the pop.
+    val direction = if (edge == NavigationEvent.EDGE_RIGHT) -1 else 1
+    ContentTransform(
+        targetContentEnter = EnterTransition.None,
+        initialContentExit = slideOut(
+            animationSpec = tween(PredictivePopMillis, easing = FastOutSlowInEasing),
+        ) { size -> IntOffset(x = direction * size.width / PredictivePopShiftDivisor, y = 0) },
+        sizeTransform = SizeTransform(clip = true),
+        targetContentZIndex = -1f,
+    )
+} + SwipeToDismissSceneStrategy.enabled() +
     SwipeDismissSensitivity.metadata(sensitivity) +
     SwipeEdgeGate.metadata(edgeWidthDp = edgeWidth, swipeFromAnywhere = swipeFromAnywhere) +
     (if (freezeBackgroundWhileIdle) FreezeBackgroundWhileIdle.enabled() else emptyMap())

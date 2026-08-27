@@ -40,7 +40,6 @@ import com.begoml.bridge.navigation.Route
 import com.begoml.bridge.navigation.RouteCodec
 import com.begoml.bridge.navigation.rememberTabbedBackStack
 import com.begoml.bridge.navigation.swipe.LocalSwipeDismissSignal
-import com.begoml.bridge.navigation.swipe.freezeDuringSwipeToDismiss
 import com.begoml.bridge.navigation.swipe.rememberSwipeDismissSignal
 import com.begoml.bridge.uikit.LocalScreenPadding
 import com.begoml.bridge.uikit.component.BridgeIcon
@@ -117,9 +116,6 @@ fun App() {
                 },
             ) {
                 BridgeTabBar(
-                    // Before the bar's own blur in the chain: the frozen frame is what the blur
-                    // would otherwise recompute against a screen that is moving underneath it.
-                    modifier = Modifier.freezeDuringSwipeToDismiss(),
                     tabs = tabs,
                     selectedIndex = backStack.selectedTab,
                     onSelect = { index ->
