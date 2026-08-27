@@ -39,6 +39,9 @@ import com.begoml.bridge.navigation.router.NavigationHost
 import com.begoml.bridge.navigation.Route
 import com.begoml.bridge.navigation.RouteCodec
 import com.begoml.bridge.navigation.rememberTabbedBackStack
+import com.begoml.bridge.navigation.swipe.LocalSwipeDismissSignal
+import com.begoml.bridge.navigation.swipe.freezeDuringSwipeToDismiss
+import com.begoml.bridge.navigation.swipe.rememberSwipeDismissSignal
 import com.begoml.bridge.uikit.LocalScreenPadding
 import com.begoml.bridge.uikit.component.BridgeIcon
 import com.begoml.bridge.uikit.component.BridgeTab
@@ -92,7 +95,15 @@ fun App() {
         val tabs = bridgeTabs()
         val contentPadding = screenPadding()
 
-        CompositionLocalProvider(LocalScreenPadding provides contentPadding) {
+        // The bars are drawn over the navigation host, not inside it, so a screen sliding away
+        // under them is invisible to anything scoped to that screen. The signal is provided here,
+        // above both, and written from inside the host.
+        val swipeSignal = rememberSwipeDismissSignal()
+
+        CompositionLocalProvider(
+            LocalScreenPadding provides contentPadding,
+            LocalSwipeDismissSignal provides swipeSignal,
+        ) {
             GlassBackdrop(
                 modifier = Modifier.fillMaxSize(),
                 backdrop = {
@@ -106,6 +117,9 @@ fun App() {
                 },
             ) {
                 BridgeTabBar(
+                    // Before the bar's own blur in the chain: the frozen frame is what the blur
+                    // would otherwise recompute against a screen that is moving underneath it.
+                    modifier = Modifier.freezeDuringSwipeToDismiss(),
                     tabs = tabs,
                     selectedIndex = backStack.selectedTab,
                     onSelect = { index ->

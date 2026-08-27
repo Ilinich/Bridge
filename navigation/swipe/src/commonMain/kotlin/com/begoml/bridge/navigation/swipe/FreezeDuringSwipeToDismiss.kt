@@ -3,6 +3,7 @@ package com.begoml.bridge.navigation.swipe
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
@@ -17,6 +18,39 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 
 private const val SettleTailMillis = 350L
+
+/**
+ * Replays the last drawn frame of everything downstream while a screen is being dragged away.
+ *
+ * For a blurred surface this is the difference between a bar that stays still and one that boils:
+ * `hazeEffect` samples whatever the source layer holds under it right now, so while a screen slides
+ * out from under a bar the bar's blur re-reads a different picture every frame — and at the moment
+ * the pop commits it jumps from one screen's colours to the next. Freezing the draw output keeps
+ * the last frame until the gesture ends.
+ *
+ * Must sit **before** the effect it freezes in the modifier chain, so it intercepts the draw call
+ * rather than being intercepted by it.
+ */
+@Composable
+fun Modifier.freezeDuringSwipeToDismiss(): Modifier {
+    val signal = LocalSwipeDismissSignal.current
+    val predictiveBack by rememberPredictiveBackInProgress()
+    val layer = rememberGraphicsLayer()
+    var hasSnapshot by remember { mutableStateOf(false) }
+    return this.then(
+        Modifier.drawWithContent {
+            if (signal.isActive || predictiveBack) {
+                if (hasSnapshot) drawLayer(layer)
+                return@drawWithContent
+            }
+            layer.record(size = IntSize(size.width.toInt(), size.height.toInt())) {
+                this@drawWithContent.drawContent()
+            }
+            drawLayer(layer)
+            if (!hasSnapshot) hasSnapshot = true
+        },
+    )
+}
 
 /**
  * Observes whether a system predictive-back gesture is currently in progress.

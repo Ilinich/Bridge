@@ -14,8 +14,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -39,9 +39,9 @@ import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.input.pointer.util.VelocityTracker
-import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
@@ -76,6 +76,7 @@ internal fun SwipeToDismissLayout(
     sensitivity: SwipeSensitivity = SwipeSensitivity.Default,
     modifier: Modifier = Modifier,
 ) {
+    val swipeSignal = LocalSwipeDismissSignal.current
     val density = LocalDensity.current
     val screenWidth = LocalWindowInfo.current.containerSize.width.toFloat().coerceAtLeast(1f)
     val isPredictiveBackInProgress by rememberPredictiveBackInProgress()
@@ -89,7 +90,9 @@ internal fun SwipeToDismissLayout(
     val shapeMax = remember(maxCornerRadiusDp) { RoundedCornerShape(maxCornerRadiusDp.dp) }
     val edgePx = remember(edgeWidthDp, density) { edgeWidthDp?.let { with(density) { it.toPx() } } }
 
-    val offsetX = remember { Animatable(0f) }
+    // Lower-bounded: a settle must never carry the foreground left of its home, where the
+    // background is still parallaxed and the right edge of the window would show a gap.
+    val offsetX = remember { Animatable(0f).apply { updateBounds(lowerBound = 0f) } }
     val scope = rememberCoroutineScope()
 
     // Kept current rather than captured: launchSettleAnimation lives in a remember that is not
@@ -107,6 +110,8 @@ internal fun SwipeToDismissLayout(
     var dragOffset by remember { mutableFloatStateOf(0f) }
     var isNestedScrollDragging by remember { mutableStateOf(false) }
     var isDismissed by remember { mutableStateOf(false) }
+    var isTouchDown by remember { mutableStateOf(false) }
+    var foregroundSnapshotInvalid by remember { mutableStateOf(false) }
     var animationJob by remember { mutableStateOf<Job?>(null) }
 
     fun launchSettleAnimation(targetOffset: Float, velocity: Float) {
@@ -118,7 +123,11 @@ internal fun SwipeToDismissLayout(
                 isDismissed = true
                 currentOnDismiss()
             } else {
-                offsetX.animateTo(0f, spring(dampingRatio = Spring.DampingRatioMediumBouncy))
+                offsetX.animateTo(
+                    targetValue = 0f,
+                    animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy),
+                    initialVelocity = velocity,
+                )
             }
         }
     }
@@ -130,7 +139,10 @@ internal fun SwipeToDismissLayout(
         }
     }
 
-    val nestedScrollConnection = remember {
+    val touchSlop = LocalViewConfiguration.current.touchSlop
+    val arbiter = remember(touchSlop) { NestedScrollSwipeArbiter(touchSlop) }
+
+    val nestedScrollConnection = remember(arbiter) {
         object : NestedScrollConnection {
             override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
                 if (!isNestedScrollDragging || source != NestedScrollSource.UserInput) return Offset.Zero
@@ -142,17 +154,29 @@ internal fun SwipeToDismissLayout(
             }
 
             override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset {
-                if (source != NestedScrollSource.UserInput || available.x <= 0f) return Offset.Zero
-                if (isDragging) return Offset.Zero
+                val isUserGesture = source == NestedScrollSource.UserInput && !isDragging
+                if (!isUserGesture) return Offset.Zero
+
                 if (!isNestedScrollDragging) {
+                    val arms = isTouchDown &&
+                        arbiter.shouldArm(consumed = consumed, available = available)
+                    if (!arms) return Offset.Zero
                     isNestedScrollDragging = true
+                    foregroundSnapshotInvalid = true
                     dragOffset = 0f
                 }
-                dragOffset = (dragOffset + available.x).coerceAtLeast(0f)
-                return Offset(available.x, 0f)
+                // Every sample reaches the arbiter above, including the leftward ones: the
+                // verdict is about the direction of the whole gesture, not of one frame.
+                return if (available.x <= 0f) {
+                    Offset.Zero
+                } else {
+                    dragOffset = (dragOffset + available.x).coerceAtLeast(0f)
+                    Offset(available.x, 0f)
+                }
             }
 
             override suspend fun onPreFling(available: Velocity): Velocity {
+                arbiter.reset()
                 if (!isNestedScrollDragging) return Velocity.Zero
                 isNestedScrollDragging = false
                 val velocity = available.x
@@ -171,12 +195,7 @@ internal fun SwipeToDismissLayout(
     var hasBeenResumed by remember { mutableStateOf(false) }
     val backgroundLayer = rememberGraphicsLayer()
     val foregroundLayer = rememberGraphicsLayer()
-    var hasForegroundSnapshot by remember { mutableStateOf(false) }
-    var foregroundSnapshotInvalid by remember { mutableStateOf(true) }
     var hasBackgroundSnapshot by remember { mutableStateOf(false) }
-    var isTouchDown by remember { mutableStateOf(false) }
-
-    LaunchedEffect(isTouchDown) { if (isTouchDown) foregroundSnapshotInvalid = true }
 
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
@@ -198,6 +217,12 @@ internal fun SwipeToDismissLayout(
     val isFullyCoveredByForeground = freezeBackgroundWhileIdle && isResumed &&
         !isDismissed && !isBeingRemoved && !isInteracting && hasBackgroundSnapshot
 
+    SideEffect { swipeSignal.isActive = isSwiping }
+
+    DisposableEffect(swipeSignal) {
+        onDispose { swipeSignal.isActive = false }
+    }
+
     Box(modifier = modifier.fillMaxSize()) {
         Box(
             modifier = Modifier.fillMaxSize().graphicsLayer {
@@ -210,14 +235,10 @@ internal fun SwipeToDismissLayout(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .layout { measurable, constraints ->
-                            if (isFullyCoveredByForeground) {
-                                layout(constraints.maxWidth, constraints.maxHeight) {}
-                            } else {
-                                val placeable = measurable.measure(constraints)
-                                layout(placeable.width, placeable.height) { placeable.place(0, 0) }
-                            }
-                        }
+                        // Draw is what gets skipped while the foreground covers this; measure and
+                        // placement are not. A subtree that skipped measure would be exposed
+                        // unplaced on the first frame of a gesture — one frame of a screen missing
+                        // whatever its layout decides, which for a bottom-anchored bar is the bar.
                         .drawWithContent {
                             if (isFullyCoveredByForeground) return@drawWithContent
                             if (predictiveBackActive) return@drawWithContent
@@ -246,6 +267,7 @@ internal fun SwipeToDismissLayout(
                     awaitEachGesture {
                         awaitFirstDown(requireUnconsumed = false)
                         isTouchDown = true
+                        arbiter.reset()
                         try {
                             do {
                                 val event = awaitPointerEvent()
@@ -275,6 +297,7 @@ internal fun SwipeToDismissLayout(
                         keyboardController?.hide()
                         animationJob?.cancel()
                         isDragging = true
+                        foregroundSnapshotInvalid = true
                         dragOffset = (offsetX.value + slopOver).coerceAtLeast(0f)
                         velocityTracker.resetTracking()
                         velocityTracker.addPosition(drag.uptimeMillis, drag.position)
@@ -315,24 +338,23 @@ internal fun SwipeToDismissLayout(
         ) {
             Box(
                 modifier = Modifier.fillMaxSize().drawWithContent {
+                    // Recording takes precedence over replaying: a snapshot invalidated in the
+                    // same frame a gesture is accepted must be refreshed, not replayed stale for
+                    // the whole swipe. Idle content draws live, so an idle screen pays nothing.
                     when {
-                        isSwiping && hasForegroundSnapshot -> drawLayer(foregroundLayer)
-                        !isSwiping && (foregroundSnapshotInvalid || isTouchDown) -> {
+                        foregroundSnapshotInvalid -> {
                             foregroundLayer.record(size = IntSize(size.width.toInt(), size.height.toInt())) {
                                 this@drawWithContent.drawContent()
                             }
                             drawLayer(foregroundLayer)
-                            if (!hasForegroundSnapshot) hasForegroundSnapshot = true
-                            if (foregroundSnapshotInvalid) foregroundSnapshotInvalid = false
+                            foregroundSnapshotInvalid = false
                         }
-                        !isSwiping -> drawContent()
+                        isSwiping -> drawLayer(foregroundLayer)
                         else -> drawContent()
                     }
                 },
             ) {
-                CompositionLocalProvider(LocalSwipeToDismissActive provides isSwiping) {
-                    foregroundContent()
-                }
+                foregroundContent()
             }
         }
     }

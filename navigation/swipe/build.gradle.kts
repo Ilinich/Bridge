@@ -8,5 +8,8 @@ kotlin {
             api(libs.navigation3.ui)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
         }
+        commonTest.dependencies {
+            implementation(libs.kotlin.test)
+        }
     }
 }
