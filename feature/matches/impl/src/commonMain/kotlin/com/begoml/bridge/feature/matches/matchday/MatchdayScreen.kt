@@ -20,6 +20,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -38,6 +39,7 @@ import com.begoml.bridge.uikit.component.OfflineNotice
 import com.begoml.bridge.uikit.theme.BridgeColors
 import com.begoml.bridge.uikit.theme.FigureStyle
 import com.begoml.bridge.uikit.theme.LabelStyle
+import kotlinx.collections.immutable.ImmutableList
 
 /** Vertical breathing room for the whole column; the window inset alone sits it flush. */
 private val ScreenVerticalPadding = 16.dp
@@ -71,7 +73,11 @@ internal fun MatchdayScreen(viewModel: MatchdayViewModel, modifier: Modifier = M
             ) {
                 with(glass) { HeroCard(state = state, labels = labels, nowMillis = nowMillis) }
                 if (state.following.isNotEmpty()) {
-                    FollowingSection(names = state.following, labels = labels)
+                    FollowingSection(
+                        players = state.following,
+                        labels = labels,
+                        onPlayerClick = viewModel::onFollowedPlayerClick,
+                    )
                 }
                 state.recent?.let { RecentSection(recent = it, labels = labels) }
                 state.stadium?.let {
@@ -223,25 +229,35 @@ private fun CountdownCell(value: Long, unit: String) {
 
 /** Followed players, written on the squad screen and only read here. */
 @Composable
-private fun FollowingSection(names: String, labels: MatchdayLabels) {
+private fun FollowingSection(
+    players: ImmutableList<FollowedPlayerUi>,
+    labels: MatchdayLabels,
+    onPlayerClick: (String) -> Unit,
+) {
     Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
         Text(text = labels.following, style = LabelStyle, color = BridgeColors.TextMuted)
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(BridgeColors.Surface, RoundedCornerShape(12.dp))
-                .padding(10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(9.dp),
-        ) {
-            FollowStar(followed = true)
-            Text(
-                text = names,
-                style = MaterialTheme.typography.labelLarge,
-                color = BridgeColors.TextPrimary,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            players.forEach { player ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .clickable { onPlayerClick(player.id) }
+                        .background(BridgeColors.Surface)
+                        .padding(10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(9.dp),
+                ) {
+                    FollowStar(followed = true)
+                    Text(
+                        text = player.name,
+                        style = MaterialTheme.typography.labelLarge,
+                        color = BridgeColors.TextPrimary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
         }
     }
 }

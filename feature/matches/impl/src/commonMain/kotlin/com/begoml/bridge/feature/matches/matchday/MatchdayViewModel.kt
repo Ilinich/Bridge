@@ -33,8 +33,12 @@ import com.begoml.bridge.core.connectivity.NetworkStatus
 import com.begoml.bridge.core.data.repository.ClubRepository
 import com.begoml.bridge.core.data.repository.MatchRepository
 import com.begoml.bridge.feature.club.api.ClubRoute
+import com.begoml.bridge.feature.squad.api.PlayerDetailRoute
 import com.begoml.bridge.navigation.router.AppRouter
 import com.begoml.bridge.navigation.router.navigateTo
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
@@ -68,6 +72,9 @@ data class MatchdayLabels(
     val capacity: String,
     val founded: String,
 )
+
+/** A followed player, carrying the id the screen needs to open them. */
+data class FollowedPlayerUi(val id: String, val name: String)
 
 /** The fixture with its text already built, so the clock cannot make the screen reformat it. */
 data class NextMatchUi(
@@ -105,8 +112,8 @@ data class MatchdayUiState(
     val hasClub: Boolean = false,
     val nextMatch: NextMatchUi? = null,
     val recent: RecentMatchUi? = null,
-    /** The followed players' names, as one line; empty when nobody is followed. */
-    val following: String = "",
+    /** The followed players, in squad order; empty when nobody is followed. */
+    val following: ImmutableList<FollowedPlayerUi> = persistentListOf(),
     val labels: MatchdayLabels? = null,
     val nextMatchLoaded: Boolean = false,
     val nextMatchFailed: Boolean = false,
@@ -173,7 +180,9 @@ internal class MatchdayViewModel(
                     hasClub = content.club != null,
                     nextMatch = nextMatchUi,
                     recent = recentUi,
-                    following = content.followedPlayers.joinToString { player -> player.name },
+                    following = content.followedPlayers
+                        .map { player -> FollowedPlayerUi(id = player.id, name = player.name) }
+                        .toImmutableList(),
                     labels = resolved,
                     nextMatchLoaded = content.nextMatchLoaded,
                     nextMatchFailed = content.nextMatchFailed,
@@ -197,6 +206,10 @@ internal class MatchdayViewModel(
 
     fun onStadiumClick() {
         router.navigateTo(ClubRoute)
+    }
+
+    fun onFollowedPlayerClick(playerId: String) {
+        router.navigateTo(PlayerDetailRoute(playerId))
     }
 
     private fun Match.toUi() = NextMatchUi(
