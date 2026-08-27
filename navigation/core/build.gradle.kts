@@ -11,5 +11,8 @@ kotlin {
             api(libs.lifecycle.viewmodel.navigation3)
             implementation(libs.koin.core)
         }
+        commonTest.dependencies {
+            implementation(libs.kotlin.test)
+        }
     }
 }

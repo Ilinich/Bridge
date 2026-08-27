@@ -36,11 +36,14 @@ private class WorkManagerRefresh(
             )
             .build()
 
-        // KEEP rather than REPLACE: every launch calls schedule(), and replacing would restart the
-        // period each time, so on a phone opened daily the work would never come due.
+        // UPDATE rather than KEEP or REPLACE. REPLACE would restart the period on every launch,
+        // so on a phone opened daily the work would never come due. KEEP has a subtler failure:
+        // the enqueued record stores the worker's class name, so a class that moves package —
+        // as this one did — leaves every existing install pointing at a name that no longer
+        // resolves, with no way to correct it. UPDATE rewrites the record and keeps the schedule.
         WorkManager.getInstance(context).enqueueUniquePeriodicWork(
             RefreshTaskId,
-            ExistingPeriodicWorkPolicy.KEEP,
+            ExistingPeriodicWorkPolicy.UPDATE,
             request,
         )
         logger.info(RefreshTag, "scheduled every $RefreshIntervalHours h")

@@ -84,23 +84,40 @@ class TabbedBackStack internal constructor(
     internal fun snapshot(): List<List<String>> = stacks.map { stack -> stack.map { it.key } }
 }
 
+/**
+ * Rebuilds the stacks from the keys that were saved.
+ *
+ * A key nobody can decode is dropped — there is nothing else to do with it — but it is reported
+ * rather than swallowed. Silence here is the dangerous outcome: a feature left out of the graph,
+ * a codec never registered or a key renamed all show up as a stack that is quietly shorter than
+ * the one the person left, on a path that only runs after the process was killed.
+ */
+internal fun restoreStacks(
+    saved: List<List<String>>,
+    codecs: List<RouteCodec>,
+    onUnknownKey: (String) -> Unit,
+): List<List<Route>> = saved.map { keys ->
+    keys.mapNotNull { key ->
+        val route = codecs.firstNotNullOfOrNull { codec -> codec.decode(key) }
+        if (route == null) onUnknownKey(key)
+        route
+    }
+}
+
 private fun tabbedBackStackSaver(
     roots: List<Route>,
     codecs: List<RouteCodec>,
+    onUnknownKey: (String) -> Unit,
 ): Saver<TabbedBackStack, Any> =
     listSaver(
         save = { stack -> listOf(stack.selectedTab) + stack.snapshot() },
         restore = { saved ->
             @Suppress("UNCHECKED_CAST")
-            val stacks = saved.drop(1).map { raw ->
-                (raw as List<String>).mapNotNull { key ->
-                    codecs.firstNotNullOfOrNull { codec -> codec.decode(key) }
-                }
-            }
+            val keys = saved.drop(1).map { raw -> raw as List<String> }
             TabbedBackStack(
                 roots = roots,
                 initialTab = saved.firstOrNull() as? Int ?: 0,
-                initialStacks = stacks,
+                initialStacks = restoreStacks(keys, codecs, onUnknownKey),
             )
         },
     )
@@ -109,5 +126,8 @@ private fun tabbedBackStackSaver(
 fun rememberTabbedBackStack(
     roots: List<Route>,
     codecs: List<RouteCodec>,
+    onUnknownKey: (String) -> Unit = {},
 ): TabbedBackStack =
-    rememberSaveable(saver = tabbedBackStackSaver(roots, codecs)) { TabbedBackStack(roots) }
+    rememberSaveable(saver = tabbedBackStackSaver(roots, codecs, onUnknownKey)) {
+        TabbedBackStack(roots)
+    }

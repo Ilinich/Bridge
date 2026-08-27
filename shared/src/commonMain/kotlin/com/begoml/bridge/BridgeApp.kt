@@ -31,6 +31,8 @@ import com.begoml.bridge.feature.matches.api.MatchdayRoute
 import com.begoml.bridge.feature.matches.api.SeasonRoute
 import com.begoml.bridge.feature.squad.api.SquadRoute
 import com.begoml.bridge.core.analytics.Analytics
+import com.begoml.bridge.foundation.logger.Logger
+import com.begoml.bridge.foundation.logger.warn
 import com.begoml.bridge.analytics.AppOpened
 import com.begoml.bridge.analytics.TabSelected
 import com.begoml.bridge.navigation.BridgeTabPager
@@ -55,6 +57,7 @@ import org.koin.compose.koinInject
 /** Tab-bar height plus the gap above and below it; screens scroll behind all of it. */
 private val TabBarInset = 70.dp
 private const val CrossfadeMillis = 150
+private const val NavigationTag = "Navigation"
 
 private val TabRoutes: List<Route> = listOf(MatchdayRoute, SeasonRoute, SquadRoute, ClubRoute)
 
@@ -85,7 +88,12 @@ fun App() {
 
         LaunchedEffect(analytics) { analytics.track(AppOpened) }
 
-        val backStack = rememberTabbedBackStack(roots = TabRoutes, codecs = codecs)
+        val logger: Logger = koinInject()
+        val backStack = rememberTabbedBackStack(
+            roots = TabRoutes,
+            codecs = codecs,
+            onUnknownKey = { key -> logger.warn(NavigationTag, "no codec for the saved route $key") },
+        )
         DisposableEffect(backStack) {
             host.attach(backStack)
             onDispose { host.detach() }

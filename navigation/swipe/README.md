@@ -32,5 +32,21 @@ work on the way past.
 **The background is frozen while the gesture is idle.** Redrawing a screen nobody is dragging
 costs frames for nothing; `FreezeBackgroundWhileIdle` holds the last frame until the drag starts.
 
-A screen that owns a horizontal gesture of its own — a pager — must not opt in, or the two will
-fight over the same drag.
+A screen that owns a horizontal gesture of its own — a pager — may still opt in, but it has to say
+when the dismiss is allowed: `Modifier.consumeHorizontalSwipeToDismissWhenNotAtStart(state)` lets
+the screen go only when the gesture began with the pager at its first page, deciding once per
+gesture. Without it the two fight over the same drag.
+
+**The pop must not be animated by the display.** A swipe-back entry carries
+`EnterTransition.None` / `ExitTransition.None` for its pop transition, because the gesture already
+drives the outgoing screen. Leave the display's own pop in place and the previous screen is drawn
+twice, a fraction of a width apart, for the length of the commit.
+
+## What is deliberately not here
+
+**Keyboard handling.** A gesture that starts while the IME is up should dismiss the keyboard
+rather than the screen, and a nested-scroll gesture should do the same. This app has no text
+input, so the branches would be code no test and no hand could reach.
+
+**Trace sections.** The gesture is a natural thing to instrument, but a systrace marker is only
+worth its noise next to a profiling workflow that reads it. There is none here.
