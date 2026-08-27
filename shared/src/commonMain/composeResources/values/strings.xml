@@ -1,5 +1,4 @@
 <resources>
-    <string name="app_name">Bridge</string>
     <string name="tab_matchday">Matchday</string>
     <string name="tab_season">Season</string>
     <string name="tab_squad">Squad</string>

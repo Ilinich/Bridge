@@ -1,6 +1,5 @@
 package com.begoml.bridge.foundation.background.impl
 
-import com.begoml.bridge.foundation.background.BackgroundRefresh
 import org.koin.core.module.Module
 import org.koin.dsl.module
 
@@ -15,7 +14,3 @@ fun backgroundModule() = module {
     bindBackgroundRefresh()
 }
 
-/** Does nothing, for a platform with no background scheduling worth the wiring. */
-internal class NoBackgroundRefresh : BackgroundRefresh {
-    override fun schedule() = Unit
-}

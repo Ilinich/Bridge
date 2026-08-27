@@ -2,7 +2,6 @@
     <string name="uikit_retry">Try again</string>
     <string name="uikit_error_title">Could not load</string>
     <string name="uikit_error_body">Check the connection and try again.</string>
-    <string name="uikit_back">Back</string>
     <string name="video_play">Play</string>
     <string name="video_pause">Pause</string>
     <string name="video_mute">Mute</string>

@@ -81,14 +81,6 @@ fun <State, Action, Event> feature(
     scope: CoroutineScope,
 ): SimpleFeature<State, Action, Event> = FeatureImpl(initialState, Unit, scope)
 
-/** A [feature] that also carries state of its own, hidden from the UI. */
-fun <State, Action, Event, InternalState> internalStateFeature(
-    initialState: State,
-    initialInternalState: InternalState,
-    scope: CoroutineScope,
-): Feature<State, Action, Event, InternalState> =
-    FeatureImpl(initialState, initialInternalState, scope)
-
 private class FeatureImpl<State, Action, Event, InternalState>(
     initialState: State,
     initialInternalState: InternalState,

@@ -56,16 +56,8 @@ class TabbedBackStack internal constructor(
         if (canPop) current.removeAt(current.lastIndex)
     }
 
-    fun popToRoot() {
-        while (canPop) pop()
-    }
 
-    /** Pops until [route] is on top; leaves the stack alone when it does not hold it. */
-    fun popTo(route: Route) {
-        if (!contains(route)) return
-        while (canPop && current.last() != route) pop()
-    }
-
+    
     fun contains(route: Route): Boolean = current.contains(route)
 
     /**
