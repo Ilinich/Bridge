@@ -155,7 +155,8 @@ everywhere else.
 | `navigation:swipe` | swipe-to-dismiss, knowing nothing about this app ([readme](navigation/swipe/README.md)) |
 | `feature:club:api` / `:impl` | club profile and its ground |
 | `feature:matches:api` / `:impl` | matchday, season calendar, match detail |
-| `feature:squad:api` / `:impl` | squad grid, player pager |
+| `feature:squad:api` / `:impl` | squad grid |
+| `feature:player:api` / `:impl` | player pager, and the only screen that writes |
 | `detekt-rules` | the custom static-analysis rule |
 | `benchmark` | baseline-profile generator and startup / scroll benchmarks |
 | `shared` | dependency graph, navigation host, iOS framework |

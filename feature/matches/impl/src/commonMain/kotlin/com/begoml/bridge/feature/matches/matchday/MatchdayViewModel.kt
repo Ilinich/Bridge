@@ -33,7 +33,7 @@ import com.begoml.bridge.core.connectivity.NetworkStatus
 import com.begoml.bridge.core.data.repository.ClubRepository
 import com.begoml.bridge.core.data.repository.MatchRepository
 import com.begoml.bridge.feature.club.api.ClubRoute
-import com.begoml.bridge.feature.squad.api.PlayerDetailRoute
+import com.begoml.bridge.feature.player.api.PlayerDetailRoute
 import com.begoml.bridge.navigation.router.AppRouter
 import com.begoml.bridge.navigation.router.navigateTo
 import kotlinx.collections.immutable.ImmutableList

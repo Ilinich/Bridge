@@ -30,6 +30,7 @@ kotlin {
             implementation(projects.feature.matches.api)
             implementation(projects.feature.matches.impl)
             implementation(projects.feature.squad.api)
+            implementation(projects.feature.player.impl)
             implementation(projects.feature.squad.impl)
             implementation(projects.navigation.core)
             implementation(projects.uikit)

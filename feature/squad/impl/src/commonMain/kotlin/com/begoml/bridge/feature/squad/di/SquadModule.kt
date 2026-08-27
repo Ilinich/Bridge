@@ -1,7 +1,5 @@
 package com.begoml.bridge.feature.squad.di
 
-import com.begoml.bridge.core.data.di.IoDispatcher
-import com.begoml.bridge.feature.squad.PlayerViewModel
 import com.begoml.bridge.feature.squad.grid.SquadDelegate
 import com.begoml.bridge.foundation.tessera.stateHolderScope
 import com.begoml.bridge.feature.squad.SquadNavigationEntry
@@ -22,16 +20,6 @@ fun squadModule() = module {
             following = get(),
             router = get(),
             analytics = get(),
-        )
-    }
-    viewModel {
-        val scope = stateHolderScope()
-        PlayerViewModel(
-            scope = scope,
-            delegate = SquadDelegate(scope = scope, repository = get()),
-            following = get(),
-            router = get(),
-            ioDispatcher = get(IoDispatcher),
         )
     }
     single { SquadNavigationEntry() } bind FeatureNavigationEntry::class

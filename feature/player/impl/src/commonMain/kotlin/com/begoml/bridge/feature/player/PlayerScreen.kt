@@ -1,4 +1,4 @@
-package com.begoml.bridge.feature.squad.player
+package com.begoml.bridge.feature.player
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -26,8 +26,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.begoml.bridge.core.data.model.Player
 import com.begoml.bridge.foundation.tessera.collectUiState
-import com.begoml.bridge.feature.squad.PlayerLabels
-import com.begoml.bridge.feature.squad.PlayerViewModel
 import com.begoml.bridge.uikit.LocalScreenPadding
 import com.begoml.bridge.uikit.component.BridgeBackButton
 import com.begoml.bridge.uikit.component.BridgeTopBar

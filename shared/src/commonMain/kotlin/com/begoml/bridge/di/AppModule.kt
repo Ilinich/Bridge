@@ -9,6 +9,7 @@ import com.begoml.bridge.foundation.logger.impl.loggerModule
 import com.begoml.bridge.feature.club.di.clubModule
 import com.begoml.bridge.navigation.di.navigationModule
 import com.begoml.bridge.feature.matches.di.matchesModule
+import com.begoml.bridge.feature.player.di.playerModule
 import com.begoml.bridge.feature.squad.di.squadModule
 import com.begoml.bridge.ioDispatcher
 import org.koin.core.KoinApplication
@@ -36,6 +37,6 @@ fun startBridge(
             refreshModule(),
         ) +
             dataModules(ioDispatcher) + navigationModule() +
-            matchesModule() + squadModule() + clubModule(),
+            matchesModule() + squadModule() + playerModule() + clubModule(),
     )
 }
