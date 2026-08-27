@@ -23,6 +23,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.graphics.Color
@@ -90,6 +92,7 @@ private fun TabItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val haptics = LocalHapticFeedback.current
     val tint by animateColorAsState(
         targetValue = if (selected) BridgeColors.ClubBright else BridgeColors.TextMuted,
     )
@@ -101,7 +104,12 @@ private fun TabItem(
             .clip(CircleShape)
             // The label is gone from the screen but not from the tab: it stays the accessible
             // name, so a screen reader still announces which tab this is.
-            .clickable(onClickLabel = tab.label, onClick = onClick)
+            // Only on a change of tab: the already-selected tab does nothing, and a control that
+            // buzzes without doing anything teaches the user to distrust the feedback.
+            .clickable(onClickLabel = tab.label) {
+                if (!selected) haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
+                onClick()
+            }
             .semantics { contentDescription = tab.label },
         horizontalArrangement = Arrangement.spacedBy(5.dp, Alignment.CenterHorizontally),
         verticalAlignment = Alignment.CenterVertically,
