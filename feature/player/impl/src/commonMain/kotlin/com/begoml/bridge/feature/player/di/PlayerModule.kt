@@ -1,6 +1,6 @@
 package com.begoml.bridge.feature.player.di
 
-import com.begoml.bridge.core.data.di.IoDispatcher
+import com.begoml.bridge.foundation.coroutines.DispatcherProvider
 import com.begoml.bridge.feature.player.PlayerDelegate
 import com.begoml.bridge.feature.player.PlayerNavigationEntry
 import com.begoml.bridge.feature.player.PlayerViewModel
@@ -20,7 +20,7 @@ fun playerModule() = module {
             delegate = PlayerDelegate(scope = scope, repository = get()),
             following = get(),
             router = get(),
-            ioDispatcher = get(IoDispatcher),
+            ioDispatcher = get<DispatcherProvider>().io,
         )
     }
     single { PlayerNavigationEntry() } bind FeatureNavigationEntry::class

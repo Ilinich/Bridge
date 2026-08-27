@@ -1,6 +1,6 @@
 package com.begoml.bridge.feature.club.di
 
-import com.begoml.bridge.core.data.di.IoDispatcher
+import com.begoml.bridge.foundation.coroutines.DispatcherProvider
 import com.begoml.bridge.feature.club.ClubNavigationEntry
 import com.begoml.bridge.feature.club.ClubDelegate
 import com.begoml.bridge.feature.club.ClubViewModel
@@ -18,7 +18,7 @@ fun clubModule() = module {
         ClubViewModel(
             scope = scope,
             delegate = ClubDelegate(scope = scope, repository = get()),
-            ioDispatcher = get(IoDispatcher),
+            ioDispatcher = get<DispatcherProvider>().io,
             analytics = get(),
         )
     }

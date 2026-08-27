@@ -1,10 +1,10 @@
 package com.begoml.bridge.core.data.db
 
+import com.begoml.bridge.foundation.coroutines.DispatcherProvider
 import android.content.Context
 import androidx.room.Room
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import kotlinx.coroutines.CoroutineDispatcher
-import com.begoml.bridge.core.data.di.IoDispatcher
 import org.koin.core.module.Module
 import org.koin.dsl.module
 
@@ -28,6 +28,6 @@ internal class AndroidDatabaseFactory(
 
 actual fun platformDatabaseModule(): Module = module {
     single<DatabaseFactory> {
-        AndroidDatabaseFactory(context = get<Context>(), queryDispatcher = get(IoDispatcher))
+        AndroidDatabaseFactory(context = get<Context>(), queryDispatcher = get<DispatcherProvider>().io)
     }
 }

@@ -11,7 +11,6 @@ import com.begoml.bridge.navigation.di.navigationModule
 import com.begoml.bridge.feature.matches.di.matchesModule
 import com.begoml.bridge.feature.player.di.playerModule
 import com.begoml.bridge.feature.squad.di.squadModule
-import com.begoml.bridge.ioDispatcher
 import org.koin.core.KoinApplication
 import org.koin.core.context.startKoin
 import org.koin.dsl.KoinAppDeclaration
@@ -36,7 +35,7 @@ fun startBridge(
             backgroundModule(),
             refreshModule(),
         ) +
-            dataModules(ioDispatcher) + navigationModule() +
+            dataModules() + navigationModule() +
             matchesModule() + squadModule() + playerModule() + clubModule(),
     )
 }

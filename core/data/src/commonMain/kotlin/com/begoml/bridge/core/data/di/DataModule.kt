@@ -1,5 +1,6 @@
 package com.begoml.bridge.core.data.di
 
+import com.begoml.bridge.foundation.coroutines.DispatcherProvider
 import com.begoml.bridge.core.data.db.BridgeDatabase
 import com.begoml.bridge.core.data.db.ClubDao
 import com.begoml.bridge.core.data.db.DatabaseFactory
@@ -20,9 +21,9 @@ import com.begoml.bridge.core.data.repository.SquadRepositoryImpl
 import com.begoml.bridge.core.data.sportsdb.SportsDbApi
 import io.ktor.client.HttpClient
 import com.begoml.bridge.foundation.coroutines.AppScope
+import com.begoml.bridge.foundation.coroutines.PlatformDispatcherProvider
 import kotlinx.coroutines.CoroutineDispatcher
 import org.koin.core.module.Module
-import org.koin.core.qualifier.named
 import org.koin.dsl.module
 import kotlin.time.Clock
 
@@ -30,15 +31,12 @@ import kotlin.time.Clock
 private const val TeamId = "133610"
 private const val ClubName = "Chelsea"
 
-val IoDispatcher = named("io")
+fun dataModules(): List<Module> = listOf(platformDatabaseModule(), dataModule())
 
-fun dataModules(ioDispatcher: CoroutineDispatcher): List<Module> =
-    listOf(platformDatabaseModule(), dataModule(ioDispatcher))
-
-private fun dataModule(ioDispatcher: CoroutineDispatcher) = module {
+private fun dataModule() = module {
     single<Clock> { Clock.System }
-    single<CoroutineDispatcher>(IoDispatcher) { ioDispatcher }
-    single { AppScope(get<CoroutineDispatcher>(IoDispatcher)) }
+    single<DispatcherProvider> { PlatformDispatcherProvider() }
+    single { AppScope(get<DispatcherProvider>().io) }
 
     single<HttpClient> { createHttpClient() }
     single { SportsDbApi(get()) }
@@ -54,7 +52,7 @@ private fun dataModule(ioDispatcher: CoroutineDispatcher) = module {
         Syncer(
             freshness = get(),
             clock = get(),
-            dispatcher = get(IoDispatcher),
+            dispatcher = get<DispatcherProvider>().io,
         )
     }
 
@@ -65,7 +63,7 @@ private fun dataModule(ioDispatcher: CoroutineDispatcher) = module {
             dao = get(),
             venueDao = get(),
             syncer = get(),
-            dispatcher = get(IoDispatcher),
+            dispatcher = get<DispatcherProvider>().io,
         )
     }
     single<SquadRepository> { SquadRepositoryImpl(
@@ -73,7 +71,7 @@ private fun dataModule(ioDispatcher: CoroutineDispatcher) = module {
             api = get(),
             dao = get(),
             syncer = get(),
-            dispatcher = get(IoDispatcher),
+            dispatcher = get<DispatcherProvider>().io,
         ) }
     single<MatchRepository> {
         MatchRepositoryImpl(
@@ -83,7 +81,7 @@ private fun dataModule(ioDispatcher: CoroutineDispatcher) = module {
             seasonApi = get(),
             seasonDao = get(),
             syncer = get(),
-            dispatcher = get(IoDispatcher),
+            dispatcher = get<DispatcherProvider>().io,
             backgroundScope = get<AppScope>(),
             clock = get(),
         )

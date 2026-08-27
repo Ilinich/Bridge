@@ -1,6 +1,6 @@
 package com.begoml.bridge.feature.matches.di
 
-import com.begoml.bridge.core.data.di.IoDispatcher
+import com.begoml.bridge.foundation.coroutines.DispatcherProvider
 import com.begoml.bridge.feature.matches.MatchesNavigationEntry
 import com.begoml.bridge.feature.matches.api.MatchesRouteCodec
 import com.begoml.bridge.feature.matches.detail.MatchDetailViewModel
@@ -30,7 +30,7 @@ fun matchesModule() = module {
             connectivity = get(),
             clock = get(),
             router = get(),
-            ioDispatcher = get(IoDispatcher),
+            ioDispatcher = get<DispatcherProvider>().io,
         )
     }
     viewModel {
@@ -41,7 +41,7 @@ fun matchesModule() = module {
             connectivity = get(),
             matchRepository = get(),
             router = get(),
-            ioDispatcher = get(IoDispatcher),
+            ioDispatcher = get<DispatcherProvider>().io,
             analytics = get(),
         )
     }
@@ -51,7 +51,7 @@ fun matchesModule() = module {
             scope = stateHolderScope(),
             matchRepository = get(),
             router = get(),
-            ioDispatcher = get(IoDispatcher),
+            ioDispatcher = get<DispatcherProvider>().io,
         )
     }
     single { MatchesNavigationEntry() } bind FeatureNavigationEntry::class

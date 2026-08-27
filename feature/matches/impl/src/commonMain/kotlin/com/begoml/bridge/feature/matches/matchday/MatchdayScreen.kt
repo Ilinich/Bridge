@@ -62,7 +62,6 @@ internal fun MatchdayScreen(viewModel: MatchdayViewModel, modifier: Modifier = M
             onRetry = viewModel::retry,
         ) {
             val labels = state.labels ?: return@LoadableContent
-            if (state.isOffline) OfflineNotice()
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -71,6 +70,7 @@ internal fun MatchdayScreen(viewModel: MatchdayViewModel, modifier: Modifier = M
                     .padding(horizontal = 14.dp, vertical = ScreenVerticalPadding),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
+                if (state.isOffline) OfflineNotice()
                 with(glass) { HeroCard(state = state, labels = labels, nowMillis = nowMillis) }
                 if (state.following.isNotEmpty()) {
                     FollowingSection(

@@ -12,7 +12,7 @@ import platform.Network.nw_path_monitor_set_queue
 import platform.Network.nw_path_monitor_set_update_handler
 import platform.Network.nw_path_monitor_start
 import platform.Network.nw_path_status_satisfied
-import platform.darwin.dispatch_get_main_queue
+import platform.darwin.dispatch_queue_create
 
 internal actual fun Module.bindNetworkMonitor() {
     single<NetworkMonitor> { IosNetworkMonitor() }
@@ -21,15 +21,17 @@ internal actual fun Module.bindNetworkMonitor() {
 /**
  * Watches every interface through NWPathMonitor.
  *
- * The handler is delivered on the main queue so the emission is already on the dispatcher the
- * state holder updates from; the monitor is cancelled when the flow's collector goes away.
+ * The handler runs on a queue of its own rather than on the main one: nothing here touches UIKit,
+ * `trySend` is safe from any thread, and the collector decides where the value is handled. Putting
+ * it on the main queue would spend the thread that draws on an event no one is drawing.
  */
 private class IosNetworkMonitor : NetworkMonitor {
 
     @OptIn(ExperimentalForeignApi::class)
     override fun updates(): Flow<Boolean> = callbackFlow {
         val monitor = nw_path_monitor_create()
-        nw_path_monitor_set_queue(monitor, dispatch_get_main_queue())
+        val queue = dispatch_queue_create("com.begoml.bridge.connectivity", null)
+        nw_path_monitor_set_queue(monitor, queue)
         nw_path_monitor_set_update_handler(monitor) { path ->
             trySend(nw_path_get_status(path) == nw_path_status_satisfied)
         }

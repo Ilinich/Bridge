@@ -1,9 +1,9 @@
 package com.begoml.bridge.core.data.db
 
+import com.begoml.bridge.foundation.coroutines.DispatcherProvider
 import androidx.room.Room
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import kotlinx.coroutines.CoroutineDispatcher
-import com.begoml.bridge.core.data.di.IoDispatcher
 import org.koin.core.module.Module
 import org.koin.dsl.module
 import platform.Foundation.NSDocumentDirectory
@@ -36,5 +36,5 @@ internal class IosDatabaseFactory(private val queryDispatcher: CoroutineDispatch
 }
 
 actual fun platformDatabaseModule(): Module = module {
-    single<DatabaseFactory> { IosDatabaseFactory(queryDispatcher = get(IoDispatcher)) }
+    single<DatabaseFactory> { IosDatabaseFactory(queryDispatcher = get<DispatcherProvider>().io) }
 }

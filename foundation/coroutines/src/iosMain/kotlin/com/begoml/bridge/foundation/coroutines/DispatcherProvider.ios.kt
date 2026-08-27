@@ -1,4 +1,4 @@
-package com.begoml.bridge
+package com.begoml.bridge.foundation.coroutines
 
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -10,7 +10,7 @@ import kotlinx.coroutines.Dispatchers
  * It is not equivalent to the Android side, and the difference is worth knowing: `Dispatchers.IO`
  * grows to many threads, while `Default` is sized to the core count. Room queries run here and
  * SQLite blocks the calling thread, so enough concurrent queries would take threads away from
- * computation. This app issues few at a time; an app that issued many would want a dedicated pool
- * rather than this.
+ * computation. This app issues few at a time; an app that issued many would want a dedicated pool.
  */
-internal actual val ioDispatcher: CoroutineDispatcher = Dispatchers.Default
+@Suppress("InjectDispatcher")
+internal actual val platformIoDispatcher: CoroutineDispatcher = Dispatchers.Default

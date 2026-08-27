@@ -22,7 +22,11 @@ internal actual fun Module.bindNetworkMonitor() {
  */
 private class AndroidNetworkMonitor(context: Context) : NetworkMonitor {
 
-    private val manager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
+    // Lazy because the graph builds this on start-up while nothing has asked about the network
+    // yet, and reaching into system services is work the first frame does not owe anyone.
+    private val manager by lazy(LazyThreadSafetyMode.NONE) {
+        context.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
+    }
 
     override fun updates(): Flow<Boolean> = callbackFlow {
         val service = manager
