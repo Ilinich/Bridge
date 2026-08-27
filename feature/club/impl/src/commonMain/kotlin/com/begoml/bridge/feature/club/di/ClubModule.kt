@@ -17,7 +17,7 @@ fun clubModule() = module {
         val scope = stateHolderScope()
         ClubViewModel(
             scope = scope,
-            delegate = ClubDelegate(scope = scope, repository = get()),
+            delegate = ClubDelegate(scope = scope, repository = get(), club = get()),
             ioDispatcher = get<DispatcherProvider>().io,
             analytics = get(),
         )

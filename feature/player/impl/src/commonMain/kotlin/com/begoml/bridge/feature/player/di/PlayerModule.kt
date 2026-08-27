@@ -17,7 +17,7 @@ fun playerModule() = module {
         val scope = stateHolderScope()
         PlayerViewModel(
             scope = scope,
-            delegate = PlayerDelegate(scope = scope, repository = get()),
+            delegate = PlayerDelegate(scope = scope, repository = get(), club = get()),
             following = get(),
             router = get(),
             ioDispatcher = get<DispatcherProvider>().io,

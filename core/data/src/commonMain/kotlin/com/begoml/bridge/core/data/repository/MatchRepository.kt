@@ -1,6 +1,5 @@
 package com.begoml.bridge.core.data.repository
 
-import com.begoml.bridge.core.data.TeamNames
 import com.begoml.bridge.core.data.db.SeasonDao
 import com.begoml.bridge.core.data.db.Syncer
 import com.begoml.bridge.core.data.db.toEntity
@@ -30,6 +29,7 @@ import kotlin.time.Clock
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.launch
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours
@@ -41,14 +41,11 @@ import kotlin.time.Duration.Companion.seconds
  */
 interface MatchRepository {
 
-    fun nextMatch(): Flow<Loadable<Match?>>
+    fun nextMatch(teamId: String): Flow<Loadable<Match?>>
 
-    fun lastResult(): Flow<Loadable<Match?>>
+    fun lastResult(teamId: String): Flow<Loadable<Match?>>
 
     fun season(): Flow<Loadable<Season>>
-
-    /** Whether this is the club the build follows; the feed spells names inconsistently. */
-    fun isOurClub(teamName: String): Boolean
 
     fun match(id: String): Flow<Loadable<SeasonMatch?>>
 
@@ -57,8 +54,6 @@ interface MatchRepository {
 }
 
 internal class MatchRepositoryImpl(
-    private val teamId: String,
-    private val clubName: String,
     sportsDb: SportsDbApi,
     private val seasonApi: SeasonApi,
     private val seasonDao: SeasonDao,
@@ -86,15 +81,15 @@ internal class MatchRepositoryImpl(
         backgroundScope = backgroundScope,
     )
 
-    override fun nextMatch(): Flow<Loadable<Match?>> =
+    override fun nextMatch(teamId: String): Flow<Loadable<Match?>> =
         nextMatchCache.cachedResource(teamId).map { loadable ->
             loadable.map { matches -> matches.minByOrNull { it.kickoff } }
-        }
+        }.flowOn(dispatcher)
 
-    override fun lastResult(): Flow<Loadable<Match?>> =
+    override fun lastResult(teamId: String): Flow<Loadable<Match?>> =
         lastResultCache.cachedResource(teamId).map { loadable ->
             loadable.map { matches -> matches.maxByOrNull { it.kickoff } }
-        }
+        }.flowOn(dispatcher)
 
     /** The season now being played, falling back to the last one while the new one is unpublished. */
     override fun season(): Flow<Loadable<Season>> = flow {
@@ -114,9 +109,7 @@ internal class MatchRepositoryImpl(
         )
     }
 
-    override fun isOurClub(teamName: String): Boolean = TeamNames.matches(teamName, clubName)
-
-    override suspend fun refresh() {
+    override suspend fun refresh() = withContext(dispatcher) {
         val seasonId = resolveSeasonId()
         syncer.sync(key = seasonKey(seasonId), ttl = null, force = true) { fetch(seasonId) }
         nextMatchCache.invalidateAll()

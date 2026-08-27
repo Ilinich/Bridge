@@ -2,6 +2,7 @@ package com.begoml.bridge.feature.player
 
 import com.begoml.bridge.core.data.model.Loadable
 import com.begoml.bridge.core.data.model.Player
+import com.begoml.bridge.core.data.model.FollowedClub
 import com.begoml.bridge.core.data.repository.SquadRepository
 import com.begoml.bridge.foundation.tessera.UiStateDelegate
 import com.begoml.bridge.foundation.tessera.UiStateDelegateImpl
@@ -27,11 +28,12 @@ data class PlayerSquadState(
 class PlayerDelegate(
     scope: CoroutineScope,
     repository: SquadRepository,
+    club: FollowedClub,
 ) : UiStateDelegate<PlayerSquadState, Nothing> by UiStateDelegateImpl(PlayerSquadState()) {
 
     init {
         scope.launch {
-            repository.squad().collect { loadable ->
+            repository.squad(club.id).collect { loadable ->
                 updateUiState { state ->
                     when (loadable) {
                         is Loadable.Loading -> state.copy(isLoading = true)

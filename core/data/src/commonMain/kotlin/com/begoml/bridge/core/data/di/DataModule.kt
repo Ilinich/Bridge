@@ -20,6 +20,7 @@ import com.begoml.bridge.core.data.repository.SquadRepository
 import com.begoml.bridge.core.data.repository.SquadRepositoryImpl
 import com.begoml.bridge.core.data.sportsdb.SportsDbApi
 import io.ktor.client.HttpClient
+import com.begoml.bridge.core.data.model.FollowedClub
 import com.begoml.bridge.foundation.coroutines.AppScope
 import com.begoml.bridge.foundation.coroutines.PlatformDispatcherProvider
 import kotlinx.coroutines.CoroutineDispatcher
@@ -35,6 +36,7 @@ fun dataModules(): List<Module> = listOf(platformDatabaseModule(), dataModule())
 
 private fun dataModule() = module {
     single<Clock> { Clock.System }
+    single { FollowedClub(id = TeamId, name = ClubName) }
     single<DispatcherProvider> { PlatformDispatcherProvider() }
     single { AppScope(get<DispatcherProvider>().io) }
 
@@ -58,7 +60,6 @@ private fun dataModule() = module {
 
     single<ClubRepository> {
         ClubRepositoryImpl(
-            teamId = TeamId,
             api = get(),
             dao = get(),
             venueDao = get(),
@@ -67,7 +68,6 @@ private fun dataModule() = module {
         )
     }
     single<SquadRepository> { SquadRepositoryImpl(
-            teamId = TeamId,
             api = get(),
             dao = get(),
             syncer = get(),
@@ -75,8 +75,6 @@ private fun dataModule() = module {
         ) }
     single<MatchRepository> {
         MatchRepositoryImpl(
-            teamId = TeamId,
-            clubName = ClubName,
             sportsDb = get(),
             seasonApi = get(),
             seasonDao = get(),

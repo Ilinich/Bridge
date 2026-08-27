@@ -8,7 +8,8 @@ import bridge.feature.matches.impl.generated.resources.season_round
 import com.begoml.bridge.core.data.model.SeasonRound
 import com.begoml.bridge.core.connectivity.Connectivity
 import com.begoml.bridge.core.connectivity.NetworkStatus
-import com.begoml.bridge.core.data.repository.MatchRepository
+import com.begoml.bridge.core.data.TeamNames
+import com.begoml.bridge.core.data.model.FollowedClub
 import kotlin.time.Clock
 import com.begoml.bridge.core.analytics.Analytics
 import com.begoml.bridge.feature.matches.analytics.MatchOpened
@@ -72,7 +73,7 @@ internal class SeasonViewModel(
     private val scope: CoroutineScope,
     private val feature: SeasonFeature,
     private val connectivity: Connectivity,
-    private val matchRepository: MatchRepository,
+    private val club: FollowedClub,
     private val router: AppRouter,
     private val ioDispatcher: CoroutineDispatcher,
     private val analytics: Analytics,
@@ -121,8 +122,8 @@ internal class SeasonViewModel(
                         ?.let { getString(Res.string.fixture_score, it.home, it.away) }
                         ?: match.kickoff.formatTime(),
                     hasScore = score != null,
-                    highlighted = matchRepository.isOurClub(match.home.name) ||
-                        matchRepository.isOurClub(match.away.name),
+                    highlighted = TeamNames.matches(match.home.name, club.name) ||
+                        TeamNames.matches(match.away.name, club.name),
                 )
             }.toImmutableList(),
         )

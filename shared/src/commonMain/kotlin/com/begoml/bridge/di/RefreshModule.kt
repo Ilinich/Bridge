@@ -1,5 +1,6 @@
 package com.begoml.bridge.di
 
+import com.begoml.bridge.core.data.model.FollowedClub
 import com.begoml.bridge.core.data.repository.ClubRepository
 import com.begoml.bridge.core.data.repository.MatchRepository
 import com.begoml.bridge.core.data.repository.SquadRepository
@@ -23,6 +24,7 @@ fun refreshModule() = module {
         val squad: SquadRepository = get()
         val matches: MatchRepository = get()
         val logger: Logger = get()
+        val followed: FollowedClub = get()
 
         RefreshWork {
             // One failure must not cancel the others: a squad that could not be fetched is no
@@ -31,7 +33,12 @@ fun refreshModule() = module {
             // Cancellation is rethrown rather than counted as a failure: the platform revokes
             // the window by cancelling, and a swallowed cancellation would let the run carry on
             // making requests after its time is up and then report a result nobody asked for.
-            val results = listOf(club::refresh, squad::refresh, matches::refresh).map { refresh ->
+            val refreshes = listOf<suspend () -> Unit>(
+                { club.refresh(followed.id) },
+                { squad.refresh(followed.id) },
+                { matches.refresh() },
+            )
+            val results = refreshes.map { refresh ->
                 runCatching { refresh() }
                     .onFailure { error -> if (error is CancellationException) throw error }
             }

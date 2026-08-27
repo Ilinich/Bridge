@@ -16,6 +16,8 @@ import bridge.feature.matches.impl.generated.resources.match_not_found
 import bridge.feature.matches.impl.generated.resources.match_title
 import com.begoml.bridge.core.data.model.Loadable
 import com.begoml.bridge.core.data.model.SeasonMatch
+import com.begoml.bridge.core.data.TeamNames
+import com.begoml.bridge.core.data.model.FollowedClub
 import com.begoml.bridge.core.data.repository.MatchRepository
 import com.begoml.bridge.feature.matches.formatKickoff
 import com.begoml.bridge.navigation.router.AppRouter
@@ -70,6 +72,7 @@ internal class MatchDetailViewModel(
     matchId: String,
     private val scope: CoroutineScope,
     private val matchRepository: MatchRepository,
+    private val club: FollowedClub,
     private val router: AppRouter,
     private val ioDispatcher: CoroutineDispatcher,
 ) : ViewModel(),
@@ -101,8 +104,8 @@ internal class MatchDetailViewModel(
     }
 
     private fun SeasonMatch.side(): MatchSide? = when {
-        matchRepository.isOurClub(home.name) -> MatchSide.Home
-        matchRepository.isOurClub(away.name) -> MatchSide.Away
+        TeamNames.matches(home.name, club.name) -> MatchSide.Home
+        TeamNames.matches(away.name, club.name) -> MatchSide.Away
         else -> null
     }
 

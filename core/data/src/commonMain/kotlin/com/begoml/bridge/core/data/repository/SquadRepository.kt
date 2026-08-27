@@ -12,6 +12,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.withContext
 import kotlin.time.Duration.Companion.hours
 
 /**
@@ -22,37 +23,36 @@ import kotlin.time.Duration.Companion.hours
  */
 interface SquadRepository {
 
-    fun squad(): Flow<Loadable<List<Player>>>
+    fun squad(teamId: String): Flow<Loadable<List<Player>>>
 
     /** Revalidates now, ignoring the time to live. */
-    suspend fun refresh()
+    suspend fun refresh(teamId: String)
 }
 
 internal class SquadRepositoryImpl(
-    private val teamId: String,
     private val api: SportsDbApi,
     private val dao: PlayerDao,
     private val syncer: Syncer,
     private val dispatcher: CoroutineDispatcher,
 ) : SquadRepository {
 
-    override fun squad(): Flow<Loadable<List<Player>>> = persistedResource(
+    override fun squad(teamId: String): Flow<Loadable<List<Player>>> = persistedResource(
         // flowOn, because map runs in the collector's context and the collector is the main
         // dispatcher: mapping a whole squad would otherwise land on the frame that draws it.
         stored = dao.observeAll().map { rows ->
             rows.takeIf { it.isNotEmpty() }?.map { it.toPlayer() }
         }.flowOn(dispatcher),
     ) {
-        syncer.sync(key = squadKey, ttl = 4.hours) { fetch() }
+        syncer.sync(key = squadKey(teamId), ttl = 4.hours) { fetch(teamId) }
     }
 
-    override suspend fun refresh() {
-        syncer.sync(key = squadKey, ttl = null, force = true) { fetch() }
+    override suspend fun refresh(teamId: String) = withContext(dispatcher) {
+        syncer.sync(key = squadKey(teamId), ttl = null, force = true) { fetch(teamId) }
     }
 
-    private val squadKey get() = "squad:$teamId"
+    private fun squadKey(teamId: String) = "squad:$teamId"
 
-    private suspend fun fetch() {
+    private suspend fun fetch(teamId: String) {
         val players = api.squad(teamId).mapNotNull { it.toPlayer() }
         if (players.isNotEmpty()) {
             dao.replaceAll(players.mapIndexed { index, player -> player.toEntity(index) })

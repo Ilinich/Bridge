@@ -3,6 +3,7 @@ package com.begoml.bridge.feature.club
 import com.begoml.bridge.core.data.model.Club
 import com.begoml.bridge.core.data.model.Loadable
 import com.begoml.bridge.core.data.model.Venue
+import com.begoml.bridge.core.data.model.FollowedClub
 import com.begoml.bridge.core.data.repository.ClubRepository
 import com.begoml.bridge.foundation.tessera.UiStateDelegate
 import com.begoml.bridge.foundation.tessera.UiStateDelegateImpl
@@ -29,6 +30,7 @@ sealed interface ClubEvent
 class ClubDelegate(
     private val scope: CoroutineScope,
     private val repository: ClubRepository,
+    private val club: FollowedClub,
 ) : UiStateDelegate<ClubState, ClubEvent> by UiStateDelegateImpl(ClubState()) {
 
     /** A forced refresh holds the syncer's key mutex across the network, so only one may run. */
@@ -40,12 +42,12 @@ class ClubDelegate(
 
     fun retry() {
         if (refreshJob?.isActive == true) return
-        refreshJob = scope.launch { repository.refresh() }
+        refreshJob = scope.launch { repository.refresh(club.id) }
     }
 
     private fun observe() {
         scope.launch {
-            repository.club().collect { loadable ->
+            repository.club(club.id).collect { loadable ->
                 updateUiState { state ->
                     when (loadable) {
                         is Loadable.Loading -> state.copy(isLoading = true)
@@ -60,7 +62,7 @@ class ClubDelegate(
             }
         }
         scope.launch {
-            repository.venue().collect { loadable ->
+            repository.venue(club.id).collect { loadable ->
                 if (loadable is Loadable.Content) {
                     updateUiState { state -> state.copy(venue = loadable.value) }
                 }

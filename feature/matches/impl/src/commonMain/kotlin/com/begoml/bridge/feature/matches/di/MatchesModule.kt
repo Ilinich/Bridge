@@ -22,6 +22,7 @@ fun matchesModule() = module {
             scope = scope,
             feature = MatchdayFeature(
                 scope = scope,
+                club = get(),
                 clubRepository = get(),
                 matchRepository = get(),
                 squadRepository = get(),
@@ -39,7 +40,7 @@ fun matchesModule() = module {
             scope = scope,
             feature = SeasonFeature(scope = scope, matchRepository = get(), clock = get()),
             connectivity = get(),
-            matchRepository = get(),
+            club = get(),
             router = get(),
             ioDispatcher = get<DispatcherProvider>().io,
             analytics = get(),
@@ -50,6 +51,7 @@ fun matchesModule() = module {
             matchId = matchId,
             scope = stateHolderScope(),
             matchRepository = get(),
+            club = get(),
             router = get(),
             ioDispatcher = get<DispatcherProvider>().io,
         )

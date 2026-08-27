@@ -16,7 +16,7 @@ fun squadModule() = module {
         val scope = stateHolderScope()
         SquadViewModel(
             scope = scope,
-            delegate = SquadDelegate(scope = scope, repository = get()),
+            delegate = SquadDelegate(scope = scope, repository = get(), club = get()),
             following = get(),
             router = get(),
             analytics = get(),

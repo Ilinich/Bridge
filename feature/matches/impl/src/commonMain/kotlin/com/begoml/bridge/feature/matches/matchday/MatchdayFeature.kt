@@ -4,6 +4,7 @@ import com.begoml.bridge.core.data.model.Club
 import com.begoml.bridge.core.data.model.Loadable
 import com.begoml.bridge.core.data.model.Match
 import com.begoml.bridge.core.data.model.Player
+import com.begoml.bridge.core.data.model.FollowedClub
 import com.begoml.bridge.core.data.repository.ClubRepository
 import com.begoml.bridge.core.data.repository.MatchRepository
 import com.begoml.bridge.core.data.repository.SquadRepository
@@ -55,6 +56,7 @@ sealed interface MatchdayEvent
  */
 class MatchdayFeature(
     private val scope: CoroutineScope,
+    private val club: FollowedClub,
     private val clubRepository: ClubRepository,
     private val matchRepository: MatchRepository,
     private val squadRepository: SquadRepository,
@@ -75,7 +77,7 @@ class MatchdayFeature(
         awaitActionsIn(scope) { action ->
             when (action) {
                 MatchdayAction.Retry -> {
-                    clubRepository.refresh()
+                    clubRepository.refresh(club.id)
                     observeSources()
                 }
             }
@@ -94,7 +96,7 @@ class MatchdayFeature(
             scope = scope,
             source = combine(
                 following.stateFlow,
-                squadRepository.squad(),
+                squadRepository.squad(club.id),
             ) { followed, squad ->
                 (squad as? Loadable.Content)?.value.orEmpty()
                     .filter { player -> followed.contains(player.id) }
@@ -107,9 +109,9 @@ class MatchdayFeature(
         sourcesJob?.cancel()
         sourcesJob = composeState(
             scope = scope,
-            source1 = clubRepository.club().withInitial(scope, Loadable.Loading),
-            source2 = matchRepository.nextMatch().withInitial(scope, Loadable.Loading),
-            source3 = matchRepository.lastResult().withInitial(scope, Loadable.Loading),
+            source1 = clubRepository.club(club.id).withInitial(scope, Loadable.Loading),
+            source2 = matchRepository.nextMatch(club.id).withInitial(scope, Loadable.Loading),
+            source3 = matchRepository.lastResult(club.id).withInitial(scope, Loadable.Loading),
         ) { state, club, next, last ->
             state.copy(
                 club = (club as? Loadable.Content)?.value ?: state.club,

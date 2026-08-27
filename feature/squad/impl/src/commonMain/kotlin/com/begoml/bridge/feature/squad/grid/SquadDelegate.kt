@@ -2,6 +2,7 @@ package com.begoml.bridge.feature.squad.grid
 
 import com.begoml.bridge.core.data.model.Loadable
 import com.begoml.bridge.core.data.model.Player
+import com.begoml.bridge.core.data.model.FollowedClub
 import com.begoml.bridge.core.data.repository.SquadRepository
 import com.begoml.bridge.foundation.tessera.UiStateDelegate
 import com.begoml.bridge.foundation.tessera.UiStateDelegateImpl
@@ -32,6 +33,7 @@ sealed interface SquadEvent {
 class SquadDelegate(
     private val scope: CoroutineScope,
     private val repository: SquadRepository,
+    private val club: FollowedClub,
 ) : UiStateDelegate<SquadState, SquadEvent> by UiStateDelegateImpl(SquadState()) {
 
     /** The subscription [retry] replaces, so repeated taps cannot stack collectors. */
@@ -52,7 +54,7 @@ class SquadDelegate(
     private fun observe() {
         squadJob?.cancel()
         squadJob = scope.launch {
-            repository.squad().collect { loadable ->
+            repository.squad(club.id).collect { loadable ->
                 updateUiState { state ->
                     when (loadable) {
                         is Loadable.Loading -> state.copy(isLoading = true, error = null)

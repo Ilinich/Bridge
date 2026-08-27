@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.withContext
 import kotlin.time.Duration.Companion.days
 
 /**
@@ -32,15 +33,14 @@ import kotlin.time.Duration.Companion.days
  */
 interface ClubRepository {
 
-    fun club(): Flow<Loadable<Club>>
+    fun club(teamId: String): Flow<Loadable<Club>>
 
-    fun venue(): Flow<Loadable<Venue>>
+    fun venue(teamId: String): Flow<Loadable<Venue>>
 
-    suspend fun refresh()
+    suspend fun refresh(teamId: String)
 }
 
 internal class ClubRepositoryImpl(
-    private val teamId: String,
     private val api: SportsDbApi,
     private val dao: ClubDao,
     private val venueDao: VenueDao,
@@ -48,10 +48,10 @@ internal class ClubRepositoryImpl(
     private val dispatcher: CoroutineDispatcher,
 ) : ClubRepository {
 
-    override fun club(): Flow<Loadable<Club>> = persistedResource(
+    override fun club(teamId: String): Flow<Loadable<Club>> = persistedResource(
         stored = dao.observe(teamId).map { entity -> entity?.toClub() }.flowOn(dispatcher),
     ) {
-        syncer.sync(key = clubKey, ttl = ClubTtl) { fetchClub() }
+        syncer.sync(key = clubKey(teamId), ttl = ClubTtl) { fetchClub(teamId) }
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -62,7 +62,7 @@ internal class ClubRepositoryImpl(
      * flatMapLatest would cancel an in-flight venue request and start it again each time — under
      * repeated refreshes it would never finish.
      */
-    override fun venue(): Flow<Loadable<Venue>> = club()
+    override fun venue(teamId: String): Flow<Loadable<Venue>> = club(teamId)
         .map { loadable -> (loadable as? Loadable.Content)?.value?.details?.venueId }
         .distinctUntilChanged()
         .flatMapLatest { venueId ->
@@ -75,13 +75,13 @@ internal class ClubRepositoryImpl(
             }
         }
 
-    override suspend fun refresh() {
-        syncer.sync(key = clubKey, ttl = null, force = true) { fetchClub() }
-        val venueId = dao.observe(teamId).first()?.venueId ?: return
+    override suspend fun refresh(teamId: String) = withContext(dispatcher) {
+        syncer.sync(key = clubKey(teamId), ttl = null, force = true) { fetchClub(teamId) }
+        val venueId = dao.observe(teamId).first()?.venueId ?: return@withContext
         syncer.sync(key = "venue:$venueId", ttl = null, force = true) { fetchVenue(venueId) }
     }
 
-    private suspend fun fetchClub() {
+    private suspend fun fetchClub(teamId: String) {
         val club = api.team(teamId)?.toClub() ?: return
         dao.upsert(club.toEntity())
     }
@@ -91,7 +91,7 @@ internal class ClubRepositoryImpl(
         venueDao.upsert(venue.toEntity())
     }
 
-    private val clubKey get() = "club:$teamId"
+    private fun clubKey(teamId: String) = "club:$teamId"
 
     private companion object {
         val ClubTtl = 7.days
