@@ -1,7 +1,6 @@
 package com.begoml.bridge.feature.matches.detail
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import bridge.feature.matches.impl.generated.resources.Res
 import bridge.feature.matches.impl.generated.resources.fixture_score
 import bridge.feature.matches.impl.generated.resources.fixture_versus
@@ -21,18 +20,14 @@ import com.begoml.bridge.core.data.repository.MatchRepository
 import com.begoml.bridge.feature.matches.formatKickoff
 import com.begoml.bridge.navigation.router.AppRouter
 import com.begoml.bridge.navigation.router.navigateUp
+import com.begoml.bridge.foundation.tessera.UiStateDelegate
+import com.begoml.bridge.foundation.tessera.UiStateDelegateImpl
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jetbrains.compose.resources.getString
-
-/** How long a state flow outlives its last collector, so a configuration change does not refetch. */
-internal const val SubscriptionTimeoutMillis = 5_000L
 
 data class MatchDetailLabels(
     val title: String,
@@ -73,25 +68,32 @@ data class MatchDetailUiState(
 
 internal class MatchDetailViewModel(
     matchId: String,
+    private val scope: CoroutineScope,
     private val matchRepository: MatchRepository,
     private val router: AppRouter,
     private val ioDispatcher: CoroutineDispatcher,
-) : ViewModel() {
-
-    private val labels = MutableStateFlow<MatchDetailLabels?>(null)
-
-    val state: StateFlow<MatchDetailUiState> =
-        combine(matchRepository.match(matchId), labels) { loadable, resolved ->
-            val match = (loadable as? Loadable.Content)?.value
-            MatchDetailUiState(
-                match = match?.let { withContext(ioDispatcher) { it.toUi() } },
-                labels = resolved,
-                isLoading = loadable is Loadable.Loading || resolved == null,
-            )
-        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(SubscriptionTimeoutMillis), MatchDetailUiState())
+) : ViewModel(),
+    UiStateDelegate<MatchDetailUiState, Nothing> by UiStateDelegateImpl(MatchDetailUiState()) {
 
     init {
-        viewModelScope.launch { labels.value = withContext(ioDispatcher) { readLabels() } }
+        scope.launch {
+            val labels = withContext(ioDispatcher) { readLabels() }
+            matchRepository.match(matchId).collect { loadable ->
+                val match = (loadable as? Loadable.Content)?.value
+                val ui = match?.let { withContext(ioDispatcher) { it.toUi() } }
+                updateUiState {
+                    MatchDetailUiState(
+                        match = ui,
+                        labels = labels,
+                        isLoading = loadable is Loadable.Loading,
+                    )
+                }
+            }
+        }
+    }
+
+    override fun onCleared() {
+        scope.cancel()
     }
 
     fun onBack() {

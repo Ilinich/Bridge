@@ -1,7 +1,6 @@
 package com.begoml.bridge.feature.club
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import bridge.feature.club.impl.generated.resources.Res
 import bridge.feature.club.impl.generated.resources.club_about
 import bridge.feature.club.impl.generated.resources.club_capacity
@@ -19,14 +18,13 @@ import bridge.feature.club.impl.generated.resources.club_youtube
 import com.begoml.bridge.core.data.model.Club
 import com.begoml.bridge.core.data.model.Venue
 import com.begoml.bridge.core.data.repository.ClubRepository
-import com.begoml.bridge.foundation.analytics.Analytics
-import com.begoml.bridge.foundation.analytics.AnalyticsEvent
+import com.begoml.bridge.core.analytics.Analytics
+import com.begoml.bridge.feature.club.analytics.VideoStarted
+import com.begoml.bridge.foundation.tessera.UiStateDelegate
+import com.begoml.bridge.foundation.tessera.UiStateDelegateImpl
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jetbrains.compose.resources.getString
@@ -62,35 +60,37 @@ data class ClubUiState(
     val error: Throwable? = null,
 )
 
-/** How long a state flow outlives its last collector, so a rotation does not refetch. */
-private const val SubscriptionTimeoutMillis = 5_000L
-
 internal class ClubViewModel(
-    repository: ClubRepository,
+    private val scope: CoroutineScope,
+    private val delegate: ClubDelegate,
     private val ioDispatcher: CoroutineDispatcher,
     private val analytics: Analytics,
-) : ViewModel() {
-
-    private val delegate = ClubDelegate(scope = viewModelScope, repository = repository)
-    private val labels = MutableStateFlow<ClubLabels?>(null)
-
-    val state: StateFlow<ClubUiState> =
-        combine(delegate.uiStateFlow, labels) { content, resolved ->
-            ClubUiState(
-                club = content.club,
-                venue = content.venue,
-                labels = resolved,
-                isLoading = content.isLoading || resolved == null,
-                error = content.error,
-            )
-        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(SubscriptionTimeoutMillis), ClubUiState())
+) : ViewModel(),
+    UiStateDelegate<ClubUiState, Nothing> by UiStateDelegateImpl(ClubUiState()) {
 
     init {
-        viewModelScope.launch { labels.value = withContext(ioDispatcher) { readLabels() } }
+        scope.launch {
+            val labels = withContext(ioDispatcher) { readLabels() }
+            delegate.uiStateFlow.collect { content ->
+                updateUiState {
+                    ClubUiState(
+                        club = content.club,
+                        venue = content.venue,
+                        labels = labels,
+                        isLoading = content.isLoading,
+                        error = content.error,
+                    )
+                }
+            }
+        }
+    }
+
+    override fun onCleared() {
+        scope.cancel()
     }
 
     fun onVideoStarted() {
-        analytics.track(AnalyticsEvent.VideoStarted(source = "club_media"))
+        analytics.track(VideoStarted(source = "club_media"))
     }
 
     fun retry() {

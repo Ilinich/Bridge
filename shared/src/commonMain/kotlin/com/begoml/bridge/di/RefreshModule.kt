@@ -3,7 +3,7 @@ package com.begoml.bridge.di
 import com.begoml.bridge.core.data.repository.ClubRepository
 import com.begoml.bridge.core.data.repository.MatchRepository
 import com.begoml.bridge.core.data.repository.SquadRepository
-import com.begoml.bridge.foundation.background.RefreshWork
+import com.begoml.bridge.core.background.RefreshWork
 import com.begoml.bridge.foundation.logger.Logger
 import com.begoml.bridge.foundation.logger.warn
 import org.koin.dsl.module

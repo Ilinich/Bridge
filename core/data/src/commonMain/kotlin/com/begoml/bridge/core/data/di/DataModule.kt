@@ -34,12 +34,11 @@ private const val ClubName = "Chelsea"
 val IoDispatcher = named("io")
 val DataScope = named("data")
 
-private val nowMillis: () -> Long = { Clock.System.now().toEpochMilliseconds() }
-
 fun dataModules(ioDispatcher: CoroutineDispatcher): List<Module> =
     listOf(platformDatabaseModule(), dataModule(ioDispatcher))
 
 private fun dataModule(ioDispatcher: CoroutineDispatcher) = module {
+    single<Clock> { Clock.System }
     single<CoroutineDispatcher>(IoDispatcher) { ioDispatcher }
     single<CoroutineScope>(DataScope) {
         CoroutineScope(SupervisorJob() + get<CoroutineDispatcher>(IoDispatcher))
@@ -58,7 +57,7 @@ private fun dataModule(ioDispatcher: CoroutineDispatcher) = module {
     single {
         Syncer(
             freshness = get(),
-            nowMillis = nowMillis,
+            clock = get(),
             dispatcher = get(IoDispatcher),
         )
     }
@@ -90,7 +89,7 @@ private fun dataModule(ioDispatcher: CoroutineDispatcher) = module {
             syncer = get(),
             dispatcher = get(IoDispatcher),
             backgroundScope = get(DataScope),
-            nowMillis = nowMillis,
+            clock = get(),
         )
     }
 }

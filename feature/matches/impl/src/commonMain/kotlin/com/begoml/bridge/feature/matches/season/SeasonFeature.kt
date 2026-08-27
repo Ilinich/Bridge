@@ -13,6 +13,7 @@ import com.begoml.bridge.foundation.tessera.withInitial
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
+import kotlin.time.Clock
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 
@@ -39,7 +40,7 @@ sealed interface SeasonEvent
 class SeasonFeature(
     private val scope: CoroutineScope,
     private val matchRepository: MatchRepository,
-    private val nowMillis: () -> Long,
+    private val clock: Clock,
 ) : SimpleFeature<SeasonState, SeasonAction, SeasonEvent> by feature(SeasonState(), scope) {
 
     /** The subscription Retry replaces; see [observeSeason]. */
@@ -74,7 +75,7 @@ class SeasonFeature(
     }
 
     private fun startingRoundIndex(season: Season): Int {
-        val current = season.roundAt(nowMillis())
+        val current = season.roundAt(clock.now().toEpochMilliseconds())
         return season.rounds.indexOfFirst { it.number == current?.number }.coerceAtLeast(0)
     }
 }

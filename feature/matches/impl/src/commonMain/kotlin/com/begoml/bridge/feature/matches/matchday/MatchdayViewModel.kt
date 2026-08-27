@@ -1,7 +1,6 @@
 package com.begoml.bridge.feature.matches.matchday
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import bridge.feature.matches.impl.generated.resources.Res
 import bridge.feature.matches.impl.generated.resources.fixture_score
 import bridge.feature.matches.impl.generated.resources.fixture_teams
@@ -22,25 +21,27 @@ import bridge.feature.matches.impl.generated.resources.matchday_recent
 import bridge.feature.matches.impl.generated.resources.matchday_seconds
 import bridge.feature.matches.impl.generated.resources.matchday_stadium
 import com.begoml.bridge.core.data.model.Club
+import kotlin.time.Clock
 import com.begoml.bridge.feature.matches.formatKickoff
 import com.begoml.bridge.uikit.groupedThousands
 import com.begoml.bridge.core.data.model.Match
+import com.begoml.bridge.foundation.tessera.UiStateDelegate
+import com.begoml.bridge.foundation.tessera.UiStateDelegateImpl
+import com.begoml.bridge.core.connectivity.ConnectivityFeature
 import com.begoml.bridge.core.data.repository.ClubRepository
 import com.begoml.bridge.core.data.repository.MatchRepository
 import com.begoml.bridge.feature.club.api.ClubRoute
 import com.begoml.bridge.navigation.router.AppRouter
 import com.begoml.bridge.navigation.router.navigateTo
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jetbrains.compose.resources.getString
@@ -106,38 +107,31 @@ data class MatchdayUiState(
     val nextMatchFailed: Boolean = false,
     val isLoading: Boolean = true,
     val error: Throwable? = null,
-    val nowMillis: Long = 0L,
+    val isOffline: Boolean = false,
 )
 
-/** How long a state flow outlives its last collector, so a rotation does not refetch. */
-private const val SubscriptionTimeoutMillis = 5_000L
 private const val TickMillis = 1_000L
 
 internal class MatchdayViewModel(
-    clubRepository: ClubRepository,
-    matchRepository: MatchRepository,
-    private val nowMillis: () -> Long,
+    private val scope: CoroutineScope,
+    private val feature: MatchdayFeature,
+    private val connectivity: ConnectivityFeature,
+    private val clock: Clock,
     private val router: AppRouter,
     private val ioDispatcher: CoroutineDispatcher,
-) : ViewModel() {
-
-    private val feature = MatchdayFeature(
-        scope = viewModelScope,
-        clubRepository = clubRepository,
-        matchRepository = matchRepository,
-    )
-
-    private val labels = MutableStateFlow<MatchdayLabels?>(null)
+) : ViewModel(),
+    UiStateDelegate<MatchdayUiState, Nothing> by UiStateDelegateImpl(MatchdayUiState()) {
 
     /**
      * The countdown's clock.
      *
-     * A flow rather than a loop on viewModelScope: combined into [state], it only runs while
-     * something collects, so a screen the user has left stops ticking.
+     * Cold on purpose: the screen collects it through the lifecycle, so a second's tick costs
+     * nothing while the user is elsewhere. It is deliberately not part of the ui state — a state
+     * that rebuilt every second would recompose the whole screen for one line of text.
      */
-    private val ticker: Flow<Long> = flow {
+    val ticker: Flow<Long> = flow {
         while (true) {
-            emit(nowMillis())
+            emit(clock.now().toEpochMilliseconds())
             delay(TickMillis)
         }
     }
@@ -158,36 +152,37 @@ internal class MatchdayViewModel(
         .distinctUntilChanged()
         .map { club -> club?.toStadiumUi() }
 
-    val state: StateFlow<MatchdayUiState> =
-        combine(
-            feature.stateFlow,
-            labels,
-            recent,
-            ticker,
-            combine(nextMatch, stadium) { next, ground -> next to ground },
-        ) { content, resolved, recentUi, now, fixtureAndGround ->
-            val (nextMatchUi, stadiumUi) = fixtureAndGround
-            MatchdayUiState(
-                backdropUrl = content.club?.media?.fanartUrls?.firstOrNull(),
-                stadium = stadiumUi,
-                hasClub = content.club != null,
-                nextMatch = nextMatchUi,
-                recent = recentUi,
-                labels = resolved,
-                nextMatchLoaded = content.nextMatchLoaded,
-                nextMatchFailed = content.nextMatchFailed,
-                isLoading = content.isLoading || resolved == null,
-                error = content.error,
-                nowMillis = now,
-            )
-        }.stateIn(
-            viewModelScope,
-            SharingStarted.WhileSubscribed(SubscriptionTimeoutMillis),
-            MatchdayUiState(),
-        )
-
     init {
-        viewModelScope.launch { labels.value = withContext(ioDispatcher) { readLabels() } }
+        scope.launch {
+            val resolved = withContext(ioDispatcher) { readLabels() }
+            combine(
+                feature.stateFlow,
+                recent,
+                nextMatch,
+                stadium,
+                connectivity.stateFlow,
+            ) { content, recentUi, nextMatchUi, stadiumUi, network ->
+                MatchdayUiState(
+                    backdropUrl = content.club?.media?.fanartUrls?.firstOrNull(),
+                    stadium = stadiumUi,
+                    hasClub = content.club != null,
+                    nextMatch = nextMatchUi,
+                    recent = recentUi,
+                    labels = resolved,
+                    nextMatchLoaded = content.nextMatchLoaded,
+                    nextMatchFailed = content.nextMatchFailed,
+                    isLoading = content.isLoading,
+                    error = content.error,
+                    isOffline = network.isOffline,
+                )
+            }.collect { built -> updateUiState { built } }
+        }
+    }
+
+    fun nowMillis(): Long = clock.now().toEpochMilliseconds()
+
+    override fun onCleared() {
+        scope.cancel()
     }
 
     fun retry() {

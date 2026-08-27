@@ -37,9 +37,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import bridge.feature.matches.impl.generated.resources.Res
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.begoml.bridge.foundation.tessera.collectUiState
 import com.begoml.bridge.uikit.LocalScreenPadding
 import com.begoml.bridge.uikit.component.LoadableContent
+import com.begoml.bridge.uikit.component.OfflineNotice
 import com.begoml.bridge.uikit.component.TeamMonogram
 import com.begoml.bridge.uikit.theme.BridgeColors
 import com.begoml.bridge.uikit.theme.FigureStyle
@@ -47,7 +48,7 @@ import com.begoml.bridge.uikit.theme.LabelStyle
 
 @Composable
 internal fun SeasonScreen(viewModel: SeasonViewModel, modifier: Modifier = Modifier) {
-    val state by viewModel.state.collectAsStateWithLifecycle()
+    val state by viewModel.collectUiState()
     val contentPadding = LocalScreenPadding.current
 
     LoadableContent(
@@ -73,6 +74,7 @@ internal fun SeasonScreen(viewModel: SeasonViewModel, modifier: Modifier = Modif
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Spacer(Modifier.height(contentPadding.calculateTopPadding()))
+            if (state.isOffline) OfflineNotice(modifier = Modifier.padding(horizontal = 16.dp))
             val scope = rememberCoroutineScope()
             RoundPills(
                 rounds = state.rounds,

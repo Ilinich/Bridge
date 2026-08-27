@@ -1,15 +1,16 @@
 package com.begoml.bridge.feature.matches.season
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import bridge.feature.matches.impl.generated.resources.Res
 import bridge.feature.matches.impl.generated.resources.fixture_score
 import bridge.feature.matches.impl.generated.resources.fixture_teams
 import bridge.feature.matches.impl.generated.resources.season_round
 import com.begoml.bridge.core.data.model.SeasonRound
+import com.begoml.bridge.core.connectivity.ConnectivityFeature
 import com.begoml.bridge.core.data.repository.MatchRepository
-import com.begoml.bridge.foundation.analytics.Analytics
-import com.begoml.bridge.foundation.analytics.AnalyticsEvent
+import kotlin.time.Clock
+import com.begoml.bridge.core.analytics.Analytics
+import com.begoml.bridge.feature.matches.analytics.MatchOpened
 import com.begoml.bridge.feature.matches.api.MatchDetailRoute
 import com.begoml.bridge.feature.matches.formatDay
 import com.begoml.bridge.feature.matches.formatTime
@@ -18,11 +19,14 @@ import com.begoml.bridge.navigation.router.navigateTo
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
+import com.begoml.bridge.foundation.tessera.UiStateDelegate
+import com.begoml.bridge.foundation.tessera.UiStateDelegateImpl
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.withContext
 import org.jetbrains.compose.resources.getString
 
@@ -53,42 +57,51 @@ data class SeasonUiState(
     val initialRoundIndex: Int = 0,
     val isLoading: Boolean = true,
     val error: Throwable? = null,
+    val isOffline: Boolean = false,
 )
 
-/** How long a state flow outlives its last collector, so a rotation does not refetch. */
-private const val SubscriptionTimeoutMillis = 5_000L
-
+/**
+ * The season screen.
+ *
+ * The feature arrives built rather than being constructed here, and both it and this share one
+ * scope created outside them: a state holder whose lifetime is decided by whoever happens to own
+ * it is the thing that leaks. Cancelling that scope in [onCleared] ends both at once.
+ */
 internal class SeasonViewModel(
+    private val scope: CoroutineScope,
+    private val feature: SeasonFeature,
+    private val connectivity: ConnectivityFeature,
     private val matchRepository: MatchRepository,
-    nowMillis: () -> Long,
     private val router: AppRouter,
     private val ioDispatcher: CoroutineDispatcher,
     private val analytics: Analytics,
-) : ViewModel() {
+) : ViewModel(),
+    UiStateDelegate<SeasonUiState, Nothing> by UiStateDelegateImpl(SeasonUiState()) {
 
-    private val feature = SeasonFeature(
-        scope = viewModelScope,
-        matchRepository = matchRepository,
-        nowMillis = nowMillis,
-    )
-
-    val state: StateFlow<SeasonUiState> = feature.stateFlow
-        .map { content ->
-            SeasonUiState(
-                rounds = withContext(ioDispatcher) { content.rounds.toUi() },
-                initialRoundIndex = content.initialRoundIndex,
-                isLoading = content.isLoading,
-                error = content.error,
-            )
+    init {
+        scope.launch {
+            combine(feature.stateFlow, connectivity.stateFlow) { content, network ->
+                SeasonUiState(
+                    rounds = withContext(ioDispatcher) { content.rounds.toUi() },
+                    initialRoundIndex = content.initialRoundIndex,
+                    isLoading = content.isLoading,
+                    error = content.error,
+                    isOffline = network.isOffline,
+                )
+            }.collect { built -> updateUiState { built } }
         }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(SubscriptionTimeoutMillis), SeasonUiState())
+    }
+
+    override fun onCleared() {
+        scope.cancel()
+    }
 
     fun retry() {
         feature.dispatchAction(SeasonAction.Retry)
     }
 
     fun onMatchClick(matchId: String) {
-        analytics.track(AnalyticsEvent.MatchOpened(matchId))
+        analytics.track(MatchOpened(matchId))
         router.navigateTo(MatchDetailRoute(matchId))
     }
 

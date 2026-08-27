@@ -26,6 +26,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
+import kotlin.time.Clock
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.map
@@ -64,13 +65,13 @@ internal class MatchRepositoryImpl(
     private val syncer: Syncer,
     private val dispatcher: CoroutineDispatcher,
     private val backgroundScope: CoroutineScope,
-    private val nowMillis: () -> Long,
+    private val clock: Clock,
 ) : MatchRepository {
 
     private val nextMatchCache = InMemoryCache<String, List<Match>>(
         loader = { id -> sportsDb.nextEvents(id).mapNotNull { it.toMatch() } },
         dispatcher = dispatcher,
-        nowMillis = nowMillis,
+        clock = clock,
         staleAfter = 60.seconds,
         expireAfter = 10.minutes,
         backgroundScope = backgroundScope,
@@ -79,7 +80,7 @@ internal class MatchRepositoryImpl(
     private val lastResultCache = InMemoryCache<String, List<Match>>(
         loader = { id -> sportsDb.lastEvents(id).mapNotNull { it.toMatch() } },
         dispatcher = dispatcher,
-        nowMillis = nowMillis,
+        clock = clock,
         staleAfter = 5.minutes,
         expireAfter = 1.hours,
         backgroundScope = backgroundScope,
@@ -139,7 +140,7 @@ internal class MatchRepositoryImpl(
     }
 
     private suspend fun resolveSeasonId(): String {
-        val current = seasonIdAt(nowMillis())
+        val current = seasonIdAt(clock.now().toEpochMilliseconds())
         runCatching {
             syncer.sync(key = seasonKey(current), ttl = CurrentSeasonTtl) { fetch(current) }
         }
@@ -155,7 +156,7 @@ internal class MatchRepositoryImpl(
     }
 
     private fun ttlFor(seasonId: String): Duration? =
-        if (seasonId == seasonIdAt(nowMillis())) CurrentSeasonTtl else null
+        if (seasonId == seasonIdAt(clock.now().toEpochMilliseconds())) CurrentSeasonTtl else null
 
     private fun seasonKey(seasonId: String) = "season:$seasonId"
 

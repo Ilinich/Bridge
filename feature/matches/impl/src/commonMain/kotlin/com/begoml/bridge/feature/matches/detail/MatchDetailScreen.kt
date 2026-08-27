@@ -14,7 +14,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.begoml.bridge.foundation.tessera.collectUiState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
@@ -45,7 +45,7 @@ private val ScreenGutter = 14.dp
 
 @Composable
 internal fun MatchDetailScreen(viewModel: MatchDetailViewModel, modifier: Modifier = Modifier) {
-    val state by viewModel.state.collectAsStateWithLifecycle()
+    val state by viewModel.collectUiState()
     val shader = rememberAnimatedShader(ClubBackgroundShader)
     val contentPadding = LocalScreenPadding.current
 

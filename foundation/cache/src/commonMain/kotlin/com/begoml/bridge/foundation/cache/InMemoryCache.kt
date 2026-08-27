@@ -1,5 +1,6 @@
 package com.begoml.bridge.foundation.cache
 
+import kotlin.time.Clock
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.CoroutineDispatcher
@@ -38,12 +39,12 @@ import kotlin.time.Duration
  *   it, a slow response could resurrect data the caller had just thrown away.
  *
  * [loader] runs on [dispatcher]; the cache never assumes a dispatcher of its own, so tests stay
- * deterministic. [nowMillis] is injected for the same reason.
+ * deterministic. [clock] is injected for the same reason.
  */
 class InMemoryCache<Key : Any, Value : Any>(
     private val loader: suspend (Key) -> Value,
     private val dispatcher: CoroutineDispatcher,
-    private val nowMillis: () -> Long,
+    private val clock: Clock,
     private val staleAfter: Duration? = null,
     private val expireAfter: Duration? = null,
     private val backgroundScope: CoroutineScope? = null,
@@ -96,7 +97,7 @@ class InMemoryCache<Key : Any, Value : Any>(
     private suspend fun getWithinTimeToLive(key: Key): Value {
         val entry = entries.value[key] ?: return loadOnce(key)
 
-        val age = nowMillis() - entry.loadedAtMillis
+        val age = clock.now().toEpochMilliseconds() - entry.loadedAtMillis
         if (expireAfter != null && age >= expireAfter.inWholeMilliseconds) return loadOnce(key)
         if (staleAfter != null && age >= staleAfter.inWholeMilliseconds) {
             backgroundScope?.launch { runCatching { loadOnce(key) } }
@@ -150,7 +151,7 @@ class InMemoryCache<Key : Any, Value : Any>(
             withContext(NonCancellable) {
                 mutex.withLock {
                     if ((generations[key] ?: 0L) == generationAtStart) {
-                        entries.value = entries.value + (key to Entry(value, nowMillis()))
+                        entries.value = entries.value + (key to Entry(value, clock.now().toEpochMilliseconds()))
                     }
                     inFlight.remove(key)
                 }

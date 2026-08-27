@@ -2,7 +2,7 @@ package com.begoml.bridge
 
 import androidx.compose.ui.window.ComposeUIViewController
 import com.begoml.bridge.di.startBridge
-import com.begoml.bridge.foundation.background.BackgroundRefresh
+import com.begoml.bridge.core.background.BackgroundRefresh
 
 private var started = false
 

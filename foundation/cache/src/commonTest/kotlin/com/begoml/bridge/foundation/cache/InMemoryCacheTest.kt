@@ -7,6 +7,7 @@ import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
+import kotlin.time.Clock
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
@@ -20,16 +21,16 @@ class InMemoryCacheTest {
     @Test
     fun `fresh entry is served without loading`() = runTest {
         var loads = 0
-        var now = 0L
+        val clock = MovableClock()
         val cache = cacheOf(
-            nowMillis = { now },
+            clock = clock,
             staleAfter = 100.milliseconds,
             expireAfter = 500.milliseconds,
             scope = this,
         ) { loads++; "v$loads" }
 
         assertEquals("v1", cache.get(Key))
-        now = 50
+        clock.millis = 50
         assertEquals("v1", cache.get(Key))
 
         assertEquals(1, loads)
@@ -38,16 +39,16 @@ class InMemoryCacheTest {
     @Test
     fun `stale entry is served immediately and revalidated in the background`() = runTest {
         var loads = 0
-        var now = 0L
+        val clock = MovableClock()
         val cache = cacheOf(
-            nowMillis = { now },
+            clock = clock,
             staleAfter = 100.milliseconds,
             expireAfter = 500.milliseconds,
             scope = this,
         ) { loads++; "v$loads" }
 
         assertEquals("v1", cache.get(Key))
-        now = 200
+        clock.millis = 200
 
         assertEquals("v1", cache.get(Key), "stale reads must not block on the network")
         testScheduler.advanceUntilIdle()
@@ -59,16 +60,16 @@ class InMemoryCacheTest {
     @Test
     fun `expired entry makes the caller wait for a fresh value`() = runTest {
         var loads = 0
-        var now = 0L
+        val clock = MovableClock()
         val cache = cacheOf(
-            nowMillis = { now },
+            clock = clock,
             staleAfter = 100.milliseconds,
             expireAfter = 500.milliseconds,
             scope = this,
         ) { loads++; "v$loads" }
 
         assertEquals("v1", cache.get(Key))
-        now = 600
+        clock.millis = 600
 
         assertEquals("v2", cache.get(Key))
         assertEquals(2, loads)
@@ -78,7 +79,7 @@ class InMemoryCacheTest {
     fun `concurrent loads of one key call the loader once`() = runTest {
         val gate = CompletableDeferred<Unit>()
         var loads = 0
-        val cache = cacheOf(nowMillis = { 0L }, scope = this) {
+        val cache = cacheOf(clock = MovableClock(), scope = this) {
             loads++
             gate.await()
             "value"
@@ -100,7 +101,7 @@ class InMemoryCacheTest {
     @Test
     fun `a response that lands after invalidate is not written back`() = runTest {
         val gate = CompletableDeferred<Unit>()
-        val cache = cacheOf(nowMillis = { 0L }, scope = this) {
+        val cache = cacheOf(clock = MovableClock(), scope = this) {
             gate.await()
             "late"
         }
@@ -118,9 +119,9 @@ class InMemoryCacheTest {
     @Test
     fun `a failing background refresh leaves the cached value in place`() = runTest {
         var attempt = 0
-        var now = 0L
+        val clock = MovableClock()
         val cache = cacheOf(
-            nowMillis = { now },
+            clock = clock,
             staleAfter = 100.milliseconds,
             scope = this,
         ) {
@@ -129,7 +130,7 @@ class InMemoryCacheTest {
         }
 
         assertEquals("v1", cache.get(Key))
-        now = 200
+        clock.millis = 200
 
         assertEquals("v1", cache.get(Key))
         testScheduler.advanceUntilIdle()
@@ -140,7 +141,7 @@ class InMemoryCacheTest {
 
     @Test
     fun `a failing load propagates to every waiting caller`() = runTest {
-        val cache = cacheOf(nowMillis = { 0L }, scope = this) { error("network down") }
+        val cache = cacheOf(clock = MovableClock(), scope = this) { error("network down") }
 
         assertFailsWith<IllegalStateException> { cache.get(Key) }
         assertNull(cache.peek(Key))
@@ -152,7 +153,7 @@ class InMemoryCacheTest {
             InMemoryCache<String, String>(
                 loader = { "value" },
                 dispatcher = StandardTestDispatcher(),
-                nowMillis = { 0L },
+                clock = MovableClock(),
                 staleAfter = 100.milliseconds,
             )
         }
@@ -165,7 +166,7 @@ class InMemoryCacheTest {
             InMemoryCache<String, String>(
                 loader = { "value" },
                 dispatcher = StandardTestDispatcher(),
-                nowMillis = { 0L },
+                clock = MovableClock(),
                 staleAfter = 500.milliseconds,
                 expireAfter = 100.milliseconds,
                 backgroundScope = TestScope(),
@@ -175,7 +176,7 @@ class InMemoryCacheTest {
 }
 
 private fun TestScope.cacheOf(
-    nowMillis: () -> Long,
+    clock: Clock,
     scope: TestScope,
     staleAfter: kotlin.time.Duration? = null,
     expireAfter: kotlin.time.Duration? = null,
@@ -183,7 +184,7 @@ private fun TestScope.cacheOf(
 ): InMemoryCache<String, String> = InMemoryCache(
     loader = loader,
     dispatcher = StandardTestDispatcher(testScheduler),
-    nowMillis = nowMillis,
+    clock = clock,
     staleAfter = staleAfter,
     expireAfter = expireAfter,
     backgroundScope = scope,

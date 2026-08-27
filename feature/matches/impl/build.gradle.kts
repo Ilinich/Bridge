@@ -10,7 +10,8 @@ kotlin {
             // Another feature's destinations, and nothing else of it.
             implementation(projects.feature.club.api)
 
-            implementation(projects.foundation.analytics.api)
+            implementation(projects.core.analytics.api)
+            implementation(projects.core.connectivity.api)
             implementation(projects.foundation.tessera)
             implementation(projects.core.data)
             implementation(projects.navigation.core)

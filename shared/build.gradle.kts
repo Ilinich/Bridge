@@ -15,10 +15,11 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            implementation(projects.foundation.analytics.api)
-            implementation(projects.foundation.background.api)
-            implementation(projects.foundation.background.impl)
-            implementation(projects.foundation.analytics.impl)
+            implementation(projects.core.analytics.api)
+            implementation(projects.core.background.api)
+            implementation(projects.core.background.impl)
+            implementation(projects.core.connectivity.impl)
+            implementation(projects.core.analytics.impl)
             implementation(projects.foundation.logger.impl)
             implementation(projects.core.data)
             implementation(libs.coil.compose)

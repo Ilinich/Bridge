@@ -25,7 +25,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.begoml.bridge.core.data.model.Player
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.begoml.bridge.foundation.tessera.collectUiState
 import com.begoml.bridge.feature.squad.PlayerLabels
 import com.begoml.bridge.feature.squad.PlayerViewModel
 import com.begoml.bridge.uikit.LocalScreenPadding
@@ -63,7 +63,7 @@ internal fun PlayerScreen(
     initialPlayerId: String,
     modifier: Modifier = Modifier,
 ) {
-    val state by viewModel.state.collectAsStateWithLifecycle()
+    val state by viewModel.collectUiState()
     val players = state.squad.players
     val labels = state.labels
     val shader = rememberAnimatedShader(ClubBackgroundShader)

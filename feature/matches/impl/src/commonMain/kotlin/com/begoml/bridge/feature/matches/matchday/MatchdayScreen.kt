@@ -25,6 +25,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import bridge.feature.matches.impl.generated.resources.Res
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.begoml.bridge.foundation.tessera.collectUiState
 import com.begoml.bridge.uikit.LocalScreenPadding
 import com.begoml.bridge.uikit.component.BackdropImage
 import com.begoml.bridge.uikit.component.BadgeImage
@@ -32,6 +33,7 @@ import com.begoml.bridge.uikit.component.GlassPanel
 import com.begoml.bridge.uikit.component.LoadableContent
 import com.begoml.bridge.uikit.glass.GlassBackdrop
 import com.begoml.bridge.uikit.glass.GlassScope
+import com.begoml.bridge.uikit.component.OfflineNotice
 import com.begoml.bridge.uikit.theme.BridgeColors
 import com.begoml.bridge.uikit.theme.FigureStyle
 import com.begoml.bridge.uikit.theme.LabelStyle
@@ -41,7 +43,8 @@ private val ScreenVerticalPadding = 16.dp
 
 @Composable
 internal fun MatchdayScreen(viewModel: MatchdayViewModel, modifier: Modifier = Modifier) {
-    val state by viewModel.state.collectAsStateWithLifecycle()
+    val state by viewModel.collectUiState()
+    val nowMillis by viewModel.ticker.collectAsStateWithLifecycle(viewModel.nowMillis())
     val contentPadding = LocalScreenPadding.current
 
     GlassBackdrop(
@@ -56,6 +59,7 @@ internal fun MatchdayScreen(viewModel: MatchdayViewModel, modifier: Modifier = M
             onRetry = viewModel::retry,
         ) {
             val labels = state.labels ?: return@LoadableContent
+            if (state.isOffline) OfflineNotice()
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -64,7 +68,7 @@ internal fun MatchdayScreen(viewModel: MatchdayViewModel, modifier: Modifier = M
                     .padding(horizontal = 14.dp, vertical = ScreenVerticalPadding),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                with(glass) { HeroCard(state = state, labels = labels) }
+                with(glass) { HeroCard(state = state, labels = labels, nowMillis = nowMillis) }
                 state.recent?.let { RecentSection(recent = it, labels = labels) }
                 state.stadium?.let {
                     StadiumSection(
@@ -79,7 +83,7 @@ internal fun MatchdayScreen(viewModel: MatchdayViewModel, modifier: Modifier = M
 }
 
 @Composable
-private fun GlassScope.HeroCard(state: MatchdayUiState, labels: MatchdayLabels) {
+private fun GlassScope.HeroCard(state: MatchdayUiState, labels: MatchdayLabels, nowMillis: Long) {
     GlassPanel(modifier = Modifier.fillMaxWidth()) {
         Column(verticalArrangement = Arrangement.spacedBy(11.dp)) {
             Row(
@@ -129,7 +133,7 @@ private fun GlassScope.HeroCard(state: MatchdayUiState, labels: MatchdayLabels) 
                 CountdownRow(
                     labels = labels,
                     countdown = Countdown.between(
-                        nowMillis = state.nowMillis,
+                        nowMillis = nowMillis,
                         kickoffMillis = match.kickoffMillis,
                     ),
                 )

@@ -30,8 +30,9 @@ import com.begoml.bridge.feature.club.api.ClubRoute
 import com.begoml.bridge.feature.matches.api.MatchdayRoute
 import com.begoml.bridge.feature.matches.api.SeasonRoute
 import com.begoml.bridge.feature.squad.api.SquadRoute
-import com.begoml.bridge.foundation.analytics.Analytics
-import com.begoml.bridge.foundation.analytics.AnalyticsEvent
+import com.begoml.bridge.core.analytics.Analytics
+import com.begoml.bridge.analytics.AppOpened
+import com.begoml.bridge.analytics.TabSelected
 import com.begoml.bridge.navigation.BridgeTabPager
 import com.begoml.bridge.navigation.FeatureNavigationEntry
 import com.begoml.bridge.navigation.router.NavigationHost
@@ -80,7 +81,7 @@ fun App() {
         val host: NavigationHost = koinInject()
         val analytics: Analytics = koinInject()
 
-        LaunchedEffect(analytics) { analytics.track(AnalyticsEvent.AppOpened) }
+        LaunchedEffect(analytics) { analytics.track(AppOpened) }
 
         val backStack = rememberTabbedBackStack(roots = TabRoutes, codecs = codecs)
         DisposableEffect(backStack) {
@@ -108,7 +109,7 @@ fun App() {
                     tabs = tabs,
                     selectedIndex = backStack.selectedTab,
                     onSelect = { index ->
-                        analytics.track(AnalyticsEvent.TabSelected(tabs[index].label))
+                        analytics.track(TabSelected(tabs[index].label))
                         backStack.selectTab(index)
                     },
                 )

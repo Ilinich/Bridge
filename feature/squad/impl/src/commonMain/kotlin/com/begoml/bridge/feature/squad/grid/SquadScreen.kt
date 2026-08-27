@@ -27,7 +27,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.dp
 import com.begoml.bridge.core.data.model.Player
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.begoml.bridge.foundation.tessera.collectUiState
 import com.begoml.bridge.feature.squad.SquadViewModel
 import com.begoml.bridge.uikit.LocalScreenPadding
 import com.begoml.bridge.uikit.component.CutoutImage
@@ -50,7 +50,7 @@ private val ScreenGutter = 14.dp
 
 @Composable
 internal fun SquadScreen(viewModel: SquadViewModel, modifier: Modifier = Modifier) {
-    val state by viewModel.state.collectAsStateWithLifecycle()
+    val state by viewModel.collectUiState()
     val contentPadding = LocalScreenPadding.current
     val layoutDirection = LocalLayoutDirection.current
 

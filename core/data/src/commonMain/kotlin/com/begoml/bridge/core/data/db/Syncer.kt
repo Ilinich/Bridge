@@ -1,5 +1,7 @@
 package com.begoml.bridge.core.data.db
 
+import kotlin.time.Clock
+
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -18,7 +20,7 @@ import kotlin.time.Duration
  */
 internal class Syncer(
     private val freshness: FreshnessDao,
-    private val nowMillis: () -> Long,
+    private val clock: Clock,
     private val dispatcher: CoroutineDispatcher,
 ) {
 
@@ -29,14 +31,14 @@ internal class Syncer(
         lockFor(key).withLock {
             if (!force && !isDue(key, ttl)) return
             withContext(dispatcher) { fetch() }
-            freshness.stamp(FreshnessEntity(key = key, fetchedAtMillis = nowMillis()))
+            freshness.stamp(FreshnessEntity(key = key, fetchedAtMillis = clock.now().toEpochMilliseconds()))
         }
     }
 
     private suspend fun isDue(key: String, ttl: Duration?): Boolean {
         val fetchedAt = freshness.fetchedAt(key) ?: return true
         if (ttl == null) return false
-        return nowMillis() - fetchedAt >= ttl.inWholeMilliseconds
+        return clock.now().toEpochMilliseconds() - fetchedAt >= ttl.inWholeMilliseconds
     }
 
     private suspend fun lockFor(key: String): Mutex =

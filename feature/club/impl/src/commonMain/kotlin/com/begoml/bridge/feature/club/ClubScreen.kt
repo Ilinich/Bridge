@@ -32,7 +32,7 @@ import androidx.compose.ui.unit.dp
 import bridge.feature.club.impl.generated.resources.Res
 import com.begoml.bridge.core.data.model.Club
 import com.begoml.bridge.core.data.model.Venue
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.begoml.bridge.foundation.tessera.collectUiState
 import com.begoml.bridge.uikit.LocalScreenPadding
 import com.begoml.bridge.uikit.groupedThousands
 import com.begoml.bridge.uikit.component.BackdropImage
@@ -69,7 +69,7 @@ private const val ClipUrl =
 
 @Composable
 internal fun ClubScreen(viewModel: ClubViewModel, modifier: Modifier = Modifier) {
-    val state by viewModel.state.collectAsStateWithLifecycle()
+    val state by viewModel.collectUiState()
     val contentPadding = LocalScreenPadding.current
 
     val shader = rememberAnimatedShader(FloodlightShader)

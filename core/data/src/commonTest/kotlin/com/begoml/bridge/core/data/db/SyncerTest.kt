@@ -6,6 +6,8 @@ import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
+import kotlin.time.Clock
+import kotlin.time.Instant
 import kotlin.test.assertEquals
 import kotlin.time.Duration.Companion.hours
 
@@ -20,17 +22,22 @@ private class FakeFreshnessDao : FreshnessDao {
     }
 }
 
+/** A clock this suite moves by hand, so an age is stated rather than waited for. */
+private class MovableClock(var millis: Long = 0L) : Clock {
+    override fun now(): Instant = Instant.fromEpochMilliseconds(millis)
+}
+
 private const val Key = "season:2025-26"
 
 class SyncerTest {
 
-    private fun TestScope.syncerWith(now: () -> Long, dao: FreshnessDao) =
-        Syncer(freshness = dao, nowMillis = now, dispatcher = StandardTestDispatcher(testScheduler))
+    private fun TestScope.syncerWith(clock: Clock, dao: FreshnessDao) =
+        Syncer(freshness = dao, clock = clock, dispatcher = StandardTestDispatcher(testScheduler))
 
     @Test
     fun `a resource that was never fetched is fetched`() = runTest {
         var fetches = 0
-        syncerWith({ 0L }, FakeFreshnessDao()).sync(Key, ttl = 4.hours) { fetches++ }
+        syncerWith(MovableClock(0L), FakeFreshnessDao()).sync(Key, ttl = 4.hours) { fetches++ }
 
         assertEquals(1, fetches)
     }
@@ -38,7 +45,7 @@ class SyncerTest {
     @Test
     fun `a resource that can never change is fetched once and never again`() = runTest {
         var fetches = 0
-        val syncer = syncerWith({ 0L }, FakeFreshnessDao())
+        val syncer = syncerWith(MovableClock(0L), FakeFreshnessDao())
 
         syncer.sync(Key, ttl = null) { fetches++ }
         syncer.sync(Key, ttl = null) { fetches++ }
@@ -49,11 +56,11 @@ class SyncerTest {
     @Test
     fun `a fresh resource is not fetched again`() = runTest {
         var fetches = 0
-        var now = 0L
-        val syncer = syncerWith({ now }, FakeFreshnessDao())
+        val clock = MovableClock()
+        val syncer = syncerWith(clock, FakeFreshnessDao())
 
         syncer.sync(Key, ttl = 4.hours) { fetches++ }
-        now = 3.hours.inWholeMilliseconds
+        clock.millis = 3.hours.inWholeMilliseconds
         syncer.sync(Key, ttl = 4.hours) { fetches++ }
 
         assertEquals(1, fetches)
@@ -62,11 +69,11 @@ class SyncerTest {
     @Test
     fun `a resource past its time to live is fetched again`() = runTest {
         var fetches = 0
-        var now = 0L
-        val syncer = syncerWith({ now }, FakeFreshnessDao())
+        val clock = MovableClock()
+        val syncer = syncerWith(clock, FakeFreshnessDao())
 
         syncer.sync(Key, ttl = 4.hours) { fetches++ }
-        now = 5.hours.inWholeMilliseconds
+        clock.millis = 5.hours.inWholeMilliseconds
         syncer.sync(Key, ttl = 4.hours) { fetches++ }
 
         assertEquals(2, fetches)
@@ -75,7 +82,7 @@ class SyncerTest {
     @Test
     fun `force ignores a stamp that is still fresh`() = runTest {
         var fetches = 0
-        val syncer = syncerWith({ 0L }, FakeFreshnessDao())
+        val syncer = syncerWith(MovableClock(0L), FakeFreshnessDao())
 
         syncer.sync(Key, ttl = 4.hours) { fetches++ }
         syncer.sync(Key, ttl = 4.hours, force = true) { fetches++ }
@@ -87,7 +94,7 @@ class SyncerTest {
     fun `two callers asking at once produce one fetch`() = runTest {
         val gate = CompletableDeferred<Unit>()
         var fetches = 0
-        val syncer = syncerWith({ 0L }, FakeFreshnessDao())
+        val syncer = syncerWith(MovableClock(0L), FakeFreshnessDao())
 
         val first = async { syncer.sync(Key, ttl = 4.hours) { fetches++; gate.await() } }
         val second = async { syncer.sync(Key, ttl = 4.hours) { fetches++ } }

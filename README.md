@@ -145,8 +145,9 @@ everywhere else.
 | `foundation:tessera` | state holders: `feature()` and `UiStateDelegate` ([readme](foundation/tessera/README.md)) |
 | `foundation:cache` | in-memory cache with soft and hard TTL |
 | `foundation:logger:api` / `:impl` | the logging contract, and the platform sink behind it |
-| `foundation:analytics:api` / `:impl` | typed events, recorded to the log until a backend exists |
-| `foundation:background:api` / `:impl` | daily refresh: WorkManager and `BGTaskScheduler` |
+| `core:analytics:api` / `:impl` | the `track` entry point; each feature declares its own events |
+| `core:background:api` / `:impl` | daily refresh: WorkManager and `BGTaskScheduler` |
+| `core:connectivity:api` / `:impl` | a headless feature: `ConnectivityManager` and `NWPathMonitor` behind one state flow |
 | `core:data` | HTTP clients, DTOs, domain models, repositories |
 | `uikit` | theme, glass surfaces, runtime-shader brushes, components |
 | `navigation:core` | the routing contract, the router, per-tab stacks ([readme](navigation/core/README.md)) |
