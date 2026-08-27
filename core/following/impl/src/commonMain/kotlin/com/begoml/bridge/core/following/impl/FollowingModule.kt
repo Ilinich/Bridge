@@ -24,6 +24,10 @@ fun followingModule(): Module = module {
     }
     single<FollowingStore> { DataStoreFollowing(get()) }
     single<FollowingFeature> {
-        FollowingFeatureImpl(scope = stateHolderScope(), store = get())
+        FollowingFeatureImpl(
+            scope = stateHolderScope(),
+            store = get(),
+            plugins = listOf(FollowingLogPlugin(get())),
+        )
     }
 }

@@ -2,13 +2,13 @@ package com.begoml.bridge.foundation.tessera
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel.Factory.BUFFERED
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -68,6 +68,31 @@ interface Feature<State, Action, Event, InternalState> :
 typealias SimpleFeature<State, Action, Event> = Feature<State, Action, Event, Unit>
 
 /**
+ * A listener on a feature's traffic, installed at construction.
+ *
+ * It **observes** and does not intervene: no hook can rewrite an action or veto a state. That is
+ * the line between a plugin and the feature's own logic — a plugin that can swallow an action
+ * moves behaviour out of the feature and into the wiring, where nobody looks for it. Logging,
+ * analytics and debug panels all fit on this side of the line.
+ *
+ * Hooks run on whichever coroutine caused them, so they must be cheap and must not throw.
+ */
+interface FeaturePlugin<State, Action, Event> {
+
+    fun onStart() = Unit
+
+    fun onAction(action: Action) = Unit
+
+    /** Only for a transition that changed something; equal states are not reported. */
+    fun onState(old: State, new: State) = Unit
+
+    fun onEvent(event: Event) = Unit
+
+    /** The scope that owned the feature has ended; [error] is null for a plain cancellation. */
+    fun onStop(error: Throwable?) = Unit
+}
+
+/**
  * The default state holder: a state flow, an action channel and an event flow, mixed into a class
  * with `by feature(...)`.
  *
@@ -79,12 +104,14 @@ typealias SimpleFeature<State, Action, Event> = Feature<State, Action, Event, Un
 fun <State, Action, Event> feature(
     initialState: State,
     scope: CoroutineScope,
-): SimpleFeature<State, Action, Event> = FeatureImpl(initialState, Unit, scope)
+    plugins: List<FeaturePlugin<State, Action, Event>> = emptyList(),
+): SimpleFeature<State, Action, Event> = FeatureImpl(initialState, Unit, scope, plugins)
 
 private class FeatureImpl<State, Action, Event, InternalState>(
     initialState: State,
     initialInternalState: InternalState,
     private val scope: CoroutineScope,
+    private val plugins: List<FeaturePlugin<State, Action, Event>> = emptyList(),
 ) : Feature<State, Action, Event, InternalState> {
 
     private val mutableState = MutableStateFlow(initialState)
@@ -100,15 +127,38 @@ private class FeatureImpl<State, Action, Event, InternalState>(
 
     override val events: Flow<Event> = eventChannel.receiveAsFlow()
 
+    init {
+        plugins.forEach { plugin -> plugin.onStart() }
+        scope.coroutineContext[Job]?.invokeOnCompletion { error ->
+            plugins.forEach { plugin -> plugin.onStop(error) }
+        }
+    }
+
     override suspend fun updateState(transform: (State) -> State) {
-        // update() rather than a plain read-modify-write: updateStateAsync writes without taking
-        // this mutex, so a value read here could otherwise be stale by the time it is written back
-        // and the async write would be lost.
-        stateMutex.withLock { mutableState.update(transform) }
+        // compareAndSet rather than a plain read-modify-write: updateStateAsync writes without
+        // taking this mutex, so a value read here could otherwise be stale by the time it is
+        // written back and the async write would be lost.
+        stateMutex.withLock { commit(transform) }
     }
 
     override fun updateStateAsync(transform: (State) -> State) {
-        mutableState.update(transform)
+        commit(transform)
+    }
+
+    /**
+     * The one place state is written, so plugins see every transition and see it once.
+     *
+     * The loop is what `MutableStateFlow.update` does; it is spelled out here because a plugin
+     * needs the value that was replaced, and `update` does not hand it back.
+     */
+    private fun commit(transform: (State) -> State) {
+        var old: State
+        var new: State
+        do {
+            old = mutableState.value
+            new = transform(old)
+        } while (!mutableState.compareAndSet(old, new))
+        if (old != new) plugins.forEach { plugin -> plugin.onState(old, new) }
     }
 
     override suspend fun updateInternalState(transform: (InternalState) -> InternalState) {
@@ -118,10 +168,11 @@ private class FeatureImpl<State, Action, Event, InternalState>(
     }
 
     override fun dispatchAction(action: Action) {
-        scope.launch { actions.send(action) }
+        scope.launch { emitAction(action) }
     }
 
     override suspend fun emitAction(action: Action) {
+        plugins.forEach { plugin -> plugin.onAction(action) }
         actions.send(action)
     }
 
@@ -130,10 +181,11 @@ private class FeatureImpl<State, Action, Event, InternalState>(
     }
 
     override fun dispatchEvent(event: Event) {
-        scope.launch { eventChannel.send(event) }
+        scope.launch { emitEvent(event) }
     }
 
     override suspend fun emitEvent(event: Event) {
+        plugins.forEach { plugin -> plugin.onEvent(event) }
         eventChannel.send(event)
     }
 }

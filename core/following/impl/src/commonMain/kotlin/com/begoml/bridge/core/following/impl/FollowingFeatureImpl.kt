@@ -2,6 +2,7 @@ package com.begoml.bridge.core.following.impl
 
 import com.begoml.bridge.core.following.FollowingFeature
 import com.begoml.bridge.core.following.FollowingState
+import com.begoml.bridge.foundation.tessera.FeaturePlugin
 import com.begoml.bridge.foundation.tessera.SimpleFeature
 import com.begoml.bridge.foundation.tessera.awaitActionsIn
 import com.begoml.bridge.foundation.tessera.feature
@@ -26,9 +27,10 @@ internal sealed interface FollowingEvent
 internal class FollowingFeatureImpl(
     scope: CoroutineScope,
     private val store: FollowingStore,
+    plugins: List<FeaturePlugin<FollowingState, FollowingAction, FollowingEvent>> = emptyList(),
 ) : FollowingFeature,
     SimpleFeature<FollowingState, FollowingAction, FollowingEvent>
-    by feature(FollowingState(), scope) {
+    by feature(FollowingState(), scope, plugins) {
 
     init {
         scope.launch {
