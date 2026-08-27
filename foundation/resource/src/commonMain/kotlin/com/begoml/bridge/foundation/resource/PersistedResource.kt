@@ -1,6 +1,5 @@
-package com.begoml.bridge.core.data.repository
+package com.begoml.bridge.foundation.resource
 
-import com.begoml.bridge.core.domain.model.Loadable
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
@@ -14,7 +13,7 @@ import kotlinx.coroutines.launch
  * network — that is the whole point of persisting them. A failed refresh is reported only when
  * there is nothing stored to show instead.
  */
-internal fun <T : Any> persistedResource(
+fun <T : Any> persistedResource(
     stored: Flow<T?>,
     sync: suspend () -> Unit,
 ): Flow<Loadable<T>> = channelFlow {

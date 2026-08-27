@@ -1,6 +1,6 @@
 package com.begoml.bridge.feature.player
 
-import com.begoml.bridge.core.domain.model.Loadable
+import com.begoml.bridge.foundation.resource.Loadable
 import com.begoml.bridge.core.domain.model.Player
 import com.begoml.bridge.core.domain.model.FollowedClub
 import com.begoml.bridge.core.domain.repository.SquadRepository

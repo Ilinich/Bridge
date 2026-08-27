@@ -1,4 +1,4 @@
-package com.begoml.bridge.core.domain.model
+package com.begoml.bridge.foundation.resource
 
 /**
  * What a screen has of a resource right now.

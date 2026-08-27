@@ -1,12 +1,13 @@
 package com.begoml.bridge.core.data.repository
 
+import com.begoml.bridge.foundation.resource.persistedResource
 import com.begoml.bridge.core.domain.repository.SquadRepository
 
 import com.begoml.bridge.core.data.db.PlayerDao
 import com.begoml.bridge.core.data.db.Syncer
 import com.begoml.bridge.core.data.db.toEntity
 import com.begoml.bridge.core.data.db.toPlayer
-import com.begoml.bridge.core.domain.model.Loadable
+import com.begoml.bridge.foundation.resource.Loadable
 import com.begoml.bridge.core.domain.model.Player
 import com.begoml.bridge.core.data.mapper.toPlayer
 import com.begoml.bridge.core.data.sportsdb.SportsDbApi

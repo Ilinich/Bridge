@@ -1,5 +1,7 @@
 package com.begoml.bridge.core.data.repository
 
+import com.begoml.bridge.foundation.resource.persistedResource
+import com.begoml.bridge.foundation.resource.cachedResource
 import com.begoml.bridge.core.domain.repository.MatchRepository
 
 import com.begoml.bridge.core.data.db.SeasonDao
@@ -8,12 +10,12 @@ import com.begoml.bridge.core.data.db.toEntity
 import com.begoml.bridge.core.data.db.SeasonMatchEntity
 import com.begoml.bridge.core.data.db.toSeasonMatch
 import com.begoml.bridge.core.data.db.toSeason
-import com.begoml.bridge.core.domain.model.Loadable
+import com.begoml.bridge.foundation.resource.Loadable
 import com.begoml.bridge.core.domain.model.Match
 import com.begoml.bridge.core.domain.model.Season
 import com.begoml.bridge.core.domain.model.SeasonMatch
 import com.begoml.bridge.core.domain.model.SeasonRound
-import com.begoml.bridge.core.domain.model.map
+import com.begoml.bridge.foundation.resource.map
 import com.begoml.bridge.core.domain.model.roundAt
 import com.begoml.bridge.core.data.mapper.toMatch
 import com.begoml.bridge.core.data.mapper.toSeason
@@ -21,7 +23,7 @@ import com.begoml.bridge.core.data.openfootball.SeasonApi
 import com.begoml.bridge.core.domain.previousSeasonId
 import com.begoml.bridge.core.domain.seasonIdAt
 import com.begoml.bridge.core.data.sportsdb.SportsDbApi
-import com.begoml.bridge.foundation.cache.InMemoryCache
+import com.begoml.bridge.foundation.resource.InMemoryCache
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow

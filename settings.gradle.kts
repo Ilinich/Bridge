@@ -36,7 +36,7 @@ include(":benchmark")
 include(":shared")
 
 include(":foundation:tessera")
-include(":foundation:cache")
+include(":foundation:resource")
 include(":foundation:coroutines")
 include(":foundation:logger:api")
 include(":foundation:logger:impl")

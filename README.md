@@ -141,7 +141,9 @@ everywhere else.
 ## Layers
 
 `core:domain` holds the models and the repository contracts; `core:data` holds Room, the HTTP
-clients and the implementations. Features depend on the domain only, so a DAO in a ViewModel is
+clients and the implementations; `foundation:resource` holds the mechanism both of them use —
+`Loadable` and the builders that report a source as loading, content or failure. That mechanism
+carries no fact about football, which is why it sits below the domain rather than inside it. Features depend on the domain only, so a DAO in a ViewModel is
 not a matter of discipline — it does not compile. Only the composition root depends on `core:data`,
 which is also what keeps Room's annotation processor out of every feature's build.
 
@@ -156,7 +158,7 @@ rule appears that two screens must agree on, that is when the layer earns its pl
 | Module | Contains |
 |---|---|
 | `foundation:tessera` | state holders: `feature()` and `UiStateDelegate` ([readme](foundation/tessera/README.md)) |
-| `foundation:cache` | in-memory cache with soft and hard TTL |
+| `foundation:resource` | how a value is loaded and reported: `Loadable`, the in-memory cache with soft and hard TTL, and the two builders that turn a source into the three states a screen can be in |
 | `foundation:logger:api` / `:impl` | the logging contract, and the platform sink behind it |
 | `core:analytics:api` / `:impl` | the `track` entry point; each feature declares its own events |
 | `core:background:api` / `:impl` | daily refresh: WorkManager and `BGTaskScheduler` |

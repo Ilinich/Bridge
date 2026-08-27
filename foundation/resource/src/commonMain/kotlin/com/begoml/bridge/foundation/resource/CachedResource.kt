@@ -1,7 +1,5 @@
-package com.begoml.bridge.core.data.repository
+package com.begoml.bridge.foundation.resource
 
-import com.begoml.bridge.core.domain.model.Loadable
-import com.begoml.bridge.foundation.cache.InMemoryCache
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.filterNotNull
@@ -15,7 +13,7 @@ import kotlinx.coroutines.flow.map
  * for data separately from observing it. A failure is reported only while nothing is cached; once
  * a value exists, a failed refresh leaves the screen showing what it has.
  */
-internal fun <Key : Any, Value : Any> InMemoryCache<Key, Value>.cachedResource(
+fun <Key : Any, Value : Any> InMemoryCache<Key, Value>.cachedResource(
     key: Key,
 ): Flow<Loadable<Value>> = flow {
     val cached = peek(key)

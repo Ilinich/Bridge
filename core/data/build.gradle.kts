@@ -22,7 +22,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             api(projects.core.domain)
-            implementation(projects.foundation.cache)
+            implementation(projects.foundation.resource)
             api(projects.foundation.coroutines)
 
             implementation(libs.ktor.client.core)

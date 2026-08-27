@@ -1,5 +1,6 @@
 package com.begoml.bridge.core.data.repository
 
+import com.begoml.bridge.foundation.resource.persistedResource
 import com.begoml.bridge.core.domain.repository.ClubRepository
 
 import com.begoml.bridge.core.data.db.ClubDao
@@ -9,7 +10,7 @@ import com.begoml.bridge.core.data.db.toClub
 import com.begoml.bridge.core.data.db.toEntity
 import com.begoml.bridge.core.data.db.toVenue
 import com.begoml.bridge.core.domain.model.Club
-import com.begoml.bridge.core.domain.model.Loadable
+import com.begoml.bridge.foundation.resource.Loadable
 import com.begoml.bridge.core.domain.model.Venue
 import com.begoml.bridge.core.data.mapper.toClub
 import com.begoml.bridge.core.data.mapper.toVenue

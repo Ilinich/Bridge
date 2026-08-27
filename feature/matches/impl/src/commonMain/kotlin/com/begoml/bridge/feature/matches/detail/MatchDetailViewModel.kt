@@ -14,7 +14,7 @@ import bridge.feature.matches.impl.generated.resources.season_round
 import bridge.feature.matches.impl.generated.resources.match_kickoff
 import bridge.feature.matches.impl.generated.resources.match_not_found
 import bridge.feature.matches.impl.generated.resources.match_title
-import com.begoml.bridge.core.domain.model.Loadable
+import com.begoml.bridge.foundation.resource.Loadable
 import com.begoml.bridge.core.domain.model.SeasonMatch
 import com.begoml.bridge.core.domain.TeamNames
 import com.begoml.bridge.core.domain.model.FollowedClub

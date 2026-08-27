@@ -1,7 +1,7 @@
 package com.begoml.bridge.feature.club
 
 import com.begoml.bridge.core.domain.model.Club
-import com.begoml.bridge.core.domain.model.Loadable
+import com.begoml.bridge.foundation.resource.Loadable
 import com.begoml.bridge.core.domain.model.Venue
 import com.begoml.bridge.core.domain.model.FollowedClub
 import com.begoml.bridge.core.domain.repository.ClubRepository

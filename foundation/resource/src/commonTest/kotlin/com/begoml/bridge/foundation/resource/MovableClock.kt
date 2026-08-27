@@ -1,4 +1,4 @@
-package com.begoml.bridge.foundation.cache
+package com.begoml.bridge.foundation.resource
 
 import kotlin.time.Clock
 import kotlin.time.Instant

@@ -1,7 +1,7 @@
 package com.begoml.bridge.feature.matches.matchday
 
 import com.begoml.bridge.core.domain.model.Club
-import com.begoml.bridge.core.domain.model.Loadable
+import com.begoml.bridge.foundation.resource.Loadable
 import com.begoml.bridge.core.domain.model.Match
 import com.begoml.bridge.core.domain.model.Player
 import com.begoml.bridge.core.domain.model.FollowedClub

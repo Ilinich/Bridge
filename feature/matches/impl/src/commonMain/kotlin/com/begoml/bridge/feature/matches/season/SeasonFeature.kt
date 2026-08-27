@@ -1,6 +1,6 @@
 package com.begoml.bridge.feature.matches.season
 
-import com.begoml.bridge.core.domain.model.Loadable
+import com.begoml.bridge.foundation.resource.Loadable
 import com.begoml.bridge.core.domain.model.Season
 import com.begoml.bridge.core.domain.model.SeasonRound
 import com.begoml.bridge.core.domain.model.roundAt

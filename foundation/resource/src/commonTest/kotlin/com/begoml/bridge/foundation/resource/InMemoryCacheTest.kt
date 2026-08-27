@@ -1,4 +1,4 @@
-package com.begoml.bridge.foundation.cache
+package com.begoml.bridge.foundation.resource
 
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.async
