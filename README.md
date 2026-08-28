@@ -43,7 +43,7 @@ Every screen, every state holder, every repository and every test below is writt
 | Video | playback contract, transport controls | ExoPlayer / AVPlayer |
 | Logging | levels, tags, the debug gate | `Log` / `NSLog` |
 | Background refresh | what to refresh | WorkManager / `BGTaskScheduler` |
-| Tests | Compose UI tests in `commonTest` | run natively on iOS, on a device on Android |
+| Tests | unit tests and a Compose UI test in `commonTest` | run natively on iOS, on a device on Android |
 
 Kotlin 2.4.10, Gradle 9.1, AGP 9.0, JDK 21, minSdk 26. Static analysis is detekt with a rule
 written for this repository; performance has a Macrobenchmark module and a recorded baseline
@@ -88,6 +88,13 @@ same call returns a still gradient, so callers never branch.
 no-op on iOS — no error, no log. `GlassBackdrop` makes the two siblings by construction and
 `Modifier.glass()` exists only inside its scope, so the mistake is unrepresentable rather than
 merely documented.
+
+**Strings are never read on the frame.** A Compose resource is a `suspend` call, so reading one
+while composing means either blocking the frame or rendering a screen that has no words yet. Each
+feature instead declares the ids it needs and asks a `StringResolver` for them once, off the main
+thread, before its first frame; the resolved labels then live in the state next to everything else
+the screen draws. The host never names a feature — it asks the graph for every `LabelsLoader` and
+runs them — so a new feature brings its own strings with it.
 
 **A composition API that refuses to starve.** `combine` emits nothing until every source has
 spoken, so one silent source leaves a screen blank forever. `composeState` therefore accepts only
@@ -158,13 +165,15 @@ rule appears that two screens must agree on, that is when the layer earns its pl
 | Module | Contains |
 |---|---|
 | `foundation:tessera` | state holders: `feature()` and `UiStateDelegate` ([readme](foundation/tessera/README.md)) |
+| `foundation:coroutines` | the dispatchers a state holder is given, and `safeLaunch`: a launch whose failure is logged instead of reaching the platform handler |
+| `foundation:strings` | `StringResolver`: the only way a feature reads a string resource, and the loader contract the host drives at startup |
 | `foundation:resource` | how a value is loaded and reported: `Loadable`, the in-memory cache with soft and hard TTL, and the two builders that turn a source into the three states a screen can be in |
 | `foundation:logger:api` / `:impl` | the logging contract, and the platform sink behind it |
 | `core:analytics:api` / `:impl` | the `track` entry point; each feature declares its own events |
 | `core:background:api` / `:impl` | daily refresh: WorkManager and `BGTaskScheduler` |
 | `core:connectivity:api` / `:impl` | `ConnectivityManager` and `NWPathMonitor` behind one state flow |
-| `core:features:following:api` / `:impl` | followed players: a state holder with no screen, shared by two feature modules |
-| `core:domain` | what the app is about: models, `Loadable`, the repository contracts |
+| `core:features:following:api` / `:impl` | followed players: a state holder with no screen, shared by three feature modules |
+| `core:domain` | what the app is about: models and the repository contracts |
 | `core:data` | how it is fetched: HTTP clients, DTOs, Room, mappers, the repository implementations |
 | `uikit` | theme, glass surfaces, runtime-shader brushes, components |
 | `navigation:core` | the routing contract, the router, per-tab stacks ([readme](navigation/core/README.md)) |
