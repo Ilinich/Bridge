@@ -82,7 +82,7 @@ internal class MatchDetailViewModel(
     UiStateDelegate<MatchDetailUiState> by UiStateDelegateImpl(MatchDetailUiState()) {
 
     init {
-        viewModelScope.safeLaunch(ioDispatcher, logger, Tag) {
+        viewModelScope.safeLaunch(dispatcher = ioDispatcher, logger = logger, tag = Tag) {
             matchRepository.match(matchId).collect { loadable ->
                 val match = (loadable as? Loadable.Content)?.value
                 val ui = match?.let { it.toUi() }

@@ -72,7 +72,7 @@ internal class PlayerViewModel(
 ) : ViewModel(scope), UiStateDelegate<PlayerUiState> by UiStateDelegateImpl(PlayerUiState()) {
 
     init {
-        viewModelScope.safeLaunch(ioDispatcher, logger, Tag) {
+        viewModelScope.safeLaunch(dispatcher = ioDispatcher, logger = logger, tag = Tag) {
             combine(repository.squad(club.id), following.stateFlow) { loadable, followed ->
                 loadable to followed.playerIds
             }.collect { (loadable, followed) ->

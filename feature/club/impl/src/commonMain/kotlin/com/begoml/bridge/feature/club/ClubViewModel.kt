@@ -100,7 +100,7 @@ internal class ClubViewModel(
     private var refreshJob: Job? = null
 
     init {
-        viewModelScope.safeLaunch(ioDispatcher, logger, Tag) {
+        viewModelScope.safeLaunch(dispatcher = ioDispatcher, logger = logger, tag = Tag) {
             // Two requests rather than one combined source: the ground can only be asked about
             // once the club record says which ground it is, and the profile must render without
             // waiting for that second answer.
@@ -135,7 +135,11 @@ internal class ClubViewModel(
     /** A forced refresh holds the syncer's key mutex across the network, so only one may run. */
     fun retry() {
         if (refreshJob?.isActive == true) return
-        refreshJob = viewModelScope.safeLaunch(ioDispatcher, logger, Tag) { repository.refresh(club.id) }
+        refreshJob = viewModelScope.safeLaunch(
+            dispatcher = ioDispatcher,
+            logger = logger,
+            tag = Tag,
+        ) { repository.refresh(club.id) }
     }
 
     private fun Club.toUi(labels: ClubLabels) = ClubUi(

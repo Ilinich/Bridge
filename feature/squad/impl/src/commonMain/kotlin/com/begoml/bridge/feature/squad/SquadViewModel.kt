@@ -63,7 +63,7 @@ internal class SquadViewModel(
 ) : ViewModel(scope), UiStateDelegate<SquadUiState> by UiStateDelegateImpl(SquadUiState()) {
 
     init {
-        viewModelScope.safeLaunch(ioDispatcher, logger, Tag) {
+        viewModelScope.safeLaunch(dispatcher = ioDispatcher, logger = logger, tag = Tag) {
             combine(repository.squad(club.id), following.stateFlow) { loadable, followed ->
                 loadable to followed.playerIds
             }.collect { (loadable, followed) ->
@@ -80,7 +80,11 @@ internal class SquadViewModel(
     }
 
     fun retry() {
-        viewModelScope.safeLaunch(ioDispatcher, logger, Tag) { repository.refresh(club.id) }
+        viewModelScope.safeLaunch(
+            dispatcher = ioDispatcher,
+            logger = logger,
+            tag = Tag,
+        ) { repository.refresh(club.id) }
     }
 
     private fun toUiState(

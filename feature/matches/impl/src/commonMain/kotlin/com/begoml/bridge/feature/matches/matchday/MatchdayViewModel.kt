@@ -166,7 +166,7 @@ internal class MatchdayViewModel(
         .map { club -> club?.toStadiumUi() }
 
     init {
-        viewModelScope.safeLaunch(ioDispatcher, logger, Tag) {
+        viewModelScope.safeLaunch(dispatcher = ioDispatcher, logger = logger, tag = Tag) {
             combine(
                 feature.stateFlow,
                 recent,

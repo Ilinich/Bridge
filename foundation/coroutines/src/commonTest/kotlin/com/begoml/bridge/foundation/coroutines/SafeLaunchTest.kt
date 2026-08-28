@@ -35,7 +35,11 @@ class SafeLaunchTest {
         // hands its exception to the parent, and the handler installed here is never consulted.
         val scope = CoroutineScope(SupervisorJob() + StandardTestDispatcher(testScheduler))
 
-        scope.safeLaunch(StandardTestDispatcher(testScheduler), logger, "Screen") { throw Boom() }
+        scope.safeLaunch(
+            dispatcher = StandardTestDispatcher(testScheduler),
+            logger = logger,
+            tag = "Screen",
+        ) { throw Boom() }
         advanceUntilIdle()
 
         assertEquals(1, logger.errors.size)
@@ -49,7 +53,11 @@ class SafeLaunchTest {
         val logger = RecordingLogger()
         val scope = CoroutineScope(SupervisorJob() + StandardTestDispatcher(testScheduler))
 
-        val job = scope.safeLaunch(StandardTestDispatcher(testScheduler), logger, "Screen") {
+        val job = scope.safeLaunch(
+            dispatcher = StandardTestDispatcher(testScheduler),
+            logger = logger,
+            tag = "Screen",
+        ) {
             throw CancellationException("gone")
         }
         advanceUntilIdle()
@@ -65,7 +73,7 @@ class SafeLaunchTest {
         val scope = CoroutineScope(SupervisorJob() + StandardTestDispatcher(testScheduler))
         var ranOn: CoroutineDispatcher? = null
 
-        scope.safeLaunch(handed, logger, "Screen") {
+        scope.safeLaunch(dispatcher = handed, logger = logger, tag = "Screen") {
             @OptIn(kotlin.ExperimentalStdlibApi::class)
             ranOn = currentCoroutineContext()[CoroutineDispatcher]
         }

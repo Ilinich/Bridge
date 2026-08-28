@@ -84,7 +84,7 @@ internal class SeasonViewModel(
     UiStateDelegate<SeasonUiState> by UiStateDelegateImpl(SeasonUiState()) {
 
     init {
-        viewModelScope.safeLaunch(ioDispatcher, logger, Tag) {
+        viewModelScope.safeLaunch(dispatcher = ioDispatcher, logger = logger, tag = Tag) {
             combine(feature.stateFlow, connectivity.status) { content, network ->
                 SeasonUiState(
                     rounds = content.rounds.toUi(),
