@@ -35,11 +35,14 @@ internal class ClubRepositoryImpl(
     private val dispatcher: CoroutineDispatcher,
 ) : ClubRepository {
 
+    // flowOn on the whole chain, not on the stored half of it: everything here — the database
+    // flow, the mapping, the fetch that persistedResource starts — belongs off the collector's
+    // context, and a repository that inherited it would behave differently per caller.
     override fun club(teamId: String): Flow<Loadable<Club>> = persistedResource(
-        stored = dao.observe(teamId).map { entity -> entity?.toClub() }.flowOn(dispatcher),
+        stored = dao.observe(teamId).map { entity -> entity?.toClub() },
     ) {
         syncer.sync(key = clubKey(teamId), ttl = ClubTtl) { fetchClub(teamId) }
-    }
+    }.flowOn(dispatcher)
 
     @OptIn(ExperimentalCoroutinesApi::class)
     /**
@@ -56,11 +59,12 @@ internal class ClubRepositoryImpl(
             if (venueId == null) return@flatMapLatest flowOf(Loadable.Loading)
 
             persistedResource(
-                stored = venueDao.observe(venueId).map { it?.toVenue() }.flowOn(dispatcher),
+                stored = venueDao.observe(venueId).map { it?.toVenue() },
             ) {
                 syncer.sync(key = "venue:$venueId", ttl = ClubTtl) { fetchVenue(venueId) }
             }
         }
+        .flowOn(dispatcher)
 
     override suspend fun refresh(teamId: String) = withContext(dispatcher) {
         syncer.sync(key = clubKey(teamId), ttl = null, force = true) { fetchClub(teamId) }

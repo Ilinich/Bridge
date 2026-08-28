@@ -6,7 +6,6 @@ import com.begoml.bridge.foundation.tessera.FeaturePlugin
 import com.begoml.bridge.foundation.tessera.Feature
 import com.begoml.bridge.foundation.tessera.awaitActionsIn
 import com.begoml.bridge.foundation.tessera.feature
-import kotlinx.collections.immutable.toImmutableSet
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -28,12 +27,12 @@ internal class FollowingFeatureImpl(
     plugins: List<FeaturePlugin<FollowingState, FollowingAction>> = emptyList(),
 ) : FollowingFeature,
     Feature<FollowingState, FollowingAction>
-    by feature(FollowingState(), scope, plugins) {
+    by feature(initialState = FollowingState(), scope = scope, plugins = plugins) {
 
     init {
         scope.launch {
             store.observe().collect { stored ->
-                updateState { FollowingState(playerIds = stored.toImmutableSet(), isLoaded = true) }
+                updateState { FollowingState(playerIds = stored, isLoaded = true) }
             }
         }
         awaitActionsIn(scope) { action ->

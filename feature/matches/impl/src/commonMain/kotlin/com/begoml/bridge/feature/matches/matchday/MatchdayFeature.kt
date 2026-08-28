@@ -14,9 +14,6 @@ import com.begoml.bridge.foundation.tessera.awaitActionsIn
 import com.begoml.bridge.foundation.tessera.composeState
 import com.begoml.bridge.foundation.tessera.feature
 import com.begoml.bridge.foundation.tessera.withInitial
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.persistentListOf
-import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.combine
 
@@ -25,7 +22,7 @@ data class MatchdayState(
     val nextMatch: Match? = null,
     val lastResult: Match? = null,
     /** The followed players who are in the current squad, in squad order. */
-    val followedPlayers: ImmutableList<Player> = persistentListOf(),
+    val followedPlayers: List<Player> = emptyList(),
     /**
      * Whether the fixture source has answered yet.
      *
@@ -58,7 +55,7 @@ class MatchdayFeature(
     private val matchRepository: MatchRepository,
     private val squadRepository: SquadRepository,
     private val following: FollowingFeature,
-) : Feature<MatchdayState, MatchdayAction> by feature(MatchdayState(), scope) {
+) : Feature<MatchdayState, MatchdayAction> by feature(initialState = MatchdayState(), scope = scope) {
 
     init {
         observeSources()
@@ -92,8 +89,7 @@ class MatchdayFeature(
             ) { followed, squad ->
                 (squad as? Loadable.Content)?.value.orEmpty()
                     .filter { player -> followed.contains(player.id) }
-                    .toImmutableList()
-            }.withInitial(scope, persistentListOf()),
+            }.withInitial(scope, emptyList()),
         ) { state, players -> state.copy(followedPlayers = players) }
     }
 

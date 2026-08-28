@@ -1,8 +1,6 @@
 package com.begoml.bridge.core.features.following
 
 import com.begoml.bridge.foundation.tessera.FeatureStateDelegate
-import kotlinx.collections.immutable.ImmutableSet
-import kotlinx.collections.immutable.persistentSetOf
 
 /**
  * The players this person follows.
@@ -11,7 +9,7 @@ import kotlinx.collections.immutable.persistentSetOf
  * does not draw an empty set as a decision the person made.
  */
 data class FollowingState(
-    val playerIds: ImmutableSet<String> = persistentSetOf(),
+    val playerIds: Set<String> = emptySet(),
     val isLoaded: Boolean = false,
 ) {
 

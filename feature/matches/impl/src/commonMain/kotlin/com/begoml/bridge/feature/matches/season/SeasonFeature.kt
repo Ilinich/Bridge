@@ -10,14 +10,11 @@ import com.begoml.bridge.foundation.tessera.awaitActionsIn
 import com.begoml.bridge.foundation.tessera.composeState
 import com.begoml.bridge.foundation.tessera.feature
 import com.begoml.bridge.foundation.tessera.withInitial
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.persistentListOf
-import kotlinx.collections.immutable.toImmutableList
 import kotlin.time.Clock
 import kotlinx.coroutines.CoroutineScope
 
 data class SeasonState(
-    val rounds: ImmutableList<SeasonRound> = persistentListOf(),
+    val rounds: List<SeasonRound> = emptyList(),
     val initialRoundIndex: Int = 0,
     val isLoading: Boolean = true,
     val error: Throwable? = null,
@@ -38,7 +35,7 @@ class SeasonFeature(
     private val scope: CoroutineScope,
     private val matchRepository: MatchRepository,
     private val clock: Clock,
-) : Feature<SeasonState, SeasonAction> by feature(SeasonState(), scope) {
+) : Feature<SeasonState, SeasonAction> by feature(initialState = SeasonState(), scope = scope) {
 
     init {
         observeSeason()
@@ -60,7 +57,7 @@ class SeasonFeature(
                 is Loadable.Loading -> state.copy(isLoading = true, error = null)
                 is Loadable.Failed -> state.copy(isLoading = false, error = loadable.error)
                 is Loadable.Content -> state.copy(
-                    rounds = loadable.value.rounds.toImmutableList(),
+                    rounds = loadable.value.rounds,
                     initialRoundIndex = startingRoundIndex(loadable.value),
                     isLoading = false,
                     error = null,

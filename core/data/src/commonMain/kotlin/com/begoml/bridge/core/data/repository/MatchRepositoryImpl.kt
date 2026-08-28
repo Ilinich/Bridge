@@ -81,18 +81,16 @@ internal class MatchRepositoryImpl(
         val seasonId = resolveSeasonId()
         backgroundScope.launch { runCatching { cacheFinishedSeason(previousSeasonId(seasonId)) } }
 
-        // A season is 380 fixtures: grouping and sorting them belongs off the collector's context,
-        // which is the main dispatcher.
+        // A season is 380 fixtures: grouping and sorting them belongs off the collector's context.
         val stored = seasonDao.observeSeason(seasonId)
             .map { rows -> rows.takeIf { it.isNotEmpty() }?.toSeason(seasonId) }
-            .flowOn(dispatcher)
 
         emitAll(
             persistedResource(stored = stored) {
                 syncer.sync(key = seasonKey(seasonId), ttl = ttlFor(seasonId)) { fetch(seasonId) }
             },
         )
-    }
+    }.flowOn(dispatcher)
 
     override suspend fun refreshFixtures(teamId: String) = withContext(dispatcher) {
         // refresh rather than invalidate: invalidating leaves the caches empty until somebody

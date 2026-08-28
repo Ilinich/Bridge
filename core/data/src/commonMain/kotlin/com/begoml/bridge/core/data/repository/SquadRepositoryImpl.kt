@@ -25,15 +25,15 @@ internal class SquadRepositoryImpl(
     private val dispatcher: CoroutineDispatcher,
 ) : SquadRepository {
 
+    // flowOn on the whole chain: mapping a whole squad has no business on the context that
+    // collects it, and neither has the fetch persistedResource starts.
     override fun squad(teamId: String): Flow<Loadable<List<Player>>> = persistedResource(
-        // flowOn, because map runs in the collector's context and the collector is the main
-        // dispatcher: mapping a whole squad would otherwise land on the frame that draws it.
         stored = dao.observeAll().map { rows ->
             rows.takeIf { it.isNotEmpty() }?.map { it.toPlayer() }
-        }.flowOn(dispatcher),
+        },
     ) {
         syncer.sync(key = squadKey(teamId), ttl = 4.hours) { fetch(teamId) }
-    }
+    }.flowOn(dispatcher)
 
     override suspend fun refresh(teamId: String) = withContext(dispatcher) {
         syncer.sync(key = squadKey(teamId), ttl = null, force = true) { fetch(teamId) }
