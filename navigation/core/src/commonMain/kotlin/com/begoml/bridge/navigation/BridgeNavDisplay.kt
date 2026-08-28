@@ -1,5 +1,6 @@
 package com.begoml.bridge.navigation
 
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
@@ -44,7 +45,10 @@ private const val ExitOffsetFraction = 0.06f
  */
 @Composable
 fun BridgeNavDisplay(
-    backStack: List<Route>,
+    // A snapshot list rather than an immutable one: this is the stack being pushed to, and Compose
+    // tracks it directly. Copying it to an immutable list per composition would trade the tracking
+    // for a copy and gain nothing.
+    backStack: SnapshotStateList<Route>,
     onBack: () -> Unit,
     entries: List<FeatureNavigationEntry>,
     modifier: Modifier = Modifier,

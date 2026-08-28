@@ -1,5 +1,6 @@
 package com.begoml.bridge.uikit.component
 
+import kotlinx.collections.immutable.ImmutableList
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.border
@@ -49,7 +50,7 @@ private val TabIconSize = 21.dp
  */
 @Composable
 fun GlassScope.BridgeTabBar(
-    tabs: List<BridgeTab>,
+    tabs: ImmutableList<BridgeTab>,
     selectedIndex: Int,
     onSelect: (Int) -> Unit,
     modifier: Modifier = Modifier,

@@ -1,5 +1,6 @@
 package com.begoml.bridge.navigation
 
+import kotlinx.collections.immutable.ImmutableList
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.Composable
@@ -21,7 +22,7 @@ import androidx.compose.ui.Modifier
 @Composable
 fun BridgeTabPager(
     backStack: TabbedBackStack,
-    entries: List<FeatureNavigationEntry>,
+    entries: ImmutableList<FeatureNavigationEntry>,
     modifier: Modifier = Modifier,
 ) {
     val stacks = backStack.allStacks

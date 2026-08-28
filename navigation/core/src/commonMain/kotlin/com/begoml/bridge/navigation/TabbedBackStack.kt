@@ -1,5 +1,6 @@
 package com.begoml.bridge.navigation
 
+import kotlinx.collections.immutable.ImmutableList
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.getValue
@@ -124,8 +125,8 @@ private fun tabbedBackStackSaver(
 
 @Composable
 fun rememberTabbedBackStack(
-    roots: List<Route>,
-    codecs: List<RouteCodec>,
+    roots: ImmutableList<Route>,
+    codecs: ImmutableList<RouteCodec>,
     onUnknownKey: (String) -> Unit = {},
 ): TabbedBackStack =
     rememberSaveable(saver = tabbedBackStackSaver(roots, codecs, onUnknownKey)) {

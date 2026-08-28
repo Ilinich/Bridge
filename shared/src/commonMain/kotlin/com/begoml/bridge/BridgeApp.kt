@@ -1,5 +1,8 @@
 package com.begoml.bridge
 
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toImmutableList
+import kotlinx.collections.immutable.ImmutableList
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.begoml.bridge.navigation.TabbedBackStack
 import com.begoml.bridge.di.StringsGate
@@ -64,7 +67,7 @@ private val TabBarInset = 70.dp
 private const val CrossfadeMillis = 150
 private const val NavigationTag = "Navigation"
 
-private val TabRoutes: List<Route> = listOf(MatchdayRoute, SeasonRoute, SquadRoute, ClubRoute)
+private val TabRoutes: ImmutableList<Route> = persistentListOf(MatchdayRoute, SeasonRoute, SquadRoute, ClubRoute)
 
 /**
  * The host.
@@ -86,8 +89,8 @@ fun App() {
         // instance, so a test that wraps App() in its own KoinApplication supplies all of these
         // rather than the router alone.
         val koin = currentKoinScope().getKoin()
-        val codecs: List<RouteCodec> = remember(koin) { koin.getAll() }
-        val entries: List<FeatureNavigationEntry> = remember(koin) { koin.getAll() }
+        val codecs = remember(koin) { koin.getAll<RouteCodec>().toImmutableList() }
+        val entries = remember(koin) { koin.getAll<FeatureNavigationEntry>().toImmutableList() }
         val host: NavigationHost = koinInject()
         val analytics: Analytics = koinInject()
 
@@ -127,7 +130,7 @@ fun App() {
 @Composable
 private fun Shell(
     backStack: TabbedBackStack,
-    entries: List<FeatureNavigationEntry>,
+    entries: ImmutableList<FeatureNavigationEntry>,
     analytics: Analytics,
 ) {
     val tabs = bridgeTabs()
@@ -179,7 +182,7 @@ private fun screenPadding(): PaddingValues {
 }
 
 @Composable
-private fun bridgeTabs(): List<BridgeTab> = listOf(
+private fun bridgeTabs(): ImmutableList<BridgeTab> = persistentListOf(
     BridgeTab(BridgeIcon.Matchday, stringResource(Res.string.tab_matchday)),
     BridgeTab(BridgeIcon.Season, stringResource(Res.string.tab_season)),
     BridgeTab(BridgeIcon.Squad, stringResource(Res.string.tab_squad)),

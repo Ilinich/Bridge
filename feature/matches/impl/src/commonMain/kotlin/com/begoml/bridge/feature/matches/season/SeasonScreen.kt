@@ -1,5 +1,6 @@
 package com.begoml.bridge.feature.matches.season
 
+import kotlinx.collections.immutable.ImmutableList
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -98,7 +99,7 @@ internal fun SeasonScreen(viewModel: SeasonViewModel, modifier: Modifier = Modif
 
 @Composable
 private fun RoundPills(
-    rounds: List<SeasonRoundUi>,
+    rounds: ImmutableList<SeasonRoundUi>,
     selectedIndex: Int,
     onSelect: (Int) -> Unit,
     state: LazyListState,
