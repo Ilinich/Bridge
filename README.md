@@ -13,15 +13,19 @@ no API key to obtain and no account to create.
 
 ### iOS
 
-| Matchday | Season | Squad | Club |
-|---|---|---|---|
-| ![Matchday](docs/screenshots/ios-matchday.png) | ![Season](docs/screenshots/ios-season.png) | ![Squad](docs/screenshots/ios-squad.png) | ![Club](docs/screenshots/ios-club.png) |
+| Matchday | Season |
+|---|---|
+| ![Matchday](docs/screenshots/ios-matchday.jpg) | ![Season](docs/screenshots/ios-season.jpg) |
+
+| Squad | Club |
+|---|---|
+| ![Squad](docs/screenshots/ios-squad.jpg) | ![Club](docs/screenshots/ios-club.jpg) |
 
 ### Android — the same shared code
 
 | Player | Match | Swipe back, mid-gesture |
 |---|---|---|
-| ![Player](docs/screenshots/android-player.png) | ![Match](docs/screenshots/android-match.png) | ![Swipe](docs/screenshots/android-swipe-back.png) |
+| ![Player](docs/screenshots/android-player.jpg) | ![Match](docs/screenshots/android-match.jpg) | ![Swipe](docs/screenshots/android-swipe-back.jpg) |
 
 ## What is shared, and what is not
 
