@@ -99,9 +99,11 @@ internal class PlayerViewModel(
             players = loadable.value.map { player -> player.toPageUi(followed) }.toImmutableList(),
             isLoading = false,
         )
+        is Loadable.Loading -> PlayerUiState(isLoading = true)
         // A pager with nothing to page has nothing to say either way, so a failure reads the same
-        // as an empty squad: the screen states that the player is not loaded.
-        else -> PlayerUiState(isLoading = loadable is Loadable.Loading)
+        // as an empty squad: the screen states that the player is not loaded, and offers no retry
+        // it could not honour — the squad is fetched by the grid this screen was opened from.
+        is Loadable.Failed -> PlayerUiState(isLoading = false)
     }
 
     private fun Player.toPageUi(followed: Set<String>) = PlayerPageUi(
