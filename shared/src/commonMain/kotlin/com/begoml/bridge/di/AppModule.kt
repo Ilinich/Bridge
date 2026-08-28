@@ -33,9 +33,14 @@ fun startBridge(
             connectivityModule(),
             followingModule(),
             backgroundModule(),
+            stringsModule(),
             refreshModule(),
         ) +
             dataModules() + navigationModule() +
             matchesModule() + squadModule() + playerModule() + clubModule(),
     )
+}.also { application ->
+    // Started here rather than from the composition: reading the app's words is a bundle lookup,
+    // and the composition runs on the thread that draws.
+    loadStrings(application.koin)
 }

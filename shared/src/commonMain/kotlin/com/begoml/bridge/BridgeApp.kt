@@ -1,7 +1,8 @@
 package com.begoml.bridge
 
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.begoml.bridge.navigation.TabbedBackStack
-import com.begoml.bridge.di.loadStrings
+import com.begoml.bridge.di.StringsGate
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -16,7 +17,6 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -105,12 +105,10 @@ fun App() {
         }
 
         // Nothing is built until the words are in the graph: a ViewModel takes its labels by
-        // constructor, so a screen composed before this finished would have nothing to take.
-        var stringsReady by remember { mutableStateOf(false) }
-        LaunchedEffect(koin) {
-            loadStrings(koin)
-            stringsReady = true
-        }
+        // constructor, so a screen composed before the read finished would have nothing to take.
+        // The read itself was started by the graph, off this thread.
+        val stringsGate: StringsGate = koinInject()
+        val stringsReady by stringsGate.ready.collectAsStateWithLifecycle()
         if (!stringsReady) {
             Box(modifier = Modifier.fillMaxSize().background(BridgeColors.Ground))
             return@BridgeTheme
