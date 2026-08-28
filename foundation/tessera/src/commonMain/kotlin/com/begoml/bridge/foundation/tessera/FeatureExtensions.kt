@@ -28,8 +28,3 @@ fun <Action> FeatureActionDelegate<Action>.awaitActionsIn(
         }
     }
 }
-
-fun <Event> FeatureEventDelegate<Event>.handleEventsIn(
-    scope: CoroutineScope,
-    onEvent: suspend (Event) -> Unit,
-): Job = scope.launch { events.collect(onEvent) }

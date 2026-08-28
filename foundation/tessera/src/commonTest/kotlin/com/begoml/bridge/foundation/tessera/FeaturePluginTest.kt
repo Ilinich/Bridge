@@ -68,7 +68,7 @@ class FeaturePluginTest {
         )
 
         feature.updateState { it }
-        feature.updateStateAsync { CountState(7) }
+        feature.updateState { CountState(7) }
 
         assertEquals(emptyList<Pair<Int, Int>>(), plugin.transitions)
     }
@@ -82,8 +82,9 @@ class FeaturePluginTest {
             plugins = listOf(plugin),
         )
 
-        feature.emitAction(CountAction.Increment)
-        feature.emitEvent(CountEvent.Done)
+        feature.dispatchAction(CountAction.Increment)
+        feature.dispatchEvent(CountEvent.Done)
+        testScheduler.advanceUntilIdle()
 
         assertEquals(listOf<CountAction>(CountAction.Increment), plugin.actions)
         assertEquals(listOf<CountEvent>(CountEvent.Done), plugin.events)

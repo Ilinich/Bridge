@@ -26,8 +26,6 @@ interface FeatureActionDelegate<Action> {
 
     fun dispatchAction(action: Action)
 
-    suspend fun emitAction(action: Action)
-
     suspend fun awaitActions(onAction: suspend (Action) -> Unit)
 }
 
@@ -37,35 +35,15 @@ interface FeatureEventDelegate<Event> {
     val events: Flow<Event>
 
     fun dispatchEvent(event: Event)
-
-    suspend fun emitEvent(event: Event)
 }
 
-/**
- * State a feature keeps for itself.
- *
- * It drives decisions but is never rendered, so changing it costs no recomposition. Anything the
- * UI reads belongs in [FeatureStateDelegate] instead.
- */
-interface FeatureInternalStateDelegate<InternalState> {
-
-    val internalState: InternalState
-
-    suspend fun updateInternalState(transform: (InternalState) -> InternalState)
-}
-
-interface Feature<State, Action, Event, InternalState> :
+interface Feature<State, Action, Event> :
     FeatureStateDelegate<State>,
     FeatureActionDelegate<Action>,
-    FeatureEventDelegate<Event>,
-    FeatureInternalStateDelegate<InternalState> {
+    FeatureEventDelegate<Event> {
 
     suspend fun updateState(transform: (State) -> State)
-
-    fun updateStateAsync(transform: (State) -> State)
 }
-
-typealias SimpleFeature<State, Action, Event> = Feature<State, Action, Event, Unit>
 
 /**
  * A listener on a feature's traffic, installed at construction.
@@ -97,33 +75,26 @@ interface FeaturePlugin<State, Action, Event> {
  * with `by feature(...)`.
  *
  * [updateState] serialises transforms behind a mutex, so a read-modify-write from two coroutines
- * cannot interleave. [updateStateAsync] is the non-suspending counterpart and relies on the
- * compare-and-set inside `MutableStateFlow.update`; it is correct for transforms that read only
- * the state passed in, and wrong for anything that also reads [internalState].
+ * cannot interleave.
  */
 fun <State, Action, Event> feature(
     initialState: State,
     scope: CoroutineScope,
     plugins: List<FeaturePlugin<State, Action, Event>> = emptyList(),
-): SimpleFeature<State, Action, Event> = FeatureImpl(initialState, Unit, scope, plugins)
+): Feature<State, Action, Event> = FeatureImpl(initialState, scope, plugins)
 
-private class FeatureImpl<State, Action, Event, InternalState>(
+private class FeatureImpl<State, Action, Event>(
     initialState: State,
-    initialInternalState: InternalState,
     private val scope: CoroutineScope,
     private val plugins: List<FeaturePlugin<State, Action, Event>> = emptyList(),
-) : Feature<State, Action, Event, InternalState> {
+) : Feature<State, Action, Event> {
 
     private val mutableState = MutableStateFlow(initialState)
-    private val mutableInternalState = MutableStateFlow(initialInternalState)
     private val stateMutex = Mutex()
-    private val internalStateMutex = Mutex()
     private val actions = Channel<Action>(BUFFERED)
     private val eventChannel = Channel<Event>(BUFFERED)
 
     override val stateFlow: StateFlow<State> = mutableState.asStateFlow()
-
-    override val internalState: InternalState get() = mutableInternalState.value
 
     override val events: Flow<Event> = eventChannel.receiveAsFlow()
 
@@ -135,21 +106,14 @@ private class FeatureImpl<State, Action, Event, InternalState>(
     }
 
     override suspend fun updateState(transform: (State) -> State) {
-        // compareAndSet rather than a plain read-modify-write: updateStateAsync writes without
-        // taking this mutex, so a value read here could otherwise be stale by the time it is
-        // written back and the async write would be lost.
         stateMutex.withLock { commit(transform) }
-    }
-
-    override fun updateStateAsync(transform: (State) -> State) {
-        commit(transform)
     }
 
     /**
      * The one place state is written, so plugins see every transition and see it once.
      *
-     * The loop is what `MutableStateFlow.update` does; it is spelled out here because a plugin
-     * needs the value that was replaced, and `update` does not hand it back.
+     * The compare-and-set loop is what `MutableStateFlow.update` does; it is spelled out because a
+     * plugin needs the value that was replaced, and `update` does not hand it back.
      */
     private fun commit(transform: (State) -> State) {
         var old: State
@@ -161,17 +125,11 @@ private class FeatureImpl<State, Action, Event, InternalState>(
         if (old != new) plugins.forEach { plugin -> plugin.onState(old, new) }
     }
 
-    override suspend fun updateInternalState(transform: (InternalState) -> InternalState) {
-        internalStateMutex.withLock {
-            mutableInternalState.value = transform(mutableInternalState.value)
-        }
-    }
-
     override fun dispatchAction(action: Action) {
         scope.launch { emitAction(action) }
     }
 
-    override suspend fun emitAction(action: Action) {
+    private suspend fun emitAction(action: Action) {
         plugins.forEach { plugin -> plugin.onAction(action) }
         actions.send(action)
     }
@@ -184,7 +142,7 @@ private class FeatureImpl<State, Action, Event, InternalState>(
         scope.launch { emitEvent(event) }
     }
 
-    override suspend fun emitEvent(event: Event) {
+    private suspend fun emitEvent(event: Event) {
         plugins.forEach { plugin -> plugin.onEvent(event) }
         eventChannel.send(event)
     }

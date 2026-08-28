@@ -3,7 +3,7 @@ package com.begoml.bridge.core.features.following.impl
 import com.begoml.bridge.core.features.following.FollowingFeature
 import com.begoml.bridge.core.features.following.FollowingState
 import com.begoml.bridge.foundation.tessera.FeaturePlugin
-import com.begoml.bridge.foundation.tessera.SimpleFeature
+import com.begoml.bridge.foundation.tessera.Feature
 import com.begoml.bridge.foundation.tessera.awaitActionsIn
 import com.begoml.bridge.foundation.tessera.feature
 import kotlinx.collections.immutable.toImmutableSet
@@ -29,7 +29,7 @@ internal class FollowingFeatureImpl(
     private val store: FollowingStore,
     plugins: List<FeaturePlugin<FollowingState, FollowingAction, FollowingEvent>> = emptyList(),
 ) : FollowingFeature,
-    SimpleFeature<FollowingState, FollowingAction, FollowingEvent>
+    Feature<FollowingState, FollowingAction, FollowingEvent>
     by feature(FollowingState(), scope, plugins) {
 
     init {

@@ -5,7 +5,7 @@ import com.begoml.bridge.core.domain.model.Season
 import com.begoml.bridge.core.domain.model.SeasonRound
 import com.begoml.bridge.core.domain.model.roundAt
 import com.begoml.bridge.core.domain.repository.MatchRepository
-import com.begoml.bridge.foundation.tessera.SimpleFeature
+import com.begoml.bridge.foundation.tessera.Feature
 import com.begoml.bridge.foundation.tessera.awaitActionsIn
 import com.begoml.bridge.foundation.tessera.composeState
 import com.begoml.bridge.foundation.tessera.feature
@@ -40,7 +40,7 @@ class SeasonFeature(
     private val scope: CoroutineScope,
     private val matchRepository: MatchRepository,
     private val clock: Clock,
-) : SimpleFeature<SeasonState, SeasonAction, SeasonEvent> by feature(SeasonState(), scope) {
+) : Feature<SeasonState, SeasonAction, SeasonEvent> by feature(SeasonState(), scope) {
 
     init {
         observeSeason()
