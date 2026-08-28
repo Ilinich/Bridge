@@ -1,6 +1,7 @@
 package com.begoml.bridge.feature.squad
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.begoml.bridge.core.analytics.Analytics
 import com.begoml.bridge.core.domain.model.FollowedClub
 import com.begoml.bridge.core.domain.model.Player
@@ -18,7 +19,6 @@ import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -50,17 +50,17 @@ data class SquadUiState(
  * cards here so that the grid does not look an id up per item while it composes.
  */
 internal class SquadViewModel(
-    private val scope: CoroutineScope,
+    scope: CoroutineScope,
     private val repository: SquadRepository,
     private val club: FollowedClub,
     private val following: FollowingFeature,
     private val router: AppRouter,
     private val ioDispatcher: CoroutineDispatcher,
     private val analytics: Analytics,
-) : ViewModel(), UiStateDelegate<SquadUiState> by UiStateDelegateImpl(SquadUiState()) {
+) : ViewModel(scope), UiStateDelegate<SquadUiState> by UiStateDelegateImpl(SquadUiState()) {
 
     init {
-        scope.launch {
+        viewModelScope.launch {
             combine(repository.squad(club.id), following.stateFlow) { loadable, followed ->
                 loadable to followed.playerIds
             }.collect { (loadable, followed) ->
@@ -70,9 +70,6 @@ internal class SquadViewModel(
         }
     }
 
-    override fun onCleared() {
-        scope.cancel()
-    }
 
     fun onPlayerClick(playerId: String) {
         analytics.track(PlayerOpened(playerId))
@@ -80,7 +77,7 @@ internal class SquadViewModel(
     }
 
     fun retry() {
-        scope.launch { repository.refresh(club.id) }
+        viewModelScope.launch { repository.refresh(club.id) }
     }
 
     private fun toUiState(

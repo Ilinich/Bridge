@@ -1,6 +1,7 @@
 package com.begoml.bridge.feature.matches.matchday
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import bridge.feature.matches.impl.generated.resources.Res
 import bridge.feature.matches.impl.generated.resources.fixture_score
 import bridge.feature.matches.impl.generated.resources.fixture_teams
@@ -39,7 +40,6 @@ import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -122,14 +122,14 @@ data class MatchdayUiState(
 private const val TickMillis = 1_000L
 
 internal class MatchdayViewModel(
-    private val scope: CoroutineScope,
+    scope: CoroutineScope,
     private val feature: MatchdayFeature,
     private val connectivity: Connectivity,
     private val clock: Clock,
     val labels: MatchdayLabels,
     private val router: AppRouter,
     private val ioDispatcher: CoroutineDispatcher,
-) : ViewModel(),
+) : ViewModel(scope),
     UiStateDelegate<MatchdayUiState> by UiStateDelegateImpl(MatchdayUiState()) {
 
     /**
@@ -163,7 +163,7 @@ internal class MatchdayViewModel(
         .map { club -> club?.toStadiumUi() }
 
     init {
-        scope.launch {
+        viewModelScope.launch {
             combine(
                 feature.stateFlow,
                 recent,
@@ -192,9 +192,6 @@ internal class MatchdayViewModel(
 
     fun nowMillis(): Long = clock.now().toEpochMilliseconds()
 
-    override fun onCleared() {
-        scope.cancel()
-    }
 
     fun retry() {
         feature.dispatchAction(MatchdayAction.Retry)

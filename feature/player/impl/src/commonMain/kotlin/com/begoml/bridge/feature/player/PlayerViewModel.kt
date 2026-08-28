@@ -1,6 +1,7 @@
 package com.begoml.bridge.feature.player
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import bridge.feature.player.impl.generated.resources.Res
 import bridge.feature.player.impl.generated.resources.player_back
 import bridge.feature.player.impl.generated.resources.player_country
@@ -23,7 +24,6 @@ import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -59,17 +59,17 @@ data class PlayerUiState(
 
 /** The player pager. It reads the squad, writes who is followed, and owns the way back. */
 internal class PlayerViewModel(
-    private val scope: CoroutineScope,
+    scope: CoroutineScope,
     private val repository: SquadRepository,
     private val club: FollowedClub,
     private val following: FollowingFeature,
     val labels: PlayerLabels,
     private val router: AppRouter,
     private val ioDispatcher: CoroutineDispatcher,
-) : ViewModel(), UiStateDelegate<PlayerUiState> by UiStateDelegateImpl(PlayerUiState()) {
+) : ViewModel(scope), UiStateDelegate<PlayerUiState> by UiStateDelegateImpl(PlayerUiState()) {
 
     init {
-        scope.launch {
+        viewModelScope.launch {
             combine(repository.squad(club.id), following.stateFlow) { loadable, followed ->
                 loadable to followed.playerIds
             }.collect { (loadable, followed) ->
@@ -79,9 +79,6 @@ internal class PlayerViewModel(
         }
     }
 
-    override fun onCleared() {
-        scope.cancel()
-    }
 
     fun onFollowClick(playerId: String) {
         following.toggle(playerId)

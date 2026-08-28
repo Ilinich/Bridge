@@ -1,6 +1,7 @@
 package com.begoml.bridge.feature.matches.detail
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import bridge.feature.matches.impl.generated.resources.Res
 import bridge.feature.matches.impl.generated.resources.fixture_score
 import bridge.feature.matches.impl.generated.resources.fixture_versus
@@ -26,7 +27,6 @@ import com.begoml.bridge.foundation.tessera.UiStateDelegate
 import com.begoml.bridge.foundation.tessera.UiStateDelegateImpl
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jetbrains.compose.resources.getString
@@ -69,17 +69,17 @@ data class MatchDetailUiState(
 
 internal class MatchDetailViewModel(
     matchId: String,
-    private val scope: CoroutineScope,
+    scope: CoroutineScope,
     private val matchRepository: MatchRepository,
     private val club: FollowedClub,
     val labels: MatchDetailLabels,
     private val router: AppRouter,
     private val ioDispatcher: CoroutineDispatcher,
-) : ViewModel(),
+) : ViewModel(scope),
     UiStateDelegate<MatchDetailUiState> by UiStateDelegateImpl(MatchDetailUiState()) {
 
     init {
-        scope.launch {
+        viewModelScope.launch {
             matchRepository.match(matchId).collect { loadable ->
                 val match = (loadable as? Loadable.Content)?.value
                 val ui = match?.let { withContext(ioDispatcher) { it.toUi() } }
@@ -90,9 +90,6 @@ internal class MatchDetailViewModel(
         }
     }
 
-    override fun onCleared() {
-        scope.cancel()
-    }
 
     fun onBack() {
         router.navigateUp()

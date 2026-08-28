@@ -1,6 +1,7 @@
 package com.begoml.bridge.feature.matches.season
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import bridge.feature.matches.impl.generated.resources.Res
 import bridge.feature.matches.impl.generated.resources.fixture_score
 import bridge.feature.matches.impl.generated.resources.fixture_teams
@@ -24,7 +25,6 @@ import com.begoml.bridge.foundation.tessera.UiStateDelegate
 import com.begoml.bridge.foundation.tessera.UiStateDelegateImpl
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.map
@@ -66,21 +66,22 @@ data class SeasonUiState(
  *
  * The feature arrives built rather than being constructed here, and both it and this share one
  * scope created outside them: a state holder whose lifetime is decided by whoever happens to own
- * it is the thing that leaks. Cancelling that scope in [onCleared] ends both at once.
+ * it is the thing that leaks. The scope is handed to [ViewModel], which cancels it when the screen
+ * is gone — so the feature ends with the ViewModel without either of them saying so.
  */
 internal class SeasonViewModel(
-    private val scope: CoroutineScope,
+    scope: CoroutineScope,
     private val feature: SeasonFeature,
     private val connectivity: Connectivity,
     private val club: FollowedClub,
     private val router: AppRouter,
     private val ioDispatcher: CoroutineDispatcher,
     private val analytics: Analytics,
-) : ViewModel(),
+) : ViewModel(scope),
     UiStateDelegate<SeasonUiState> by UiStateDelegateImpl(SeasonUiState()) {
 
     init {
-        scope.launch {
+        viewModelScope.launch {
             combine(feature.stateFlow, connectivity.status) { content, network ->
                 SeasonUiState(
                     rounds = withContext(ioDispatcher) { content.rounds.toUi() },
@@ -93,9 +94,6 @@ internal class SeasonViewModel(
         }
     }
 
-    override fun onCleared() {
-        scope.cancel()
-    }
 
     fun retry() {
         feature.dispatchAction(SeasonAction.Retry)

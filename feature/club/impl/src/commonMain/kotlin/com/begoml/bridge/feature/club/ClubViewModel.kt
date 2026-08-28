@@ -1,6 +1,7 @@
 package com.begoml.bridge.feature.club
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import bridge.feature.club.impl.generated.resources.Res
 import bridge.feature.club.impl.generated.resources.club_about
 import bridge.feature.club.impl.generated.resources.club_capacity
@@ -30,7 +31,6 @@ import com.begoml.bridge.foundation.tessera.UiStateDelegate
 import com.begoml.bridge.foundation.tessera.UiStateDelegateImpl
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jetbrains.compose.resources.getString
@@ -84,19 +84,19 @@ data class ClubUiState(
 )
 
 internal class ClubViewModel(
-    private val scope: CoroutineScope,
+    scope: CoroutineScope,
     private val repository: ClubRepository,
     private val club: FollowedClub,
     val labels: ClubLabels,
     private val ioDispatcher: CoroutineDispatcher,
     private val analytics: Analytics,
-) : ViewModel(),
+) : ViewModel(scope),
     UiStateDelegate<ClubUiState> by UiStateDelegateImpl(ClubUiState()) {
 
     private var refreshJob: Job? = null
 
     init {
-        scope.launch {
+        viewModelScope.launch {
             // Two requests rather than one combined source: the ground can only be asked about
             // once the club record says which ground it is, and the profile must render without
             // waiting for that second answer.
@@ -123,9 +123,6 @@ internal class ClubViewModel(
         }
     }
 
-    override fun onCleared() {
-        scope.cancel()
-    }
 
     fun onVideoStarted() {
         analytics.track(VideoStarted(source = "club_media"))
@@ -134,7 +131,7 @@ internal class ClubViewModel(
     /** A forced refresh holds the syncer's key mutex across the network, so only one may run. */
     fun retry() {
         if (refreshJob?.isActive == true) return
-        refreshJob = scope.launch { repository.refresh(club.id) }
+        refreshJob = viewModelScope.launch { repository.refresh(club.id) }
     }
 
     private fun Club.toUi(labels: ClubLabels) = ClubUi(
