@@ -7,16 +7,7 @@ import androidx.lifecycle.viewModelScope
 import bridge.feature.matches.impl.generated.resources.Res
 import bridge.feature.matches.impl.generated.resources.fixture_score
 import bridge.feature.matches.impl.generated.resources.fixture_versus
-import bridge.feature.matches.impl.generated.resources.match_away
-import bridge.feature.matches.impl.generated.resources.match_back
-import bridge.feature.matches.impl.generated.resources.match_draw
-import bridge.feature.matches.impl.generated.resources.match_home
-import bridge.feature.matches.impl.generated.resources.match_loss
-import bridge.feature.matches.impl.generated.resources.match_win
 import bridge.feature.matches.impl.generated.resources.season_round
-import bridge.feature.matches.impl.generated.resources.match_kickoff
-import bridge.feature.matches.impl.generated.resources.match_not_found
-import bridge.feature.matches.impl.generated.resources.match_title
 import com.begoml.bridge.foundation.resource.Loadable
 import com.begoml.bridge.core.domain.model.SeasonMatch
 import com.begoml.bridge.core.domain.TeamNames
@@ -146,16 +137,3 @@ internal class MatchDetailViewModel(
     }
 
 }
-
-/** Read once for the whole run: the words do not change while the app is open. */
-suspend fun loadMatchDetailLabels() = MatchDetailLabels(
-    title = getString(Res.string.match_title),
-    back = getString(Res.string.match_back),
-    notFound = getString(Res.string.match_not_found),
-    kickoff = getString(Res.string.match_kickoff),
-    homeLabel = getString(Res.string.match_home),
-    awayLabel = getString(Res.string.match_away),
-    win = getString(Res.string.match_win),
-    draw = getString(Res.string.match_draw),
-    loss = getString(Res.string.match_loss),
-)

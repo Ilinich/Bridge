@@ -3,7 +3,10 @@ package com.begoml.bridge.feature.matches.di
 import com.begoml.bridge.foundation.coroutines.DispatcherProvider
 import com.begoml.bridge.feature.matches.MatchesNavigationEntry
 import com.begoml.bridge.feature.matches.api.MatchesRouteCodec
+import com.begoml.bridge.feature.matches.detail.MatchDetailLabelsSource
 import com.begoml.bridge.feature.matches.detail.MatchDetailViewModel
+import com.begoml.bridge.feature.matches.matchday.MatchdayLabelsSource
+import com.begoml.bridge.foundation.strings.LabelsLoader
 import com.begoml.bridge.feature.matches.matchday.MatchdayFeature
 import com.begoml.bridge.feature.matches.matchday.MatchdayViewModel
 import com.begoml.bridge.feature.matches.season.SeasonFeature
@@ -16,6 +19,8 @@ import org.koin.dsl.bind
 import org.koin.dsl.module
 
 fun matchesModule() = module {
+    single { MatchdayLabelsSource(get()) } bind LabelsLoader::class
+    single { MatchDetailLabelsSource(get()) } bind LabelsLoader::class
     viewModel {
         val scope = stateHolderScope()
         MatchdayViewModel(
@@ -30,7 +35,7 @@ fun matchesModule() = module {
             ),
             connectivity = get(),
             clock = get(),
-            labels = get(),
+            labels = get<MatchdayLabelsSource>().labels,
             router = get(),
             ioDispatcher = get<DispatcherProvider>().io,
             logger = get(),
@@ -55,7 +60,7 @@ fun matchesModule() = module {
             scope = stateHolderScope(),
             matchRepository = get(),
             club = get(),
-            labels = get(),
+            labels = get<MatchDetailLabelsSource>().labels,
             router = get(),
             ioDispatcher = get<DispatcherProvider>().io,
             logger = get(),

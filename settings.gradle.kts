@@ -38,6 +38,7 @@ include(":shared")
 include(":foundation:tessera")
 include(":foundation:resource")
 include(":foundation:coroutines")
+include(":foundation:strings")
 include(":foundation:logger:api")
 include(":foundation:logger:impl")
 

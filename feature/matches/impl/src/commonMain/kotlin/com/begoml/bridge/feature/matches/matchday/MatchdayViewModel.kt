@@ -7,23 +7,6 @@ import androidx.lifecycle.viewModelScope
 import bridge.feature.matches.impl.generated.resources.Res
 import bridge.feature.matches.impl.generated.resources.fixture_score
 import bridge.feature.matches.impl.generated.resources.fixture_teams
-import bridge.feature.matches.impl.generated.resources.fixture_versus
-import bridge.feature.matches.impl.generated.resources.matchday_arena
-import bridge.feature.matches.impl.generated.resources.matchday_capacity
-import bridge.feature.matches.impl.generated.resources.matchday_days
-import bridge.feature.matches.impl.generated.resources.matchday_fixture_failed
-import bridge.feature.matches.impl.generated.resources.matchday_following
-import bridge.feature.matches.impl.generated.resources.matchday_founded
-import bridge.feature.matches.impl.generated.resources.matchday_hours
-import bridge.feature.matches.impl.generated.resources.matchday_kickoff_local
-import bridge.feature.matches.impl.generated.resources.matchday_kickoff_now
-import bridge.feature.matches.impl.generated.resources.matchday_loading_fixture
-import bridge.feature.matches.impl.generated.resources.matchday_minutes
-import bridge.feature.matches.impl.generated.resources.matchday_next_match
-import bridge.feature.matches.impl.generated.resources.matchday_no_fixture
-import bridge.feature.matches.impl.generated.resources.matchday_recent
-import bridge.feature.matches.impl.generated.resources.matchday_seconds
-import bridge.feature.matches.impl.generated.resources.matchday_stadium
 import com.begoml.bridge.core.domain.model.Club
 import kotlin.time.Clock
 import com.begoml.bridge.feature.matches.formatKickoff
@@ -238,24 +221,3 @@ internal class MatchdayViewModel(
     )
 
 }
-
-/** Read once for the whole run: the words do not change while the app is open. */
-suspend fun loadMatchdayLabels() = MatchdayLabels(
-    nextMatch = getString(Res.string.matchday_next_match),
-    fixtureFailed = getString(Res.string.matchday_fixture_failed),
-    noFixture = getString(Res.string.matchday_no_fixture),
-    loadingFixture = getString(Res.string.matchday_loading_fixture),
-    kickoffLocal = getString(Res.string.matchday_kickoff_local),
-    kickoffNow = getString(Res.string.matchday_kickoff_now),
-    versus = getString(Res.string.fixture_versus),
-    days = getString(Res.string.matchday_days),
-    hours = getString(Res.string.matchday_hours),
-    minutes = getString(Res.string.matchday_minutes),
-    seconds = getString(Res.string.matchday_seconds),
-    recent = getString(Res.string.matchday_recent),
-    following = getString(Res.string.matchday_following),
-    stadium = getString(Res.string.matchday_stadium),
-    arena = getString(Res.string.matchday_arena),
-    capacity = getString(Res.string.matchday_capacity),
-    founded = getString(Res.string.matchday_founded),
-)

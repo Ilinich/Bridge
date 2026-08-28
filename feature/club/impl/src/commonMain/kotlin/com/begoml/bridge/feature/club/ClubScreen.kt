@@ -65,7 +65,7 @@ private const val ClipUrl =
 
 @Composable
 internal fun ClubScreen(viewModel: ClubViewModel, modifier: Modifier = Modifier) {
-    val state by viewModel.collectUiState()
+    val uiState = viewModel.collectUiState()
     val contentPadding = LocalScreenPadding.current
 
     val shader = rememberAnimatedShader(FloodlightShader)
@@ -76,7 +76,7 @@ internal fun ClubScreen(viewModel: ClubViewModel, modifier: Modifier = Modifier)
         modifier = modifier.fillMaxSize(),
         backdrop = {
             Box(modifier = Modifier.fillMaxSize()) {
-                BackdropImage(url = state.club?.backdropUrl)
+                BackdropImage(url = uiState.value.club?.backdropUrl)
                 // Over the photograph rather than behind it: the panels frost whatever is directly
                 // beneath them, so the light has to be the top layer to be visible through them.
                 Box(
@@ -88,6 +88,7 @@ internal fun ClubScreen(viewModel: ClubViewModel, modifier: Modifier = Modifier)
             }
         },
     ) {
+        val state = uiState.value
         LoadableContent(
             isLoading = state.isLoading && state.club == null,
             error = state.error.takeIf { state.club == null },

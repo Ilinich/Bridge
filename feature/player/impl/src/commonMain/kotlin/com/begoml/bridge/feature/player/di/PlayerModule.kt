@@ -1,7 +1,9 @@
 package com.begoml.bridge.feature.player.di
 
 import com.begoml.bridge.foundation.coroutines.DispatcherProvider
+import com.begoml.bridge.feature.player.PlayerLabelsSource
 import com.begoml.bridge.feature.player.PlayerNavigationEntry
+import com.begoml.bridge.foundation.strings.LabelsLoader
 import com.begoml.bridge.feature.player.PlayerViewModel
 import com.begoml.bridge.feature.player.api.PlayerRouteCodec
 import com.begoml.bridge.foundation.coroutines.stateHolderScope
@@ -12,6 +14,7 @@ import org.koin.dsl.bind
 import org.koin.dsl.module
 
 fun playerModule() = module {
+    single { PlayerLabelsSource(get()) } bind LabelsLoader::class
     viewModel {
         val scope = stateHolderScope()
         PlayerViewModel(
@@ -19,7 +22,7 @@ fun playerModule() = module {
             repository = get(),
             club = get(),
             following = get(),
-            labels = get(),
+            labels = get<PlayerLabelsSource>().labels,
             router = get(),
             ioDispatcher = get<DispatcherProvider>().io,
             logger = get(),

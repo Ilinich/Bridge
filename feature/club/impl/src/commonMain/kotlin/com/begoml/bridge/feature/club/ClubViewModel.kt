@@ -4,20 +4,6 @@ import com.begoml.bridge.foundation.logger.Logger
 import com.begoml.bridge.foundation.coroutines.safeLaunch
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import bridge.feature.club.impl.generated.resources.Res
-import bridge.feature.club.impl.generated.resources.club_about
-import bridge.feature.club.impl.generated.resources.club_capacity
-import bridge.feature.club.impl.generated.resources.club_colours
-import bridge.feature.club.impl.generated.resources.club_founded
-import bridge.feature.club.impl.generated.resources.club_ground
-import bridge.feature.club.impl.generated.resources.club_instagram
-import bridge.feature.club.impl.generated.resources.club_links
-import bridge.feature.club.impl.generated.resources.club_location
-import bridge.feature.club.impl.generated.resources.club_media
-import bridge.feature.club.impl.generated.resources.club_opened
-import bridge.feature.club.impl.generated.resources.club_twitter
-import bridge.feature.club.impl.generated.resources.club_website
-import bridge.feature.club.impl.generated.resources.club_youtube
 import com.begoml.bridge.core.domain.model.Club
 import com.begoml.bridge.core.domain.model.Venue
 import com.begoml.bridge.core.domain.model.FollowedClub
@@ -34,7 +20,6 @@ import com.begoml.bridge.foundation.tessera.UiStateDelegateImpl
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import org.jetbrains.compose.resources.getString
 
 private const val Tag = "Club"
 
@@ -174,20 +159,3 @@ internal class ClubViewModel(
     )
 
 }
-
-/** Read once for the whole run: the words do not change while the app is open. */
-suspend fun loadClubLabels() = ClubLabels(
-    about = getString(Res.string.club_about),
-    media = getString(Res.string.club_media),
-    ground = getString(Res.string.club_ground),
-    links = getString(Res.string.club_links),
-    founded = getString(Res.string.club_founded),
-    colours = getString(Res.string.club_colours),
-    capacity = getString(Res.string.club_capacity),
-    opened = getString(Res.string.club_opened),
-    location = getString(Res.string.club_location),
-    website = getString(Res.string.club_website),
-    youtube = getString(Res.string.club_youtube),
-    twitter = getString(Res.string.club_twitter),
-    instagram = getString(Res.string.club_instagram),
-)

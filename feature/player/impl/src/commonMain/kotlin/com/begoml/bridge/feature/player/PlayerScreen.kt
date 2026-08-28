@@ -61,17 +61,20 @@ internal fun PlayerScreen(
     initialPlayerId: String,
     modifier: Modifier = Modifier,
 ) {
-    val state by viewModel.collectUiState()
-    val players = state.players
-    val labels = state.labels
+    val state = viewModel.collectUiState()
     val shader = rememberAnimatedShader(ClubBackgroundShader)
     val contentPadding = LocalScreenPadding.current
 
+    // The state is read inside the content, not here: this backdrop is a shader that owes the
+    // state nothing, and a read at the top of the function would recompose it with every tick of
+    // whatever the screen is showing.
     GlassBackdrop(
         modifier = modifier.fillMaxSize(),
         backdrop = { Box(Modifier.fillMaxSize().shaded(shader)) },
     ) {
         val glass = this
+        val players = state.value.players
+        val labels = state.value.labels
         if (players.isEmpty()) {
             Text(
                 text = labels.notFound,

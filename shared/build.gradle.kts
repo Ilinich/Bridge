@@ -23,6 +23,7 @@ kotlin {
             implementation(projects.core.analytics.impl)
             implementation(projects.foundation.logger.impl)
             implementation(projects.core.domain)
+            implementation(projects.foundation.strings)
             implementation(projects.core.data)
             implementation(libs.coil.compose)
             implementation(libs.coil.networkKtor)

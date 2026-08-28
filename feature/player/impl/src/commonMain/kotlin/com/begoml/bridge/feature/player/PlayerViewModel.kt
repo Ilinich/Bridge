@@ -4,14 +4,6 @@ import com.begoml.bridge.foundation.logger.Logger
 import com.begoml.bridge.foundation.coroutines.safeLaunch
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import bridge.feature.player.impl.generated.resources.Res
-import bridge.feature.player.impl.generated.resources.player_back
-import bridge.feature.player.impl.generated.resources.player_country
-import bridge.feature.player.impl.generated.resources.player_height
-import bridge.feature.player.impl.generated.resources.player_not_found
-import bridge.feature.player.impl.generated.resources.player_number
-import bridge.feature.player.impl.generated.resources.player_position
-import bridge.feature.player.impl.generated.resources.player_title
 import com.begoml.bridge.core.domain.model.FollowedClub
 import com.begoml.bridge.core.domain.model.Player
 import com.begoml.bridge.core.domain.repository.SquadRepository
@@ -27,7 +19,6 @@ import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.combine
-import org.jetbrains.compose.resources.getString
 
 private const val Tag = "Player"
 
@@ -120,14 +111,3 @@ internal class PlayerViewModel(
     )
 
 }
-
-/** Read once for the whole run: the words do not change while the app is open. */
-suspend fun loadPlayerLabels() = PlayerLabels(
-    title = getString(Res.string.player_title),
-    back = getString(Res.string.player_back),
-    notFound = getString(Res.string.player_not_found),
-    number = getString(Res.string.player_number),
-    position = getString(Res.string.player_position),
-    country = getString(Res.string.player_country),
-    height = getString(Res.string.player_height),
-)

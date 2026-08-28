@@ -23,15 +23,18 @@ private val ScreenVerticalPadding = 16.dp
 
 @Composable
 internal fun MatchdayScreen(viewModel: MatchdayViewModel, modifier: Modifier = Modifier) {
-    val state by viewModel.collectUiState()
+    val uiState = viewModel.collectUiState()
     val nowMillis by viewModel.ticker.collectAsStateWithLifecycle(viewModel.nowMillis())
     val contentPadding = LocalScreenPadding.current
 
+    // Every read happens in the scope that draws the thing being read: the backdrop follows one
+    // url, the content follows the rest, and neither recomposes for the other's changes.
     GlassBackdrop(
         modifier = modifier.fillMaxSize(),
-        backdrop = { BackdropImage(url = state.backdropUrl) },
+        backdrop = { BackdropImage(url = uiState.value.backdropUrl) },
     ) {
         val glass = this
+        val state = uiState.value
         LoadableContent(
             isLoading = state.isLoading &&
                 state.nextMatch == null && !state.hasClub,

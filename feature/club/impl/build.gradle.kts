@@ -11,6 +11,7 @@ kotlin {
             implementation(projects.core.connectivity.api)
             implementation(projects.foundation.tessera)
             implementation(projects.foundation.coroutines)
+            implementation(projects.foundation.strings)
             implementation(projects.core.domain)
             implementation(projects.navigation.core)
             implementation(projects.uikit)
