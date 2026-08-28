@@ -1,0 +1,162 @@
+package com.begoml.bridge.feature.squad.grid
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.dp
+import com.begoml.bridge.feature.squad.PlayerCardUi
+import com.begoml.bridge.foundation.tessera.collectUiState
+import com.begoml.bridge.feature.squad.SquadViewModel
+import com.begoml.bridge.uikit.LocalScreenPadding
+import com.begoml.bridge.uikit.component.CutoutImage
+import com.begoml.bridge.uikit.component.FollowStar
+import com.begoml.bridge.uikit.component.LoadableContent
+import com.begoml.bridge.uikit.glass.EdgeFadeOverhang
+import com.begoml.bridge.uikit.glass.ScrollEdge
+import com.begoml.bridge.uikit.glass.EdgeFadeOverhang
+import com.begoml.bridge.uikit.glass.ScrollEdgeFade
+import com.begoml.bridge.uikit.shader.ClubBackgroundShader
+import com.begoml.bridge.uikit.shader.AnimatedShader
+import com.begoml.bridge.uikit.shader.rememberAnimatedShader
+import com.begoml.bridge.uikit.shader.shaded
+import com.begoml.bridge.uikit.theme.BridgeColors
+import com.begoml.bridge.uikit.theme.FigureStyle
+import com.begoml.bridge.uikit.theme.LabelStyle
+
+private const val GridColumns = 2
+private val ScreenGutter = 14.dp
+
+
+@Composable
+internal fun SquadScreen(viewModel: SquadViewModel, modifier: Modifier = Modifier) {
+    val state by viewModel.collectUiState()
+    val contentPadding = LocalScreenPadding.current
+    val layoutDirection = LocalLayoutDirection.current
+
+    // One program for the whole grid: building it per card compiles a shader per visible cell on
+    // the first frame, and again for every card that scrolls in.
+    val cardShader = rememberAnimatedShader(ClubBackgroundShader)
+
+    Box(modifier = modifier.fillMaxSize()) {
+        LoadableContent(
+            isLoading = state.isLoading && state.players.isEmpty(),
+            error = state.error.takeIf { state.players.isEmpty() },
+            onRetry = viewModel::retry,
+            modifier = Modifier.fillMaxSize().background(BridgeColors.Ground),
+        ) {
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(GridColumns),
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(
+                    // The screen inset carries the cutout in landscape; a bare gutter would put
+                    // the first column under it.
+                    start = ScreenGutter + contentPadding.calculateStartPadding(layoutDirection),
+                    end = ScreenGutter + contentPadding.calculateEndPadding(layoutDirection),
+                    top = contentPadding.calculateTopPadding() + 4.dp,
+                    bottom = contentPadding.calculateBottomPadding(),
+                ),
+                horizontalArrangement = Arrangement.spacedBy(9.dp),
+                verticalArrangement = Arrangement.spacedBy(9.dp),
+            ) {
+                items(
+                    items = state.players,
+                    key = { player -> player.id },
+                    contentType = { "player-card" },
+                ) { player ->
+                    PlayerCard(
+                        player = player,
+                        shader = cardShader,
+                        onClick = { viewModel.onPlayerClick(player.id) },
+                    )
+                }
+            }
+        }
+
+        ScrollEdgeFade(
+            edge = ScrollEdge.Top,
+            height = contentPadding.calculateTopPadding() + EdgeFadeOverhang,
+        )
+        ScrollEdgeFade(
+            edge = ScrollEdge.Bottom,
+            height = contentPadding.calculateBottomPadding() + EdgeFadeOverhang,
+        )
+    }
+}
+
+@Composable
+private fun PlayerCard(
+    player: PlayerCardUi,
+    shader: AnimatedShader,
+    onClick: () -> Unit,
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(168.dp)
+            .clip(RoundedCornerShape(13.dp))
+            .shaded(shader)
+            .clickable(onClick = onClick),
+    ) {
+        player.shirtNumber?.let { number ->
+            Text(
+                text = number,
+                style = FigureStyle.copy(fontSize = MaterialTheme.typography.headlineLarge.fontSize),
+                color = BridgeColors.TextPrimary.copy(alpha = 0.12f),
+                modifier = Modifier.align(Alignment.TopEnd).padding(horizontal = 8.dp),
+            )
+        }
+        CutoutImage(
+            url = player.cutoutUrl,
+            modifier = Modifier.fillMaxSize().padding(top = 10.dp, bottom = 46.dp),
+        )
+        if (player.followed) {
+            FollowStar(
+                followed = true,
+                modifier = Modifier.align(Alignment.TopStart).padding(8.dp),
+            )
+        }
+        Column(
+            modifier = Modifier.align(Alignment.BottomStart).padding(8.dp),
+            verticalArrangement = Arrangement.spacedBy(2.dp),
+        ) {
+            Text(
+                text = player.name,
+                style = MaterialTheme.typography.labelLarge,
+                color = BridgeColors.TextPrimary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            player.position?.let {
+                Text(
+                    text = it,
+                    style = LabelStyle,
+                    color = BridgeColors.TextMuted,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+    }
+}

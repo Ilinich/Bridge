@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- registerDefaultNetworkCallback refuses to report anything without it, and says so only
+         in the log. Declared by the module that makes the call, so an app gains the permission
+         by depending on the feature rather than by remembering to add a line. -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+</manifest>

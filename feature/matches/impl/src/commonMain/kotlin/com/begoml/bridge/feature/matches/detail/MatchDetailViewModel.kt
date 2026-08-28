@@ -1,0 +1,139 @@
+package com.begoml.bridge.feature.matches.detail
+
+import com.begoml.bridge.foundation.logger.Logger
+import com.begoml.bridge.foundation.coroutines.safeLaunch
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import bridge.feature.matches.impl.generated.resources.Res
+import bridge.feature.matches.impl.generated.resources.fixture_score
+import bridge.feature.matches.impl.generated.resources.fixture_versus
+import bridge.feature.matches.impl.generated.resources.season_round
+import com.begoml.bridge.foundation.resource.Loadable
+import com.begoml.bridge.core.domain.model.SeasonMatch
+import com.begoml.bridge.core.domain.TeamNames
+import com.begoml.bridge.core.domain.model.FollowedClub
+import com.begoml.bridge.core.domain.repository.MatchRepository
+import com.begoml.bridge.feature.matches.formatKickoff
+import com.begoml.bridge.navigation.router.AppRouter
+import com.begoml.bridge.navigation.router.navigateUp
+import com.begoml.bridge.foundation.tessera.UiStateDelegate
+import com.begoml.bridge.foundation.tessera.UiStateDelegateImpl
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
+import org.jetbrains.compose.resources.getString
+
+private const val Tag = "MatchDetail"
+
+data class MatchDetailLabels(
+    val title: String,
+    val back: String,
+    val notFound: String,
+    val kickoff: String,
+    val homeLabel: String,
+    val awayLabel: String,
+    val win: String,
+    val draw: String,
+    val loss: String,
+)
+
+/** How the match ended for the club this build follows. Absent when it is not our match. */
+enum class MatchOutcome { Win, Draw, Loss }
+
+/** Which side of the fixture our club is on. Absent when neither side is ours. */
+enum class MatchSide { Home, Away }
+
+data class MatchDetailUi(
+    val homeName: String,
+    val homeCode: String,
+    val awayName: String,
+    val awayCode: String,
+    val scoreline: String,
+    val kickoff: String,
+    val round: String,
+    val side: MatchSide?,
+    val outcome: MatchOutcome?,
+)
+
+data class MatchDetailUiState(
+    val labels: MatchDetailLabels,
+    val match: MatchDetailUi? = null,
+    /** True until both the fixture and the labels have answered; absent is not the same as loading. */
+    val isLoading: Boolean = true,
+)
+
+internal class MatchDetailViewModel(
+    matchId: String,
+    scope: CoroutineScope,
+    private val matchRepository: MatchRepository,
+    private val club: FollowedClub,
+    private val labels: MatchDetailLabels,
+    private val router: AppRouter,
+    private val ioDispatcher: CoroutineDispatcher,
+    private val logger: Logger,
+) : ViewModel(scope),
+    UiStateDelegate<MatchDetailUiState> by UiStateDelegateImpl(MatchDetailUiState(labels = labels)) {
+
+    init {
+        viewModelScope.safeLaunch(dispatcher = ioDispatcher, logger = logger, tag = Tag) {
+            matchRepository.match(matchId).collect { loadable ->
+                val match = (loadable as? Loadable.Content)?.value
+                val ui = match?.let { it.toUi() }
+                updateUiState {
+                    MatchDetailUiState(
+                        labels = labels,
+                        match = ui,
+                        isLoading = loadable is Loadable.Loading,
+                    )
+                }
+            }
+        }
+    }
+
+
+    fun onBack() {
+        router.navigateUp()
+    }
+
+    private fun SeasonMatch.side(): MatchSide? = when {
+        TeamNames.matches(home.name, club.name) -> MatchSide.Home
+        TeamNames.matches(away.name, club.name) -> MatchSide.Away
+        else -> null
+    }
+
+    /**
+     * The result read from our club's point of view.
+     *
+     * Null for a fixture that has not been played and for a match we are not in — both are absent
+     * results, and neither is a draw.
+     */
+    private fun SeasonMatch.outcome(side: MatchSide?): MatchOutcome? {
+        val result = score ?: return null
+        val ours = when (side ?: return null) {
+            MatchSide.Home -> result.home to result.away
+            MatchSide.Away -> result.away to result.home
+        }
+        return when {
+            ours.first > ours.second -> MatchOutcome.Win
+            ours.first < ours.second -> MatchOutcome.Loss
+            else -> MatchOutcome.Draw
+        }
+    }
+
+    private suspend fun SeasonMatch.toUi(): MatchDetailUi {
+        val side = side()
+        return MatchDetailUi(
+        homeName = home.name,
+        homeCode = home.code,
+        awayName = away.name,
+        awayCode = away.code,
+        scoreline = score
+            ?.let { getString(Res.string.fixture_score, it.home, it.away) }
+            ?: getString(Res.string.fixture_versus),
+        kickoff = kickoff.formatKickoff(),
+        round = getString(Res.string.season_round, round),
+        side = side,
+        outcome = outcome(side),
+        )
+    }
+
+}

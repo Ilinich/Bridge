@@ -1,0 +1,223 @@
+package com.begoml.bridge.feature.matches.matchday
+
+import com.begoml.bridge.foundation.logger.Logger
+import com.begoml.bridge.foundation.coroutines.safeLaunch
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import bridge.feature.matches.impl.generated.resources.Res
+import bridge.feature.matches.impl.generated.resources.fixture_score
+import bridge.feature.matches.impl.generated.resources.fixture_teams
+import com.begoml.bridge.core.domain.model.Club
+import kotlin.time.Clock
+import com.begoml.bridge.feature.matches.formatKickoff
+import com.begoml.bridge.uikit.groupedThousands
+import com.begoml.bridge.core.domain.model.Match
+import com.begoml.bridge.foundation.tessera.UiStateDelegate
+import com.begoml.bridge.foundation.tessera.UiStateDelegateImpl
+import com.begoml.bridge.core.connectivity.Connectivity
+import com.begoml.bridge.core.connectivity.NetworkStatus
+import com.begoml.bridge.feature.club.api.ClubRoute
+import com.begoml.bridge.feature.player.api.PlayerDetailRoute
+import com.begoml.bridge.navigation.router.AppRouter
+import com.begoml.bridge.navigation.router.navigateTo
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.combine
+import org.jetbrains.compose.resources.getString
+
+private const val Tag = "Matchday"
+
+/** Every fixed word on the matchday screen, resolved once away from the composition. */
+data class MatchdayLabels(
+    val nextMatch: String,
+    val fixtureFailed: String,
+    val noFixture: String,
+    val loadingFixture: String,
+    val kickoffLocal: String,
+    val kickoffNow: String,
+    val versus: String,
+    val days: String,
+    val hours: String,
+    val minutes: String,
+    val seconds: String,
+    val recent: String,
+    val following: String,
+    val stadium: String,
+    val arena: String,
+    val capacity: String,
+    val founded: String,
+)
+
+/** A followed player, carrying the id the screen needs to open them. */
+data class FollowedPlayerUi(val id: String, val name: String)
+
+/** The fixture with its text already built, so the clock cannot make the screen reformat it. */
+data class NextMatchUi(
+    val competition: String,
+    val venue: String?,
+    val kickoffText: String,
+    val kickoffMillis: Long,
+    val homeName: String,
+    val homeCode: String,
+    val homeBadgeUrl: String?,
+    val awayName: String,
+    val awayCode: String,
+    val awayBadgeUrl: String?,
+)
+
+/** The ground facts, formatted once rather than on every tick. */
+data class StadiumUi(
+    val arena: String,
+    val capacity: String,
+    val founded: String,
+)
+
+/** A result row with its text already built, so the list draws strings rather than formats them. */
+data class RecentMatchUi(
+    val teams: String,
+    val competition: String,
+    val score: String?,
+    val awayBadgeUrl: String?,
+    val awayCode: String,
+)
+
+data class MatchdayUiState(
+    val labels: MatchdayLabels,
+    val backdropUrl: String? = null,
+    val stadium: StadiumUi? = null,
+    val hasClub: Boolean = false,
+    val nextMatch: NextMatchUi? = null,
+    val recent: RecentMatchUi? = null,
+    /** The followed players, in squad order; empty when nobody is followed. */
+    val following: ImmutableList<FollowedPlayerUi> = persistentListOf(),
+    val nextMatchLoaded: Boolean = false,
+    val nextMatchFailed: Boolean = false,
+    val isLoading: Boolean = true,
+    val error: Throwable? = null,
+    val isOffline: Boolean = false,
+)
+
+private const val TickMillis = 1_000L
+
+internal class MatchdayViewModel(
+    scope: CoroutineScope,
+    private val feature: MatchdayFeature,
+    private val connectivity: Connectivity,
+    private val clock: Clock,
+    private val labels: MatchdayLabels,
+    private val router: AppRouter,
+    private val ioDispatcher: CoroutineDispatcher,
+    private val logger: Logger,
+) : ViewModel(scope),
+    UiStateDelegate<MatchdayUiState> by UiStateDelegateImpl(MatchdayUiState(labels = labels)) {
+
+    /**
+     * The countdown's clock.
+     *
+     * Cold on purpose: the screen collects it through the lifecycle, so a second's tick costs
+     * nothing while the user is elsewhere. It is deliberately not part of the ui state — a state
+     * that rebuilt every second would recompose the whole screen for one line of text.
+     */
+    val ticker: Flow<Long> = flow {
+        while (true) {
+            emit(clock.now().toEpochMilliseconds())
+            delay(TickMillis)
+        }
+    }
+
+    /** Built only when the result itself changes; the clock must not re-format it every second. */
+    private val recent: Flow<RecentMatchUi?> = feature.stateFlow
+        .map { it.lastResult }
+        .distinctUntilChanged()
+        .map { match -> match?.let { it.toRecentUi() } }
+
+    private val nextMatch: Flow<NextMatchUi?> = feature.stateFlow
+        .map { it.nextMatch }
+        .distinctUntilChanged()
+        .map { match -> match?.toUi() }
+
+    private val stadium: Flow<StadiumUi?> = feature.stateFlow
+        .map { it.club }
+        .distinctUntilChanged()
+        .map { club -> club?.toStadiumUi() }
+
+    init {
+        viewModelScope.safeLaunch(dispatcher = ioDispatcher, logger = logger, tag = Tag) {
+            combine(
+                feature.stateFlow,
+                recent,
+                nextMatch,
+                stadium,
+                connectivity.status,
+            ) { content, recentUi, nextMatchUi, stadiumUi, network ->
+                MatchdayUiState(
+                    labels = labels,
+                    backdropUrl = content.club?.media?.fanartUrls?.firstOrNull(),
+                    stadium = stadiumUi,
+                    hasClub = content.club != null,
+                    nextMatch = nextMatchUi,
+                    recent = recentUi,
+                    following = content.followedPlayers
+                        .map { player -> FollowedPlayerUi(id = player.id, name = player.name) }
+                        .toImmutableList(),
+                    nextMatchLoaded = content.nextMatchLoaded,
+                    nextMatchFailed = content.nextMatchFailed,
+                    isLoading = content.isLoading,
+                    error = content.error,
+                    isOffline = network == NetworkStatus.Offline,
+                )
+            }.collect { built -> updateUiState { built } }
+        }
+    }
+
+    fun nowMillis(): Long = clock.now().toEpochMilliseconds()
+
+
+    fun retry() {
+        feature.dispatchAction(MatchdayAction.Retry)
+    }
+
+    fun onStadiumClick() {
+        router.navigateTo(ClubRoute)
+    }
+
+    fun onFollowedPlayerClick(playerId: String) {
+        router.navigateTo(PlayerDetailRoute(playerId))
+    }
+
+    private fun Match.toUi() = NextMatchUi(
+        competition = competition,
+        venue = venue,
+        kickoffText = kickoff.formatKickoff(),
+        kickoffMillis = kickoff.toEpochMilliseconds(),
+        homeName = home.name,
+        homeCode = home.code,
+        homeBadgeUrl = home.badgeUrl,
+        awayName = away.name,
+        awayCode = away.code,
+        awayBadgeUrl = away.badgeUrl,
+    )
+
+    private fun Club.toStadiumUi() = StadiumUi(
+        arena = stadium.orEmpty(),
+        capacity = stadiumCapacity?.groupedThousands().orEmpty(),
+        founded = foundedYear?.toString().orEmpty(),
+    )
+
+    private suspend fun Match.toRecentUi() = RecentMatchUi(
+        teams = getString(Res.string.fixture_teams, home.name, away.name),
+        competition = competition,
+        score = score?.let { getString(Res.string.fixture_score, it.home, it.away) },
+        awayBadgeUrl = away.badgeUrl,
+        awayCode = away.code,
+    )
+
+}

@@ -1,0 +1,9 @@
+<resources>
+    <string name="player_title">Player</string>
+    <string name="player_number">Number</string>
+    <string name="player_position">Position</string>
+    <string name="player_country">Country</string>
+    <string name="player_height">Height</string>
+    <string name="player_not_found">This player is no longer loaded.</string>
+    <string name="player_back">Back</string>
+</resources>

@@ -1,0 +1,44 @@
+build:
+  maxIssues: 0
+
+complexity:
+  LongParameterList:
+    active: true
+    functionThreshold: 8
+    constructorThreshold: 10
+    # A wire DTO's shape is the server's decision, not a design smell of ours.
+    ignoreAnnotated: ['Serializable', 'Entity']
+  TooManyFunctions:
+    active: true
+    thresholdInClasses: 20
+    thresholdInFiles: 20
+    ignorePrivate: true
+
+style:
+  MagicNumber:
+    active: false
+  # An import nobody uses is how a layer keeps compiling against a type it no longer draws.
+  UnusedImports:
+    active: true
+  UnusedPrivateMember:
+    active: true
+  ReturnCount:
+    active: true
+    max: 3
+    # Mapping a nullable wire record is a run of guard clauses by nature.
+    excludeGuardClauses: true
+  MaxLineLength:
+    active: true
+    maxLineLength: 120
+
+naming:
+  FunctionNaming:
+    active: true
+    ignoreAnnotated: ['Composable']
+  TopLevelPropertyNaming:
+    active: true
+    constantPattern: '[A-Z][_A-Za-z0-9]*'
+
+bridge:
+  HardcodedComposeString:
+    active: true

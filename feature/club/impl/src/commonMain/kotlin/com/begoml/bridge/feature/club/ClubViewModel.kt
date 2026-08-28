@@ -1,0 +1,161 @@
+package com.begoml.bridge.feature.club
+
+import com.begoml.bridge.foundation.logger.Logger
+import com.begoml.bridge.foundation.coroutines.safeLaunch
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.begoml.bridge.core.domain.model.Club
+import com.begoml.bridge.core.domain.model.Venue
+import com.begoml.bridge.core.domain.model.FollowedClub
+import com.begoml.bridge.core.domain.repository.ClubRepository
+import com.begoml.bridge.foundation.resource.Loadable
+import com.begoml.bridge.uikit.groupedThousands
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.Job
+import com.begoml.bridge.core.analytics.Analytics
+import com.begoml.bridge.feature.club.analytics.VideoStarted
+import com.begoml.bridge.foundation.tessera.UiStateDelegate
+import com.begoml.bridge.foundation.tessera.UiStateDelegateImpl
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
+
+private const val Tag = "Club"
+
+/** Every fixed word on the club screen, resolved once away from the composition. */
+data class ClubLabels(
+    val about: String,
+    val media: String,
+    val ground: String,
+    val links: String,
+    val founded: String,
+    val colours: String,
+    val capacity: String,
+    val opened: String,
+    val location: String,
+    val website: String,
+    val youtube: String,
+    val twitter: String,
+    val instagram: String,
+)
+
+/** The club as the screen draws it: figures already formatted, colours already parsed. */
+data class ClubUi(
+    val name: String,
+    val code: String,
+    val badgeUrl: String?,
+    val backdropUrl: String?,
+    val nicknames: String?,
+    val founded: String?,
+    val description: String?,
+    val colours: ImmutableList<String>,
+    val links: ImmutableList<ClubLinkUi>,
+)
+
+data class ClubLinkUi(val label: String, val url: String)
+
+data class GroundUi(
+    val name: String,
+    val thumbUrl: String?,
+    val capacity: String?,
+    val opened: String?,
+    val location: String?,
+    val description: String?,
+)
+
+data class ClubUiState(
+    val labels: ClubLabels,
+    val club: ClubUi? = null,
+    val ground: GroundUi? = null,
+    val isLoading: Boolean = true,
+    val error: Throwable? = null,
+)
+
+internal class ClubViewModel(
+    scope: CoroutineScope,
+    private val repository: ClubRepository,
+    private val club: FollowedClub,
+    private val labels: ClubLabels,
+    private val ioDispatcher: CoroutineDispatcher,
+    private val logger: Logger,
+    private val analytics: Analytics,
+) : ViewModel(scope),
+    UiStateDelegate<ClubUiState> by UiStateDelegateImpl(ClubUiState(labels = labels)) {
+
+    private var refreshJob: Job? = null
+
+    init {
+        viewModelScope.safeLaunch(dispatcher = ioDispatcher, logger = logger, tag = Tag) {
+            // Two requests rather than one combined source: the ground can only be asked about
+            // once the club record says which ground it is, and the profile must render without
+            // waiting for that second answer.
+            launch {
+                repository.club(club.id).collect { loadable ->
+                    val mapped = (loadable as? Loadable.Content)
+                        ?.let { it.value.toUi(labels) }
+                    updateUiState { state ->
+                        state.copy(
+                            club = mapped ?: state.club,
+                            isLoading = loadable is Loadable.Loading,
+                            error = (loadable as? Loadable.Failed)?.error,
+                        )
+                    }
+                }
+            }
+            launch {
+                repository.venue(club.id).collect { loadable ->
+                    val ground = (loadable as? Loadable.Content)
+                        ?.let { it.value.toUi() } ?: return@collect
+                    updateUiState { state -> state.copy(ground = ground) }
+                }
+            }
+        }
+    }
+
+
+    fun onVideoStarted() {
+        analytics.track(VideoStarted(source = "club_media"))
+    }
+
+    /** A forced refresh holds the syncer's key mutex across the network, so only one may run. */
+    fun retry() {
+        if (refreshJob?.isActive == true) return
+        refreshJob = viewModelScope.safeLaunch(
+            dispatcher = ioDispatcher,
+            logger = logger,
+            tag = Tag,
+        ) { repository.refresh(club.id) }
+    }
+
+    private fun Club.toUi(labels: ClubLabels) = ClubUi(
+        name = name,
+        code = code,
+        badgeUrl = media.badgeUrl,
+        backdropUrl = media.fanartUrls.lastOrNull(),
+        nicknames = details.nicknames.takeIf { it.isNotEmpty() }?.joinToString(" · "),
+        founded = foundedYear?.toString(),
+        description = description,
+        colours = listOfNotNull(
+            details.colours.primary,
+            details.colours.secondary,
+            details.colours.tertiary,
+        ).toImmutableList(),
+        links = listOfNotNull(
+            details.links.website?.let { ClubLinkUi(labels.website, it) },
+            details.links.youtube?.let { ClubLinkUi(labels.youtube, it) },
+            details.links.twitter?.let { ClubLinkUi(labels.twitter, it) },
+            details.links.instagram?.let { ClubLinkUi(labels.instagram, it) },
+        ).toImmutableList(),
+    )
+
+    private fun Venue.toUi() = GroundUi(
+        name = name,
+        thumbUrl = thumbUrl,
+        capacity = capacity?.groupedThousands(),
+        opened = openedYear?.toString(),
+        location = location,
+        description = description,
+    )
+
+}

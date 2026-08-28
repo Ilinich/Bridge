@@ -1,0 +1,113 @@
+package com.begoml.bridge.feature.player
+
+import com.begoml.bridge.foundation.logger.Logger
+import com.begoml.bridge.foundation.coroutines.safeLaunch
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.begoml.bridge.core.domain.model.FollowedClub
+import com.begoml.bridge.core.domain.model.Player
+import com.begoml.bridge.core.domain.repository.SquadRepository
+import com.begoml.bridge.core.features.following.FollowingFeature
+import com.begoml.bridge.foundation.resource.Loadable
+import com.begoml.bridge.foundation.tessera.UiStateDelegate
+import com.begoml.bridge.foundation.tessera.UiStateDelegateImpl
+import com.begoml.bridge.navigation.router.AppRouter
+import com.begoml.bridge.navigation.router.navigateUp
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.combine
+
+private const val Tag = "Player"
+
+/** Every fixed word on the player pager, resolved once away from the composition. */
+data class PlayerLabels(
+    val title: String,
+    val back: String,
+    val notFound: String,
+    val number: String,
+    val position: String,
+    val country: String,
+    val height: String,
+)
+
+/** A page in the pager, with everything the page draws and nothing else. */
+data class PlayerPageUi(
+    val id: String,
+    val name: String,
+    val shirtNumber: String?,
+    val position: String?,
+    val nationality: String?,
+    val height: String?,
+    val cutoutUrl: String?,
+    val followed: Boolean,
+)
+
+data class PlayerUiState(
+    val labels: PlayerLabels,
+    val players: ImmutableList<PlayerPageUi> = persistentListOf(),
+    val isLoading: Boolean = true,
+)
+
+/** The player pager. It reads the squad, writes who is followed, and owns the way back. */
+internal class PlayerViewModel(
+    scope: CoroutineScope,
+    private val repository: SquadRepository,
+    private val club: FollowedClub,
+    private val following: FollowingFeature,
+    private val labels: PlayerLabels,
+    private val router: AppRouter,
+    private val ioDispatcher: CoroutineDispatcher,
+    private val logger: Logger,
+) : ViewModel(scope), UiStateDelegate<PlayerUiState> by UiStateDelegateImpl(PlayerUiState(labels = labels)) {
+
+    init {
+        viewModelScope.safeLaunch(dispatcher = ioDispatcher, logger = logger, tag = Tag) {
+            combine(repository.squad(club.id), following.stateFlow) { loadable, followed ->
+                loadable to followed.playerIds
+            }.collect { (loadable, followed) ->
+                val built = toUiState(loadable, followed)
+                updateUiState { built }
+            }
+        }
+    }
+
+
+    fun onFollowClick(playerId: String) {
+        following.toggle(playerId)
+    }
+
+    fun onBack() {
+        router.navigateUp()
+    }
+
+    private fun toUiState(
+        loadable: Loadable<List<Player>>,
+        followed: Set<String>,
+    ): PlayerUiState = when (loadable) {
+        is Loadable.Content -> PlayerUiState(
+            labels = labels,
+            players = loadable.value.map { player -> player.toPageUi(followed) }.toImmutableList(),
+            isLoading = false,
+        )
+        is Loadable.Loading -> PlayerUiState(labels = labels, isLoading = true)
+        // A pager with nothing to page has nothing to say either way, so a failure reads the same
+        // as an empty squad: the screen states that the player is not loaded, and offers no retry
+        // it could not honour — the squad is fetched by the grid this screen was opened from.
+        is Loadable.Failed -> PlayerUiState(labels = labels, isLoading = false)
+    }
+
+    private fun Player.toPageUi(followed: Set<String>) = PlayerPageUi(
+        id = id,
+        name = name,
+        shirtNumber = shirtNumber,
+        position = position,
+        nationality = nationality,
+        height = height,
+        cutoutUrl = cutoutUrl,
+        followed = id in followed,
+    )
+
+}
