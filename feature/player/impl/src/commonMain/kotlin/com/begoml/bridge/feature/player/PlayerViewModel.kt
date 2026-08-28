@@ -9,7 +9,7 @@ import bridge.feature.player.impl.generated.resources.player_not_found
 import bridge.feature.player.impl.generated.resources.player_number
 import bridge.feature.player.impl.generated.resources.player_position
 import bridge.feature.player.impl.generated.resources.player_title
-import com.begoml.bridge.core.following.FollowingFeature
+import com.begoml.bridge.core.features.following.FollowingFeature
 import com.begoml.bridge.foundation.tessera.UiStateDelegate
 import com.begoml.bridge.foundation.tessera.UiStateDelegateImpl
 import com.begoml.bridge.navigation.router.AppRouter

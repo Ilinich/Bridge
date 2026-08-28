@@ -7,7 +7,7 @@ kotlin {
         commonMain.dependencies {
             api(projects.feature.player.api)
 
-            implementation(projects.core.following.api)
+            implementation(projects.core.features.following.api)
             implementation(projects.foundation.tessera)
             implementation(projects.foundation.coroutines)
             implementation(projects.core.domain)

@@ -13,7 +13,7 @@ kotlin {
 
             implementation(projects.core.analytics.api)
             implementation(projects.core.connectivity.api)
-            implementation(projects.core.following.api)
+            implementation(projects.core.features.following.api)
             implementation(projects.foundation.tessera)
             implementation(projects.foundation.coroutines)
             implementation(projects.core.domain)

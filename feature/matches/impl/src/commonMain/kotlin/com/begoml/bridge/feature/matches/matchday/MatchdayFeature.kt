@@ -8,7 +8,7 @@ import com.begoml.bridge.core.domain.model.FollowedClub
 import com.begoml.bridge.core.domain.repository.ClubRepository
 import com.begoml.bridge.core.domain.repository.MatchRepository
 import com.begoml.bridge.core.domain.repository.SquadRepository
-import com.begoml.bridge.core.following.FollowingFeature
+import com.begoml.bridge.core.features.following.FollowingFeature
 import com.begoml.bridge.foundation.tessera.SimpleFeature
 import com.begoml.bridge.foundation.tessera.awaitActionsIn
 import com.begoml.bridge.foundation.tessera.composeState

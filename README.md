@@ -163,7 +163,7 @@ rule appears that two screens must agree on, that is when the layer earns its pl
 | `core:analytics:api` / `:impl` | the `track` entry point; each feature declares its own events |
 | `core:background:api` / `:impl` | daily refresh: WorkManager and `BGTaskScheduler` |
 | `core:connectivity:api` / `:impl` | `ConnectivityManager` and `NWPathMonitor` behind one state flow |
-| `core:following:api` / `:impl` | followed players: a state holder with no screen, shared by two feature modules |
+| `core:features:following:api` / `:impl` | followed players: a state holder with no screen, shared by two feature modules |
 | `core:domain` | what the app is about: models, `Loadable`, the repository contracts |
 | `core:data` | how it is fetched: HTTP clients, DTOs, Room, mappers, the repository implementations |
 | `uikit` | theme, glass surfaces, runtime-shader brushes, components |

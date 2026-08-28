@@ -4,7 +4,7 @@ import com.begoml.bridge.core.data.di.dataModules
 import com.begoml.bridge.core.analytics.impl.analyticsModule
 import com.begoml.bridge.core.background.impl.backgroundModule
 import com.begoml.bridge.core.connectivity.impl.connectivityModule
-import com.begoml.bridge.core.following.impl.followingModule
+import com.begoml.bridge.core.features.following.impl.followingModule
 import com.begoml.bridge.foundation.logger.impl.loggerModule
 import com.begoml.bridge.feature.club.di.clubModule
 import com.begoml.bridge.navigation.di.navigationModule

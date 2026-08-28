@@ -2,7 +2,7 @@ package com.begoml.bridge.feature.squad
 
 import androidx.lifecycle.ViewModel
 import com.begoml.bridge.core.domain.repository.SquadRepository
-import com.begoml.bridge.core.following.FollowingFeature
+import com.begoml.bridge.core.features.following.FollowingFeature
 import com.begoml.bridge.core.analytics.Analytics
 import com.begoml.bridge.feature.squad.analytics.PlayerOpened
 import com.begoml.bridge.feature.player.api.PlayerDetailRoute
