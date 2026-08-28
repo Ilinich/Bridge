@@ -1,5 +1,7 @@
 package com.begoml.bridge.feature.player
 
+import com.begoml.bridge.foundation.logger.Logger
+import com.begoml.bridge.foundation.coroutines.safeLaunch
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import bridge.feature.player.impl.generated.resources.Res
@@ -25,9 +27,9 @@ import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.jetbrains.compose.resources.getString
+
+private const val Tag = "Player"
 
 /** Every fixed word on the player pager, resolved once away from the composition. */
 data class PlayerLabels(
@@ -66,14 +68,15 @@ internal class PlayerViewModel(
     val labels: PlayerLabels,
     private val router: AppRouter,
     private val ioDispatcher: CoroutineDispatcher,
+    private val logger: Logger,
 ) : ViewModel(scope), UiStateDelegate<PlayerUiState> by UiStateDelegateImpl(PlayerUiState()) {
 
     init {
-        viewModelScope.launch {
+        viewModelScope.safeLaunch(ioDispatcher, logger, Tag) {
             combine(repository.squad(club.id), following.stateFlow) { loadable, followed ->
                 loadable to followed.playerIds
             }.collect { (loadable, followed) ->
-                val built = withContext(ioDispatcher) { toUiState(loadable, followed) }
+                val built = toUiState(loadable, followed)
                 updateUiState { built }
             }
         }

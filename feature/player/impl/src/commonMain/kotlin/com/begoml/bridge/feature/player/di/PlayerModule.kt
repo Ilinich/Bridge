@@ -22,6 +22,7 @@ fun playerModule() = module {
             labels = get(),
             router = get(),
             ioDispatcher = get<DispatcherProvider>().io,
+            logger = get(),
         )
     }
     single { PlayerNavigationEntry() } bind FeatureNavigationEntry::class

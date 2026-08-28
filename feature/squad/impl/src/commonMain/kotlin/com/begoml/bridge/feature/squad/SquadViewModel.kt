@@ -1,5 +1,7 @@
 package com.begoml.bridge.feature.squad
 
+import com.begoml.bridge.foundation.logger.Logger
+import com.begoml.bridge.foundation.coroutines.safeLaunch
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.begoml.bridge.core.analytics.Analytics
@@ -20,8 +22,8 @@ import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+
+private const val Tag = "Squad"
 
 /** A card in the grid, with everything the card draws and nothing else. */
 data class PlayerCardUi(
@@ -56,15 +58,16 @@ internal class SquadViewModel(
     private val following: FollowingFeature,
     private val router: AppRouter,
     private val ioDispatcher: CoroutineDispatcher,
+    private val logger: Logger,
     private val analytics: Analytics,
 ) : ViewModel(scope), UiStateDelegate<SquadUiState> by UiStateDelegateImpl(SquadUiState()) {
 
     init {
-        viewModelScope.launch {
+        viewModelScope.safeLaunch(ioDispatcher, logger, Tag) {
             combine(repository.squad(club.id), following.stateFlow) { loadable, followed ->
                 loadable to followed.playerIds
             }.collect { (loadable, followed) ->
-                val built = withContext(ioDispatcher) { toUiState(loadable, followed) }
+                val built = toUiState(loadable, followed)
                 updateUiState { built }
             }
         }
@@ -77,7 +80,7 @@ internal class SquadViewModel(
     }
 
     fun retry() {
-        viewModelScope.launch { repository.refresh(club.id) }
+        viewModelScope.safeLaunch(ioDispatcher, logger, Tag) { repository.refresh(club.id) }
     }
 
     private fun toUiState(

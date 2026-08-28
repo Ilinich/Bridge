@@ -1,5 +1,7 @@
 package com.begoml.bridge.feature.club
 
+import com.begoml.bridge.foundation.logger.Logger
+import com.begoml.bridge.foundation.coroutines.safeLaunch
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import bridge.feature.club.impl.generated.resources.Res
@@ -32,8 +34,9 @@ import com.begoml.bridge.foundation.tessera.UiStateDelegateImpl
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.jetbrains.compose.resources.getString
+
+private const val Tag = "Club"
 
 /** Every fixed word on the club screen, resolved once away from the composition. */
 data class ClubLabels(
@@ -89,6 +92,7 @@ internal class ClubViewModel(
     private val club: FollowedClub,
     val labels: ClubLabels,
     private val ioDispatcher: CoroutineDispatcher,
+    private val logger: Logger,
     private val analytics: Analytics,
 ) : ViewModel(scope),
     UiStateDelegate<ClubUiState> by UiStateDelegateImpl(ClubUiState()) {
@@ -96,14 +100,14 @@ internal class ClubViewModel(
     private var refreshJob: Job? = null
 
     init {
-        viewModelScope.launch {
+        viewModelScope.safeLaunch(ioDispatcher, logger, Tag) {
             // Two requests rather than one combined source: the ground can only be asked about
             // once the club record says which ground it is, and the profile must render without
             // waiting for that second answer.
             launch {
                 repository.club(club.id).collect { loadable ->
                     val mapped = (loadable as? Loadable.Content)
-                        ?.let { withContext(ioDispatcher) { it.value.toUi(labels) } }
+                        ?.let { it.value.toUi(labels) }
                     updateUiState { state ->
                         state.copy(
                             club = mapped ?: state.club,
@@ -116,7 +120,7 @@ internal class ClubViewModel(
             launch {
                 repository.venue(club.id).collect { loadable ->
                     val ground = (loadable as? Loadable.Content)
-                        ?.let { withContext(ioDispatcher) { it.value.toUi() } } ?: return@collect
+                        ?.let { it.value.toUi() } ?: return@collect
                     updateUiState { state -> state.copy(ground = ground) }
                 }
             }
@@ -131,7 +135,7 @@ internal class ClubViewModel(
     /** A forced refresh holds the syncer's key mutex across the network, so only one may run. */
     fun retry() {
         if (refreshJob?.isActive == true) return
-        refreshJob = viewModelScope.launch { repository.refresh(club.id) }
+        refreshJob = viewModelScope.safeLaunch(ioDispatcher, logger, Tag) { repository.refresh(club.id) }
     }
 
     private fun Club.toUi(labels: ClubLabels) = ClubUi(

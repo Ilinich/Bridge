@@ -21,6 +21,7 @@ fun squadModule() = module {
             following = get(),
             router = get(),
             ioDispatcher = get<DispatcherProvider>().io,
+            logger = get(),
             analytics = get(),
         )
     }

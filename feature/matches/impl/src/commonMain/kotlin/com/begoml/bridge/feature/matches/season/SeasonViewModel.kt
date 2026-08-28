@@ -1,5 +1,7 @@
 package com.begoml.bridge.feature.matches.season
 
+import com.begoml.bridge.foundation.logger.Logger
+import com.begoml.bridge.foundation.coroutines.safeLaunch
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import bridge.feature.matches.impl.generated.resources.Res
@@ -26,10 +28,10 @@ import com.begoml.bridge.foundation.tessera.UiStateDelegateImpl
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.withContext
 import org.jetbrains.compose.resources.getString
+
+private const val Tag = "Season"
 
 /**
  * One fixture, with every string it draws already built.
@@ -76,15 +78,16 @@ internal class SeasonViewModel(
     private val club: FollowedClub,
     private val router: AppRouter,
     private val ioDispatcher: CoroutineDispatcher,
+    private val logger: Logger,
     private val analytics: Analytics,
 ) : ViewModel(scope),
     UiStateDelegate<SeasonUiState> by UiStateDelegateImpl(SeasonUiState()) {
 
     init {
-        viewModelScope.launch {
+        viewModelScope.safeLaunch(ioDispatcher, logger, Tag) {
             combine(feature.stateFlow, connectivity.status) { content, network ->
                 SeasonUiState(
-                    rounds = withContext(ioDispatcher) { content.rounds.toUi() },
+                    rounds = content.rounds.toUi(),
                     initialRoundIndex = content.initialRoundIndex,
                     isLoading = content.isLoading,
                     error = content.error,

@@ -20,6 +20,7 @@ fun clubModule() = module {
             club = get(),
             labels = get(),
             ioDispatcher = get<DispatcherProvider>().io,
+            logger = get(),
             analytics = get(),
         )
     }

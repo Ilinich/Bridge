@@ -1,5 +1,7 @@
 package com.begoml.bridge.feature.matches.matchday
 
+import com.begoml.bridge.foundation.logger.Logger
+import com.begoml.bridge.foundation.coroutines.safeLaunch
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import bridge.feature.matches.impl.generated.resources.Res
@@ -46,9 +48,9 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.jetbrains.compose.resources.getString
+
+private const val Tag = "Matchday"
 
 /** Every fixed word on the matchday screen, resolved once away from the composition. */
 data class MatchdayLabels(
@@ -129,6 +131,7 @@ internal class MatchdayViewModel(
     val labels: MatchdayLabels,
     private val router: AppRouter,
     private val ioDispatcher: CoroutineDispatcher,
+    private val logger: Logger,
 ) : ViewModel(scope),
     UiStateDelegate<MatchdayUiState> by UiStateDelegateImpl(MatchdayUiState()) {
 
@@ -150,7 +153,7 @@ internal class MatchdayViewModel(
     private val recent: Flow<RecentMatchUi?> = feature.stateFlow
         .map { it.lastResult }
         .distinctUntilChanged()
-        .map { match -> match?.let { withContext(ioDispatcher) { it.toRecentUi() } } }
+        .map { match -> match?.let { it.toRecentUi() } }
 
     private val nextMatch: Flow<NextMatchUi?> = feature.stateFlow
         .map { it.nextMatch }
@@ -163,7 +166,7 @@ internal class MatchdayViewModel(
         .map { club -> club?.toStadiumUi() }
 
     init {
-        viewModelScope.launch {
+        viewModelScope.safeLaunch(ioDispatcher, logger, Tag) {
             combine(
                 feature.stateFlow,
                 recent,

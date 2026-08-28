@@ -33,6 +33,7 @@ fun matchesModule() = module {
             labels = get(),
             router = get(),
             ioDispatcher = get<DispatcherProvider>().io,
+            logger = get(),
         )
     }
     viewModel {
@@ -44,6 +45,7 @@ fun matchesModule() = module {
             club = get(),
             router = get(),
             ioDispatcher = get<DispatcherProvider>().io,
+            logger = get(),
             analytics = get(),
         )
     }
@@ -56,6 +58,7 @@ fun matchesModule() = module {
             labels = get(),
             router = get(),
             ioDispatcher = get<DispatcherProvider>().io,
+            logger = get(),
         )
     }
     single { MatchesNavigationEntry() } bind FeatureNavigationEntry::class

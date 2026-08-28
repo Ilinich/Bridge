@@ -1,5 +1,7 @@
 package com.begoml.bridge.feature.matches.detail
 
+import com.begoml.bridge.foundation.logger.Logger
+import com.begoml.bridge.foundation.coroutines.safeLaunch
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import bridge.feature.matches.impl.generated.resources.Res
@@ -27,9 +29,9 @@ import com.begoml.bridge.foundation.tessera.UiStateDelegate
 import com.begoml.bridge.foundation.tessera.UiStateDelegateImpl
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.jetbrains.compose.resources.getString
+
+private const val Tag = "MatchDetail"
 
 data class MatchDetailLabels(
     val title: String,
@@ -75,14 +77,15 @@ internal class MatchDetailViewModel(
     val labels: MatchDetailLabels,
     private val router: AppRouter,
     private val ioDispatcher: CoroutineDispatcher,
+    private val logger: Logger,
 ) : ViewModel(scope),
     UiStateDelegate<MatchDetailUiState> by UiStateDelegateImpl(MatchDetailUiState()) {
 
     init {
-        viewModelScope.launch {
+        viewModelScope.safeLaunch(ioDispatcher, logger, Tag) {
             matchRepository.match(matchId).collect { loadable ->
                 val match = (loadable as? Loadable.Content)?.value
-                val ui = match?.let { withContext(ioDispatcher) { it.toUi() } }
+                val ui = match?.let { it.toUi() }
                 updateUiState {
                     MatchDetailUiState(match = ui, isLoading = loadable is Loadable.Loading)
                 }
