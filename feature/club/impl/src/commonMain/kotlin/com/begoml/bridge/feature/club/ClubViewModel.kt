@@ -17,7 +17,13 @@ import bridge.feature.club.impl.generated.resources.club_website
 import bridge.feature.club.impl.generated.resources.club_youtube
 import com.begoml.bridge.core.domain.model.Club
 import com.begoml.bridge.core.domain.model.Venue
+import com.begoml.bridge.core.domain.model.FollowedClub
 import com.begoml.bridge.core.domain.repository.ClubRepository
+import com.begoml.bridge.foundation.resource.Loadable
+import com.begoml.bridge.uikit.groupedThousands
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.Job
 import com.begoml.bridge.core.analytics.Analytics
 import com.begoml.bridge.feature.club.analytics.VideoStarted
 import com.begoml.bridge.foundation.tessera.UiStateDelegate
@@ -46,9 +52,33 @@ data class ClubLabels(
     val instagram: String,
 )
 
+/** The club as the screen draws it: figures already formatted, colours already parsed. */
+data class ClubUi(
+    val name: String,
+    val code: String,
+    val badgeUrl: String?,
+    val backdropUrl: String?,
+    val nicknames: String?,
+    val founded: String?,
+    val description: String?,
+    val colours: ImmutableList<String>,
+    val links: ImmutableList<ClubLinkUi>,
+)
+
+data class ClubLinkUi(val label: String, val url: String)
+
+data class GroundUi(
+    val name: String,
+    val thumbUrl: String?,
+    val capacity: String?,
+    val opened: String?,
+    val location: String?,
+    val description: String?,
+)
+
 data class ClubUiState(
-    val club: Club? = null,
-    val venue: Venue? = null,
+    val club: ClubUi? = null,
+    val ground: GroundUi? = null,
     /**
      * Null until the labels have been read.
      *
@@ -62,24 +92,40 @@ data class ClubUiState(
 
 internal class ClubViewModel(
     private val scope: CoroutineScope,
-    private val delegate: ClubDelegate,
+    private val repository: ClubRepository,
+    private val club: FollowedClub,
     private val ioDispatcher: CoroutineDispatcher,
     private val analytics: Analytics,
 ) : ViewModel(),
     UiStateDelegate<ClubUiState, Nothing> by UiStateDelegateImpl(ClubUiState()) {
 
+    private var refreshJob: Job? = null
+
     init {
         scope.launch {
             val labels = withContext(ioDispatcher) { readLabels() }
-            delegate.uiStateFlow.collect { content ->
-                updateUiState {
-                    ClubUiState(
-                        club = content.club,
-                        venue = content.venue,
-                        labels = labels,
-                        isLoading = content.isLoading,
-                        error = content.error,
-                    )
+            // Two requests rather than one combined source: the ground can only be asked about
+            // once the club record says which ground it is, and the profile must render without
+            // waiting for that second answer.
+            launch {
+                repository.club(club.id).collect { loadable ->
+                    val mapped = (loadable as? Loadable.Content)
+                        ?.let { withContext(ioDispatcher) { it.value.toUi(labels) } }
+                    updateUiState { state ->
+                        state.copy(
+                            club = mapped ?: state.club,
+                            labels = labels,
+                            isLoading = loadable is Loadable.Loading,
+                            error = (loadable as? Loadable.Failed)?.error,
+                        )
+                    }
+                }
+            }
+            launch {
+                repository.venue(club.id).collect { loadable ->
+                    val ground = (loadable as? Loadable.Content)
+                        ?.let { withContext(ioDispatcher) { it.value.toUi() } } ?: return@collect
+                    updateUiState { state -> state.copy(ground = ground) }
                 }
             }
         }
@@ -93,9 +139,41 @@ internal class ClubViewModel(
         analytics.track(VideoStarted(source = "club_media"))
     }
 
+    /** A forced refresh holds the syncer's key mutex across the network, so only one may run. */
     fun retry() {
-        delegate.retry()
+        if (refreshJob?.isActive == true) return
+        refreshJob = scope.launch { repository.refresh(club.id) }
     }
+
+    private fun Club.toUi(labels: ClubLabels) = ClubUi(
+        name = name,
+        code = code,
+        badgeUrl = media.badgeUrl,
+        backdropUrl = media.fanartUrls.lastOrNull(),
+        nicknames = details.nicknames.takeIf { it.isNotEmpty() }?.joinToString(" · "),
+        founded = foundedYear?.toString(),
+        description = description,
+        colours = listOfNotNull(
+            details.colours.primary,
+            details.colours.secondary,
+            details.colours.tertiary,
+        ).toImmutableList(),
+        links = listOfNotNull(
+            details.links.website?.let { ClubLinkUi(labels.website, it) },
+            details.links.youtube?.let { ClubLinkUi(labels.youtube, it) },
+            details.links.twitter?.let { ClubLinkUi(labels.twitter, it) },
+            details.links.instagram?.let { ClubLinkUi(labels.instagram, it) },
+        ).toImmutableList(),
+    )
+
+    private fun Venue.toUi() = GroundUi(
+        name = name,
+        thumbUrl = thumbUrl,
+        capacity = capacity?.groupedThousands(),
+        opened = openedYear?.toString(),
+        location = location,
+        description = description,
+    )
 
     private suspend fun readLabels() = ClubLabels(
         about = getString(Res.string.club_about),

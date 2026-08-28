@@ -24,15 +24,15 @@ data class MatchdayState(
     val club: Club? = null,
     val nextMatch: Match? = null,
     val lastResult: Match? = null,
+    /** The followed players who are in the current squad, in squad order. */
+    val followedPlayers: ImmutableList<Player> = persistentListOf(),
     /**
      * Whether the fixture source has answered yet.
      *
-     * Separate from [isLoading] because the club now arrives from disk instantly while the fixture
-     * is still on the network: without this the screen would announce "no fixture" for a second
-     * every cold start, which is a different statement from "still asking".
+     * Separate from [isLoading] because the club arrives from disk instantly while the fixture is
+     * still on the network: without this the screen would announce "no fixture" for a second every
+     * cold start, which is a different statement from "still asking".
      */
-    /** The followed players who are in the current squad, in squad order. */
-    val followedPlayers: ImmutableList<Player> = persistentListOf(),
     val nextMatchLoaded: Boolean = false,
     /** A fixture that failed to load is not the same statement as a club with no fixture. */
     val nextMatchFailed: Boolean = false,

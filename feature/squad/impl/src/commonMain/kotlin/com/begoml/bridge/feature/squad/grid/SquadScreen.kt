@@ -26,7 +26,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.dp
-import com.begoml.bridge.core.domain.model.Player
+import com.begoml.bridge.feature.squad.PlayerCardUi
 import com.begoml.bridge.foundation.tessera.collectUiState
 import com.begoml.bridge.feature.squad.SquadViewModel
 import com.begoml.bridge.uikit.LocalScreenPadding
@@ -61,8 +61,8 @@ internal fun SquadScreen(viewModel: SquadViewModel, modifier: Modifier = Modifie
 
     Box(modifier = modifier.fillMaxSize()) {
         LoadableContent(
-            isLoading = state.squad.isLoading && state.squad.players.isEmpty(),
-            error = state.squad.error.takeIf { state.squad.players.isEmpty() },
+            isLoading = state.isLoading && state.players.isEmpty(),
+            error = state.error.takeIf { state.players.isEmpty() },
             onRetry = viewModel::retry,
             modifier = Modifier.fillMaxSize().background(BridgeColors.Ground),
         ) {
@@ -81,14 +81,13 @@ internal fun SquadScreen(viewModel: SquadViewModel, modifier: Modifier = Modifie
                 verticalArrangement = Arrangement.spacedBy(9.dp),
             ) {
                 items(
-                    items = state.squad.players,
+                    items = state.players,
                     key = { player -> player.id },
                     contentType = { "player-card" },
                 ) { player ->
                     PlayerCard(
                         player = player,
                         shader = cardShader,
-                        followed = player.id in state.followed,
                         onClick = { viewModel.onPlayerClick(player.id) },
                     )
                 }
@@ -108,9 +107,8 @@ internal fun SquadScreen(viewModel: SquadViewModel, modifier: Modifier = Modifie
 
 @Composable
 private fun PlayerCard(
-    player: Player,
+    player: PlayerCardUi,
     shader: AnimatedShader,
-    followed: Boolean,
     onClick: () -> Unit,
 ) {
     Box(
@@ -133,7 +131,7 @@ private fun PlayerCard(
             url = player.cutoutUrl,
             modifier = Modifier.fillMaxSize().padding(top = 10.dp, bottom = 46.dp),
         )
-        if (followed) {
+        if (player.followed) {
             FollowStar(
                 followed = true,
                 modifier = Modifier.align(Alignment.TopStart).padding(8.dp),

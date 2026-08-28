@@ -1,7 +1,6 @@
 package com.begoml.bridge.feature.player.di
 
 import com.begoml.bridge.foundation.coroutines.DispatcherProvider
-import com.begoml.bridge.feature.player.PlayerDelegate
 import com.begoml.bridge.feature.player.PlayerNavigationEntry
 import com.begoml.bridge.feature.player.PlayerViewModel
 import com.begoml.bridge.feature.player.api.PlayerRouteCodec
@@ -17,7 +16,8 @@ fun playerModule() = module {
         val scope = stateHolderScope()
         PlayerViewModel(
             scope = scope,
-            delegate = PlayerDelegate(scope = scope, repository = get(), club = get()),
+            repository = get(),
+            club = get(),
             following = get(),
             router = get(),
             ioDispatcher = get<DispatcherProvider>().io,

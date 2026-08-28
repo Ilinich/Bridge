@@ -1,6 +1,6 @@
 package com.begoml.bridge.feature.squad.di
 
-import com.begoml.bridge.feature.squad.grid.SquadDelegate
+import com.begoml.bridge.foundation.coroutines.DispatcherProvider
 import com.begoml.bridge.foundation.coroutines.stateHolderScope
 import com.begoml.bridge.feature.squad.SquadNavigationEntry
 import com.begoml.bridge.feature.squad.SquadViewModel
@@ -16,9 +16,11 @@ fun squadModule() = module {
         val scope = stateHolderScope()
         SquadViewModel(
             scope = scope,
-            delegate = SquadDelegate(scope = scope, repository = get(), club = get()),
+            repository = get(),
+            club = get(),
             following = get(),
             router = get(),
+            ioDispatcher = get<DispatcherProvider>().io,
             analytics = get(),
         )
     }

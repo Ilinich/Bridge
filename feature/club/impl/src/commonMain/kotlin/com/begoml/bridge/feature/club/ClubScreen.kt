@@ -29,12 +29,8 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import bridge.feature.club.impl.generated.resources.Res
-import com.begoml.bridge.core.domain.model.Club
-import com.begoml.bridge.core.domain.model.Venue
 import com.begoml.bridge.foundation.tessera.collectUiState
 import com.begoml.bridge.uikit.LocalScreenPadding
-import com.begoml.bridge.uikit.groupedThousands
 import com.begoml.bridge.uikit.component.BackdropImage
 import com.begoml.bridge.uikit.component.BadgeImage
 import com.begoml.bridge.uikit.component.GlassPanel
@@ -80,7 +76,7 @@ internal fun ClubScreen(viewModel: ClubViewModel, modifier: Modifier = Modifier)
         modifier = modifier.fillMaxSize(),
         backdrop = {
             Box(modifier = Modifier.fillMaxSize()) {
-                BackdropImage(url = state.club?.media?.fanartUrls?.lastOrNull())
+                BackdropImage(url = state.club?.backdropUrl)
                 // Over the photograph rather than behind it: the panels frost whatever is directly
                 // beneath them, so the light has to be the top layer to be visible through them.
                 Box(
@@ -110,7 +106,7 @@ internal fun ClubScreen(viewModel: ClubViewModel, modifier: Modifier = Modifier)
                 with(this@GlassBackdrop) { Header(club = club, labels = labels) }
                 MediaSection(title = labels.media, onStarted = viewModel::onVideoStarted)
                 club.description?.let { Section(title = labels.about) { Prose(it) } }
-                state.venue?.let { GroundSection(venue = it, labels = labels) }
+                state.ground?.let { GroundSection(ground = it, labels = labels) }
                 LinksSection(club = club, labels = labels)
             }
         }
@@ -128,22 +124,22 @@ internal fun ClubScreen(viewModel: ClubViewModel, modifier: Modifier = Modifier)
 
 
 @Composable
-private fun GlassScope.Header(club: Club, labels: ClubLabels) {
+private fun GlassScope.Header(club: ClubUi, labels: ClubLabels) {
     GlassPanel(modifier = Modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(9.dp),
         ) {
-            BadgeImage(url = club.media.badgeUrl, code = club.code, size = 68.dp)
+            BadgeImage(url = club.badgeUrl, code = club.code, size = 68.dp)
             Text(
                 text = club.name,
                 style = MaterialTheme.typography.headlineSmall,
                 color = BridgeColors.TextPrimary,
             )
-            if (club.details.nicknames.isNotEmpty()) {
+            club.nicknames?.let { nicknames ->
                 Text(
-                    text = club.details.nicknames.joinToString(" · "),
+                    text = nicknames,
                     style = LabelStyle,
                     color = BridgeColors.TextMuted,
                     textAlign = TextAlign.Center,
@@ -153,9 +149,7 @@ private fun GlassScope.Header(club: Club, labels: ClubLabels) {
                 horizontalArrangement = Arrangement.spacedBy(18.dp, Alignment.CenterHorizontally),
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                club.foundedYear?.let {
-                    Fact(labels.founded, it.toString())
-                }
+                club.founded?.let { Fact(labels.founded, it) }
                 ColourStrip(club = club, label = labels.colours)
             }
         }
@@ -163,12 +157,8 @@ private fun GlassScope.Header(club: Club, labels: ClubLabels) {
 }
 
 @Composable
-private fun ColourStrip(club: Club, label: String) {
-    val colours = listOfNotNull(
-        club.details.colours.primary,
-        club.details.colours.secondary,
-        club.details.colours.tertiary,
-    ).mapNotNull(::parseHexColour)
+private fun ColourStrip(club: ClubUi, label: String) {
+    val colours = club.colours.mapNotNull(::parseHexColour)
     if (colours.isEmpty()) return
 
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -227,10 +217,10 @@ private fun MediaSection(title: String, onStarted: () -> Unit) {
 }
 
 @Composable
-private fun GroundSection(venue: Venue, labels: ClubLabels) {
+private fun GroundSection(ground: GroundUi, labels: ClubLabels) {
     Section(title = labels.ground) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            venue.thumbUrl?.let { url ->
+            ground.thumbUrl?.let { url ->
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -241,47 +231,37 @@ private fun GroundSection(venue: Venue, labels: ClubLabels) {
                 }
             }
             Text(
-                text = venue.name,
+                text = ground.name,
                 style = MaterialTheme.typography.titleMedium,
                 color = BridgeColors.TextPrimary,
             )
             Row(modifier = Modifier.fillMaxWidth()) {
-                venue.capacity?.let {
-                    Fact(labels.capacity, it.groupedThousands(), Modifier.weight(1f))
-                }
-                venue.openedYear?.let {
-                    Fact(labels.opened, it.toString(), Modifier.weight(1f))
-                }
-                venue.location?.let {
+                ground.capacity?.let { Fact(labels.capacity, it, Modifier.weight(1f)) }
+                ground.opened?.let { Fact(labels.opened, it, Modifier.weight(1f)) }
+                ground.location?.let {
                     Fact(labels.location, it, Modifier.weight(1.6f))
                 }
             }
-            venue.description?.let { Prose(it) }
+            ground.description?.let { Prose(it) }
         }
     }
 }
 
 @Composable
-private fun LinksSection(club: Club, labels: ClubLabels) {
+private fun LinksSection(club: ClubUi, labels: ClubLabels) {
     val opener = rememberUrlOpener()
-    val links = listOfNotNull(
-        club.details.links.website?.let { labels.website to it },
-        club.details.links.youtube?.let { labels.youtube to it },
-        club.details.links.twitter?.let { labels.twitter to it },
-        club.details.links.instagram?.let { labels.instagram to it },
-    )
-    if (links.isEmpty()) return
+    if (club.links.isEmpty()) return
 
     Section(title = labels.links) {
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            links.forEach { (label, url) ->
+            club.links.forEach { link ->
                 Text(
-                    text = label,
+                    text = link.label,
                     style = LabelStyle,
                     color = BridgeColors.TextPrimary,
                     modifier = Modifier
                         .background(BridgeColors.Club, CircleShape)
-                        .clickable { opener.open(url) }
+                        .clickable { opener.open(link.url) }
                         .padding(horizontal = 13.dp, vertical = 8.dp),
                 )
             }

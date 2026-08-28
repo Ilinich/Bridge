@@ -2,7 +2,6 @@ package com.begoml.bridge.feature.club.di
 
 import com.begoml.bridge.foundation.coroutines.DispatcherProvider
 import com.begoml.bridge.feature.club.ClubNavigationEntry
-import com.begoml.bridge.feature.club.ClubDelegate
 import com.begoml.bridge.feature.club.ClubViewModel
 import com.begoml.bridge.foundation.coroutines.stateHolderScope
 import com.begoml.bridge.feature.club.api.ClubRouteCodec
@@ -17,7 +16,8 @@ fun clubModule() = module {
         val scope = stateHolderScope()
         ClubViewModel(
             scope = scope,
-            delegate = ClubDelegate(scope = scope, repository = get(), club = get()),
+            repository = get(),
+            club = get(),
             ioDispatcher = get<DispatcherProvider>().io,
             analytics = get(),
         )

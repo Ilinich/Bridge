@@ -9,13 +9,18 @@ import bridge.feature.player.impl.generated.resources.player_not_found
 import bridge.feature.player.impl.generated.resources.player_number
 import bridge.feature.player.impl.generated.resources.player_position
 import bridge.feature.player.impl.generated.resources.player_title
+import com.begoml.bridge.core.domain.model.FollowedClub
+import com.begoml.bridge.core.domain.model.Player
+import com.begoml.bridge.core.domain.repository.SquadRepository
 import com.begoml.bridge.core.features.following.FollowingFeature
+import com.begoml.bridge.foundation.resource.Loadable
 import com.begoml.bridge.foundation.tessera.UiStateDelegate
 import com.begoml.bridge.foundation.tessera.UiStateDelegateImpl
 import com.begoml.bridge.navigation.router.AppRouter
 import com.begoml.bridge.navigation.router.navigateUp
-import kotlinx.collections.immutable.ImmutableSet
-import kotlinx.collections.immutable.persistentSetOf
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
@@ -35,16 +40,29 @@ data class PlayerLabels(
     val height: String,
 )
 
+/** A page in the pager, with everything the page draws and nothing else. */
+data class PlayerPageUi(
+    val id: String,
+    val name: String,
+    val shirtNumber: String?,
+    val position: String?,
+    val nationality: String?,
+    val height: String?,
+    val cutoutUrl: String?,
+    val followed: Boolean,
+)
+
 data class PlayerUiState(
-    val squad: PlayerSquadState = PlayerSquadState(),
+    val players: ImmutableList<PlayerPageUi> = persistentListOf(),
     val labels: PlayerLabels? = null,
-    val followed: ImmutableSet<String> = persistentSetOf(),
+    val isLoading: Boolean = true,
 )
 
 /** The player pager. It reads the squad, writes who is followed, and owns the way back. */
 internal class PlayerViewModel(
     private val scope: CoroutineScope,
-    private val delegate: PlayerDelegate,
+    private val repository: SquadRepository,
+    private val club: FollowedClub,
     private val following: FollowingFeature,
     private val router: AppRouter,
     private val ioDispatcher: CoroutineDispatcher,
@@ -53,9 +71,12 @@ internal class PlayerViewModel(
     init {
         scope.launch {
             val labels = withContext(ioDispatcher) { readLabels() }
-            combine(delegate.uiStateFlow, following.stateFlow) { squad, followed ->
-                PlayerUiState(squad = squad, labels = labels, followed = followed.playerIds)
-            }.collect { built -> updateUiState { built } }
+            combine(repository.squad(club.id), following.stateFlow) { loadable, followed ->
+                loadable to followed.playerIds
+            }.collect { (loadable, followed) ->
+                val built = withContext(ioDispatcher) { toUiState(loadable, followed, labels) }
+                updateUiState { built }
+            }
         }
     }
 
@@ -70,6 +91,32 @@ internal class PlayerViewModel(
     fun onBack() {
         router.navigateUp()
     }
+
+    private fun toUiState(
+        loadable: Loadable<List<Player>>,
+        followed: Set<String>,
+        labels: PlayerLabels,
+    ): PlayerUiState = when (loadable) {
+        is Loadable.Content -> PlayerUiState(
+            players = loadable.value.map { player -> player.toPageUi(followed) }.toImmutableList(),
+            labels = labels,
+            isLoading = false,
+        )
+        // A pager with nothing to page has nothing to say either way, so a failure reads the same
+        // as an empty squad: the screen states that the player is not loaded.
+        else -> PlayerUiState(labels = labels, isLoading = loadable is Loadable.Loading)
+    }
+
+    private fun Player.toPageUi(followed: Set<String>) = PlayerPageUi(
+        id = id,
+        name = name,
+        shirtNumber = shirtNumber,
+        position = position,
+        nationality = nationality,
+        height = height,
+        cutoutUrl = cutoutUrl,
+        followed = id in followed,
+    )
 
     private suspend fun readLabels() = PlayerLabels(
         title = getString(Res.string.player_title),

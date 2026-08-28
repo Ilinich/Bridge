@@ -23,7 +23,6 @@ import io.ktor.client.HttpClient
 import com.begoml.bridge.core.domain.model.FollowedClub
 import com.begoml.bridge.foundation.coroutines.AppScope
 import com.begoml.bridge.foundation.coroutines.PlatformDispatcherProvider
-import kotlinx.coroutines.CoroutineDispatcher
 import org.koin.core.module.Module
 import org.koin.dsl.module
 import kotlin.time.Clock

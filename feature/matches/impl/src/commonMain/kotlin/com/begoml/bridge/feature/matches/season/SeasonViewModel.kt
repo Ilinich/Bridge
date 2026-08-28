@@ -10,7 +10,6 @@ import com.begoml.bridge.core.connectivity.Connectivity
 import com.begoml.bridge.core.connectivity.NetworkStatus
 import com.begoml.bridge.core.domain.TeamNames
 import com.begoml.bridge.core.domain.model.FollowedClub
-import kotlin.time.Clock
 import com.begoml.bridge.core.analytics.Analytics
 import com.begoml.bridge.feature.matches.analytics.MatchOpened
 import com.begoml.bridge.feature.matches.api.MatchDetailRoute

@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -25,7 +24,6 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.begoml.bridge.core.domain.model.Player
 import com.begoml.bridge.foundation.tessera.collectUiState
 import com.begoml.bridge.navigation.swipe.consumeHorizontalSwipeToDismissWhenNotAtStart
 import com.begoml.bridge.uikit.LocalScreenPadding
@@ -40,7 +38,6 @@ import com.begoml.bridge.uikit.shader.ClubBackgroundShader
 import com.begoml.bridge.uikit.shader.rememberAnimatedShader
 import com.begoml.bridge.uikit.shader.shaded
 import com.begoml.bridge.uikit.theme.BridgeColors
-import com.begoml.bridge.uikit.theme.FigureStyle
 import com.begoml.bridge.uikit.theme.LabelStyle
 import kotlin.math.absoluteValue
 
@@ -65,7 +62,7 @@ internal fun PlayerScreen(
     modifier: Modifier = Modifier,
 ) {
     val state by viewModel.collectUiState()
-    val players = state.squad.players
+    val players = state.players
     val labels = state.labels
     val shader = rememberAnimatedShader(ClubBackgroundShader)
     val contentPadding = LocalScreenPadding.current
@@ -105,7 +102,7 @@ internal fun PlayerScreen(
                 glass = glass,
                 player = players[page],
                 labels = labels,
-                followed = players[page].id in state.followed,
+                followed = players[page].followed,
                 onFollowClick = viewModel::onFollowClick,
                 offset = {
                     (pagerState.currentPage - page) + pagerState.currentPageOffsetFraction
@@ -151,7 +148,7 @@ private fun BoxScope.PlayerTopBar(
 @Composable
 private fun PlayerPage(
     glass: GlassScope,
-    player: Player,
+    player: PlayerPageUi,
     labels: PlayerLabels,
     followed: Boolean,
     onFollowClick: (String) -> Unit,
@@ -195,7 +192,7 @@ private fun PlayerPage(
 
 @Composable
 private fun PlayerFacts(
-    player: Player,
+    player: PlayerPageUi,
     labels: PlayerLabels,
     followed: Boolean,
     onFollowClick: () -> Unit,

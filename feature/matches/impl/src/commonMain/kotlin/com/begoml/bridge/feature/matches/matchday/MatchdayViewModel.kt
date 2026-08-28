@@ -30,8 +30,6 @@ import com.begoml.bridge.foundation.tessera.UiStateDelegate
 import com.begoml.bridge.foundation.tessera.UiStateDelegateImpl
 import com.begoml.bridge.core.connectivity.Connectivity
 import com.begoml.bridge.core.connectivity.NetworkStatus
-import com.begoml.bridge.core.domain.repository.ClubRepository
-import com.begoml.bridge.core.domain.repository.MatchRepository
 import com.begoml.bridge.feature.club.api.ClubRoute
 import com.begoml.bridge.feature.player.api.PlayerDetailRoute
 import com.begoml.bridge.navigation.router.AppRouter

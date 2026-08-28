@@ -17,6 +17,11 @@ complexity:
 style:
   MagicNumber:
     active: false
+  # An import nobody uses is how a layer keeps compiling against a type it no longer draws.
+  UnusedImports:
+    active: true
+  UnusedPrivateMember:
+    active: true
   ReturnCount:
     active: true
     max: 3
