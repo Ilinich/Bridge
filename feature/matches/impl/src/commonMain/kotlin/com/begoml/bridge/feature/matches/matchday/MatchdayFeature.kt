@@ -44,8 +44,6 @@ sealed interface MatchdayAction {
     data object Retry : MatchdayAction
 }
 
-sealed interface MatchdayEvent
-
 /**
  * The matchday screen's state, folded from three independent sources.
  *
@@ -60,7 +58,7 @@ class MatchdayFeature(
     private val matchRepository: MatchRepository,
     private val squadRepository: SquadRepository,
     private val following: FollowingFeature,
-) : Feature<MatchdayState, MatchdayAction, MatchdayEvent> by feature(MatchdayState(), scope) {
+) : Feature<MatchdayState, MatchdayAction> by feature(MatchdayState(), scope) {
 
     init {
         observeSources()

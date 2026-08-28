@@ -54,7 +54,6 @@ data class PlayerPageUi(
 
 data class PlayerUiState(
     val players: ImmutableList<PlayerPageUi> = persistentListOf(),
-    val labels: PlayerLabels? = null,
     val isLoading: Boolean = true,
 )
 
@@ -64,17 +63,17 @@ internal class PlayerViewModel(
     private val repository: SquadRepository,
     private val club: FollowedClub,
     private val following: FollowingFeature,
+    val labels: PlayerLabels,
     private val router: AppRouter,
     private val ioDispatcher: CoroutineDispatcher,
-) : ViewModel(), UiStateDelegate<PlayerUiState, Nothing> by UiStateDelegateImpl(PlayerUiState()) {
+) : ViewModel(), UiStateDelegate<PlayerUiState> by UiStateDelegateImpl(PlayerUiState()) {
 
     init {
         scope.launch {
-            val labels = withContext(ioDispatcher) { readLabels() }
             combine(repository.squad(club.id), following.stateFlow) { loadable, followed ->
                 loadable to followed.playerIds
             }.collect { (loadable, followed) ->
-                val built = withContext(ioDispatcher) { toUiState(loadable, followed, labels) }
+                val built = withContext(ioDispatcher) { toUiState(loadable, followed) }
                 updateUiState { built }
             }
         }
@@ -95,16 +94,14 @@ internal class PlayerViewModel(
     private fun toUiState(
         loadable: Loadable<List<Player>>,
         followed: Set<String>,
-        labels: PlayerLabels,
     ): PlayerUiState = when (loadable) {
         is Loadable.Content -> PlayerUiState(
             players = loadable.value.map { player -> player.toPageUi(followed) }.toImmutableList(),
-            labels = labels,
             isLoading = false,
         )
         // A pager with nothing to page has nothing to say either way, so a failure reads the same
         // as an empty squad: the screen states that the player is not loaded.
-        else -> PlayerUiState(labels = labels, isLoading = loadable is Loadable.Loading)
+        else -> PlayerUiState(isLoading = loadable is Loadable.Loading)
     }
 
     private fun Player.toPageUi(followed: Set<String>) = PlayerPageUi(
@@ -118,13 +115,15 @@ internal class PlayerViewModel(
         followed = id in followed,
     )
 
-    private suspend fun readLabels() = PlayerLabels(
-        title = getString(Res.string.player_title),
-        back = getString(Res.string.player_back),
-        notFound = getString(Res.string.player_not_found),
-        number = getString(Res.string.player_number),
-        position = getString(Res.string.player_position),
-        country = getString(Res.string.player_country),
-        height = getString(Res.string.player_height),
-    )
 }
+
+/** Read once for the whole run: the words do not change while the app is open. */
+suspend fun loadPlayerLabels() = PlayerLabels(
+    title = getString(Res.string.player_title),
+    back = getString(Res.string.player_back),
+    notFound = getString(Res.string.player_not_found),
+    number = getString(Res.string.player_number),
+    position = getString(Res.string.player_position),
+    country = getString(Res.string.player_country),
+    height = getString(Res.string.player_height),
+)

@@ -77,7 +77,7 @@ internal class SeasonViewModel(
     private val ioDispatcher: CoroutineDispatcher,
     private val analytics: Analytics,
 ) : ViewModel(),
-    UiStateDelegate<SeasonUiState, Nothing> by UiStateDelegateImpl(SeasonUiState()) {
+    UiStateDelegate<SeasonUiState> by UiStateDelegateImpl(SeasonUiState()) {
 
     init {
         scope.launch {

@@ -18,6 +18,7 @@ fun clubModule() = module {
             scope = scope,
             repository = get(),
             club = get(),
+            labels = get(),
             ioDispatcher = get<DispatcherProvider>().io,
             analytics = get(),
         )

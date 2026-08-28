@@ -55,12 +55,12 @@ internal fun MatchdayScreen(viewModel: MatchdayViewModel, modifier: Modifier = M
     ) {
         val glass = this
         LoadableContent(
-            isLoading = (state.isLoading || state.labels == null) &&
+            isLoading = state.isLoading &&
                 state.nextMatch == null && !state.hasClub,
             error = state.error.takeIf { !state.hasClub && state.nextMatch == null },
             onRetry = viewModel::retry,
         ) {
-            val labels = state.labels ?: return@LoadableContent
+            val labels = viewModel.labels
             Column(
                 modifier = Modifier
                     .fillMaxSize()

@@ -22,7 +22,7 @@ import kotlinx.coroutines.launch
  * To fold a plain [Flow], seed it with [withInitial] first; the seed is the explicit answer to
  * "what does this screen show before the source speaks".
  */
-fun <T, State> Feature<State, *, *>.composeState(
+fun <T, State> Feature<State, *>.composeState(
     scope: CoroutineScope,
     source: StateFlow<T>,
     transform: (State, T) -> State,
@@ -30,7 +30,7 @@ fun <T, State> Feature<State, *, *>.composeState(
     source.collectLatest { value -> updateState { state -> transform(state, value) } }
 }
 
-fun <T1, T2, T3, State> Feature<State, *, *>.composeState(
+fun <T1, T2, T3, State> Feature<State, *>.composeState(
     scope: CoroutineScope,
     source1: StateFlow<T1>,
     source2: StateFlow<T2>,

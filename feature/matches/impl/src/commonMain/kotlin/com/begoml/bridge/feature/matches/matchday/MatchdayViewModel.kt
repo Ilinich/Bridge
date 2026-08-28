@@ -112,7 +112,6 @@ data class MatchdayUiState(
     val recent: RecentMatchUi? = null,
     /** The followed players, in squad order; empty when nobody is followed. */
     val following: ImmutableList<FollowedPlayerUi> = persistentListOf(),
-    val labels: MatchdayLabels? = null,
     val nextMatchLoaded: Boolean = false,
     val nextMatchFailed: Boolean = false,
     val isLoading: Boolean = true,
@@ -127,10 +126,11 @@ internal class MatchdayViewModel(
     private val feature: MatchdayFeature,
     private val connectivity: Connectivity,
     private val clock: Clock,
+    val labels: MatchdayLabels,
     private val router: AppRouter,
     private val ioDispatcher: CoroutineDispatcher,
 ) : ViewModel(),
-    UiStateDelegate<MatchdayUiState, Nothing> by UiStateDelegateImpl(MatchdayUiState()) {
+    UiStateDelegate<MatchdayUiState> by UiStateDelegateImpl(MatchdayUiState()) {
 
     /**
      * The countdown's clock.
@@ -164,7 +164,6 @@ internal class MatchdayViewModel(
 
     init {
         scope.launch {
-            val resolved = withContext(ioDispatcher) { readLabels() }
             combine(
                 feature.stateFlow,
                 recent,
@@ -181,7 +180,6 @@ internal class MatchdayViewModel(
                     following = content.followedPlayers
                         .map { player -> FollowedPlayerUi(id = player.id, name = player.name) }
                         .toImmutableList(),
-                    labels = resolved,
                     nextMatchLoaded = content.nextMatchLoaded,
                     nextMatchFailed = content.nextMatchFailed,
                     isLoading = content.isLoading,
@@ -237,23 +235,25 @@ internal class MatchdayViewModel(
         awayCode = away.code,
     )
 
-    private suspend fun readLabels() = MatchdayLabels(
-        nextMatch = getString(Res.string.matchday_next_match),
-        fixtureFailed = getString(Res.string.matchday_fixture_failed),
-        noFixture = getString(Res.string.matchday_no_fixture),
-        loadingFixture = getString(Res.string.matchday_loading_fixture),
-        kickoffLocal = getString(Res.string.matchday_kickoff_local),
-        kickoffNow = getString(Res.string.matchday_kickoff_now),
-        versus = getString(Res.string.fixture_versus),
-        days = getString(Res.string.matchday_days),
-        hours = getString(Res.string.matchday_hours),
-        minutes = getString(Res.string.matchday_minutes),
-        seconds = getString(Res.string.matchday_seconds),
-        recent = getString(Res.string.matchday_recent),
-        following = getString(Res.string.matchday_following),
-        stadium = getString(Res.string.matchday_stadium),
-        arena = getString(Res.string.matchday_arena),
-        capacity = getString(Res.string.matchday_capacity),
-        founded = getString(Res.string.matchday_founded),
-    )
 }
+
+/** Read once for the whole run: the words do not change while the app is open. */
+suspend fun loadMatchdayLabels() = MatchdayLabels(
+    nextMatch = getString(Res.string.matchday_next_match),
+    fixtureFailed = getString(Res.string.matchday_fixture_failed),
+    noFixture = getString(Res.string.matchday_no_fixture),
+    loadingFixture = getString(Res.string.matchday_loading_fixture),
+    kickoffLocal = getString(Res.string.matchday_kickoff_local),
+    kickoffNow = getString(Res.string.matchday_kickoff_now),
+    versus = getString(Res.string.fixture_versus),
+    days = getString(Res.string.matchday_days),
+    hours = getString(Res.string.matchday_hours),
+    minutes = getString(Res.string.matchday_minutes),
+    seconds = getString(Res.string.matchday_seconds),
+    recent = getString(Res.string.matchday_recent),
+    following = getString(Res.string.matchday_following),
+    stadium = getString(Res.string.matchday_stadium),
+    arena = getString(Res.string.matchday_arena),
+    capacity = getString(Res.string.matchday_capacity),
+    founded = getString(Res.string.matchday_founded),
+)

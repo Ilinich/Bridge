@@ -1,5 +1,7 @@
 package com.begoml.bridge
 
+import com.begoml.bridge.navigation.TabbedBackStack
+import com.begoml.bridge.di.loadStrings
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -13,7 +15,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.dp
@@ -99,39 +104,66 @@ fun App() {
             onDispose { host.detach() }
         }
 
-        val tabs = bridgeTabs()
-        val contentPadding = screenPadding()
+        // Nothing is built until the words are in the graph: a ViewModel takes its labels by
+        // constructor, so a screen composed before this finished would have nothing to take.
+        var stringsReady by remember { mutableStateOf(false) }
+        LaunchedEffect(koin) {
+            loadStrings(koin)
+            stringsReady = true
+        }
+        if (!stringsReady) {
+            Box(modifier = Modifier.fillMaxSize().background(BridgeColors.Ground))
+            return@BridgeTheme
+        }
 
-        // The bars are drawn over the navigation host, not inside it, so a screen sliding away
-        // under them is invisible to anything scoped to that screen. The signal is provided here,
-        // above both, and written from inside the host.
-        val swipeSignal = rememberSwipeDismissSignal()
+        Shell(backStack = backStack, entries = entries, analytics = analytics)
+    }
+}
 
-        CompositionLocalProvider(
-            LocalScreenPadding provides contentPadding,
-            LocalSwipeDismissSignal provides swipeSignal,
+/**
+ * The tabs, the bars and the host under them.
+ *
+ * Separate from [App] because the two answer different questions: [App] decides when there is
+ * enough to draw anything at all, this decides what the app looks like once there is.
+ */
+@Composable
+private fun Shell(
+    backStack: TabbedBackStack,
+    entries: List<FeatureNavigationEntry>,
+    analytics: Analytics,
+) {
+    val tabs = bridgeTabs()
+    val contentPadding = screenPadding()
+
+    // The bars are drawn over the navigation host, not inside it, so a screen sliding away under
+    // them is invisible to anything scoped to that screen. The signal is provided here, above
+    // both, and written from inside the host.
+    val swipeSignal = rememberSwipeDismissSignal()
+
+    CompositionLocalProvider(
+        LocalScreenPadding provides contentPadding,
+        LocalSwipeDismissSignal provides swipeSignal,
+    ) {
+        GlassBackdrop(
+            modifier = Modifier.fillMaxSize(),
+            backdrop = {
+                Box(modifier = Modifier.fillMaxSize().background(BridgeColors.Ground)) {
+                    BridgeTabPager(
+                        backStack = backStack,
+                        entries = entries,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                }
+            },
         ) {
-            GlassBackdrop(
-                modifier = Modifier.fillMaxSize(),
-                backdrop = {
-                    Box(modifier = Modifier.fillMaxSize().background(BridgeColors.Ground)) {
-                        BridgeTabPager(
-                            backStack = backStack,
-                            entries = entries,
-                            modifier = Modifier.fillMaxSize(),
-                        )
-                    }
+            BridgeTabBar(
+                tabs = tabs,
+                selectedIndex = backStack.selectedTab,
+                onSelect = { index ->
+                    analytics.track(TabSelected(tabs[index].label))
+                    backStack.selectTab(index)
                 },
-            ) {
-                BridgeTabBar(
-                    tabs = tabs,
-                    selectedIndex = backStack.selectedTab,
-                    onSelect = { index ->
-                        analytics.track(TabSelected(tabs[index].label))
-                        backStack.selectTab(index)
-                    },
-                )
-            }
+            )
         }
     }
 }

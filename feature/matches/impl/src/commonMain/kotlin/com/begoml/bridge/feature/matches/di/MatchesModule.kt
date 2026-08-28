@@ -30,6 +30,7 @@ fun matchesModule() = module {
             ),
             connectivity = get(),
             clock = get(),
+            labels = get(),
             router = get(),
             ioDispatcher = get<DispatcherProvider>().io,
         )
@@ -52,6 +53,7 @@ fun matchesModule() = module {
             scope = stateHolderScope(),
             matchRepository = get(),
             club = get(),
+            labels = get(),
             router = get(),
             ioDispatcher = get<DispatcherProvider>().io,
         )

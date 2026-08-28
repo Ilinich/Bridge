@@ -57,7 +57,7 @@ internal class SquadViewModel(
     private val router: AppRouter,
     private val ioDispatcher: CoroutineDispatcher,
     private val analytics: Analytics,
-) : ViewModel(), UiStateDelegate<SquadUiState, Nothing> by UiStateDelegateImpl(SquadUiState()) {
+) : ViewModel(), UiStateDelegate<SquadUiState> by UiStateDelegateImpl(SquadUiState()) {
 
     init {
         scope.launch {

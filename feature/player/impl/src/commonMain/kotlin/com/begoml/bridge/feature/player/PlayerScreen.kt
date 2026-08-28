@@ -63,7 +63,7 @@ internal fun PlayerScreen(
 ) {
     val state by viewModel.collectUiState()
     val players = state.players
-    val labels = state.labels
+    val labels = viewModel.labels
     val shader = rememberAnimatedShader(ClubBackgroundShader)
     val contentPadding = LocalScreenPadding.current
 
@@ -72,7 +72,6 @@ internal fun PlayerScreen(
         backdrop = { Box(Modifier.fillMaxSize().shaded(shader)) },
     ) {
         val glass = this
-        if (labels == null) return@GlassBackdrop
         if (players.isEmpty()) {
             Text(
                 text = labels.notFound,

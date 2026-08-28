@@ -79,13 +79,6 @@ data class GroundUi(
 data class ClubUiState(
     val club: ClubUi? = null,
     val ground: GroundUi? = null,
-    /**
-     * Null until the labels have been read.
-     *
-     * The screen treats that as part of loading rather than rendering blank headings for a frame:
-     * resolving strings off the composition means they are not available synchronously.
-     */
-    val labels: ClubLabels? = null,
     val isLoading: Boolean = true,
     val error: Throwable? = null,
 )
@@ -94,16 +87,16 @@ internal class ClubViewModel(
     private val scope: CoroutineScope,
     private val repository: ClubRepository,
     private val club: FollowedClub,
+    val labels: ClubLabels,
     private val ioDispatcher: CoroutineDispatcher,
     private val analytics: Analytics,
 ) : ViewModel(),
-    UiStateDelegate<ClubUiState, Nothing> by UiStateDelegateImpl(ClubUiState()) {
+    UiStateDelegate<ClubUiState> by UiStateDelegateImpl(ClubUiState()) {
 
     private var refreshJob: Job? = null
 
     init {
         scope.launch {
-            val labels = withContext(ioDispatcher) { readLabels() }
             // Two requests rather than one combined source: the ground can only be asked about
             // once the club record says which ground it is, and the profile must render without
             // waiting for that second answer.
@@ -114,7 +107,6 @@ internal class ClubViewModel(
                     updateUiState { state ->
                         state.copy(
                             club = mapped ?: state.club,
-                            labels = labels,
                             isLoading = loadable is Loadable.Loading,
                             error = (loadable as? Loadable.Failed)?.error,
                         )
@@ -175,19 +167,21 @@ internal class ClubViewModel(
         description = description,
     )
 
-    private suspend fun readLabels() = ClubLabels(
-        about = getString(Res.string.club_about),
-        media = getString(Res.string.club_media),
-        ground = getString(Res.string.club_ground),
-        links = getString(Res.string.club_links),
-        founded = getString(Res.string.club_founded),
-        colours = getString(Res.string.club_colours),
-        capacity = getString(Res.string.club_capacity),
-        opened = getString(Res.string.club_opened),
-        location = getString(Res.string.club_location),
-        website = getString(Res.string.club_website),
-        youtube = getString(Res.string.club_youtube),
-        twitter = getString(Res.string.club_twitter),
-        instagram = getString(Res.string.club_instagram),
-    )
 }
+
+/** Read once for the whole run: the words do not change while the app is open. */
+suspend fun loadClubLabels() = ClubLabels(
+    about = getString(Res.string.club_about),
+    media = getString(Res.string.club_media),
+    ground = getString(Res.string.club_ground),
+    links = getString(Res.string.club_links),
+    founded = getString(Res.string.club_founded),
+    colours = getString(Res.string.club_colours),
+    capacity = getString(Res.string.club_capacity),
+    opened = getString(Res.string.club_opened),
+    location = getString(Res.string.club_location),
+    website = getString(Res.string.club_website),
+    youtube = getString(Res.string.club_youtube),
+    twitter = getString(Res.string.club_twitter),
+    instagram = getString(Res.string.club_instagram),
+)

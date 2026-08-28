@@ -19,7 +19,7 @@ private const val Tag = "Following"
  */
 internal class FollowingLogPlugin(
     private val logger: Logger,
-) : FeaturePlugin<FollowingState, FollowingAction, FollowingEvent> {
+) : FeaturePlugin<FollowingState, FollowingAction> {
 
     override fun onState(old: FollowingState, new: FollowingState) {
         if (!old.isLoaded) return

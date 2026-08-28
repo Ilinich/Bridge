@@ -12,6 +12,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
  * "what does a screen observe, and when does it stop" is answered in one place.
  */
 @Composable
-fun <UiState> UiStateDelegate<UiState, *>.collectUiState(
+fun <UiState> UiStateDelegate<UiState>.collectUiState(
     minActiveState: Lifecycle.State = Lifecycle.State.STARTED,
 ): State<UiState> = uiStateFlow.collectAsStateWithLifecycle(minActiveState = minActiveState)

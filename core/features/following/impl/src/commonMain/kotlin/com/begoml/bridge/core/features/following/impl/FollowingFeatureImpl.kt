@@ -15,8 +15,6 @@ internal sealed interface FollowingAction {
     data class Toggle(val playerId: String) : FollowingAction
 }
 
-internal sealed interface FollowingEvent
-
 /**
  * Follows the store rather than leading it.
  *
@@ -27,9 +25,9 @@ internal sealed interface FollowingEvent
 internal class FollowingFeatureImpl(
     scope: CoroutineScope,
     private val store: FollowingStore,
-    plugins: List<FeaturePlugin<FollowingState, FollowingAction, FollowingEvent>> = emptyList(),
+    plugins: List<FeaturePlugin<FollowingState, FollowingAction>> = emptyList(),
 ) : FollowingFeature,
-    Feature<FollowingState, FollowingAction, FollowingEvent>
+    Feature<FollowingState, FollowingAction>
     by feature(FollowingState(), scope, plugins) {
 
     init {

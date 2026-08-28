@@ -27,8 +27,6 @@ sealed interface SeasonAction {
     data object Retry : SeasonAction
 }
 
-sealed interface SeasonEvent
-
 /**
  * The season calendar.
  *
@@ -40,7 +38,7 @@ class SeasonFeature(
     private val scope: CoroutineScope,
     private val matchRepository: MatchRepository,
     private val clock: Clock,
-) : Feature<SeasonState, SeasonAction, SeasonEvent> by feature(SeasonState(), scope) {
+) : Feature<SeasonState, SeasonAction> by feature(SeasonState(), scope) {
 
     init {
         observeSeason()

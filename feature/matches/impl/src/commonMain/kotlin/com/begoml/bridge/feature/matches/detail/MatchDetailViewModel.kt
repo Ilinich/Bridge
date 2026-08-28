@@ -63,7 +63,6 @@ data class MatchDetailUi(
 
 data class MatchDetailUiState(
     val match: MatchDetailUi? = null,
-    val labels: MatchDetailLabels? = null,
     /** True until both the fixture and the labels have answered; absent is not the same as loading. */
     val isLoading: Boolean = true,
 )
@@ -73,23 +72,19 @@ internal class MatchDetailViewModel(
     private val scope: CoroutineScope,
     private val matchRepository: MatchRepository,
     private val club: FollowedClub,
+    val labels: MatchDetailLabels,
     private val router: AppRouter,
     private val ioDispatcher: CoroutineDispatcher,
 ) : ViewModel(),
-    UiStateDelegate<MatchDetailUiState, Nothing> by UiStateDelegateImpl(MatchDetailUiState()) {
+    UiStateDelegate<MatchDetailUiState> by UiStateDelegateImpl(MatchDetailUiState()) {
 
     init {
         scope.launch {
-            val labels = withContext(ioDispatcher) { readLabels() }
             matchRepository.match(matchId).collect { loadable ->
                 val match = (loadable as? Loadable.Content)?.value
                 val ui = match?.let { withContext(ioDispatcher) { it.toUi() } }
                 updateUiState {
-                    MatchDetailUiState(
-                        match = ui,
-                        labels = labels,
-                        isLoading = loadable is Loadable.Loading,
-                    )
+                    MatchDetailUiState(match = ui, isLoading = loadable is Loadable.Loading)
                 }
             }
         }
@@ -145,15 +140,17 @@ internal class MatchDetailViewModel(
         )
     }
 
-    private suspend fun readLabels() = MatchDetailLabels(
-        title = getString(Res.string.match_title),
-        back = getString(Res.string.match_back),
-        notFound = getString(Res.string.match_not_found),
-        kickoff = getString(Res.string.match_kickoff),
-        homeLabel = getString(Res.string.match_home),
-        awayLabel = getString(Res.string.match_away),
-        win = getString(Res.string.match_win),
-        draw = getString(Res.string.match_draw),
-        loss = getString(Res.string.match_loss),
-    )
 }
+
+/** Read once for the whole run: the words do not change while the app is open. */
+suspend fun loadMatchDetailLabels() = MatchDetailLabels(
+    title = getString(Res.string.match_title),
+    back = getString(Res.string.match_back),
+    notFound = getString(Res.string.match_not_found),
+    kickoff = getString(Res.string.match_kickoff),
+    homeLabel = getString(Res.string.match_home),
+    awayLabel = getString(Res.string.match_away),
+    win = getString(Res.string.match_win),
+    draw = getString(Res.string.match_draw),
+    loss = getString(Res.string.match_loss),
+)

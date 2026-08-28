@@ -19,6 +19,7 @@ fun playerModule() = module {
             repository = get(),
             club = get(),
             following = get(),
+            labels = get(),
             router = get(),
             ioDispatcher = get<DispatcherProvider>().io,
         )

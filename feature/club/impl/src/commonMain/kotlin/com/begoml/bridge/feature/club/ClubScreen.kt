@@ -89,12 +89,12 @@ internal fun ClubScreen(viewModel: ClubViewModel, modifier: Modifier = Modifier)
         },
     ) {
         LoadableContent(
-            isLoading = (state.isLoading || state.labels == null) && state.club == null,
+            isLoading = state.isLoading && state.club == null,
             error = state.error.takeIf { state.club == null },
             onRetry = viewModel::retry,
         ) {
             val club = state.club ?: return@LoadableContent
-            val labels = state.labels ?: return@LoadableContent
+            val labels = viewModel.labels
             Column(
                 modifier = Modifier
                     .fillMaxSize()
