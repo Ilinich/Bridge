@@ -63,7 +63,7 @@ internal fun PlayerScreen(
 ) {
     val state by viewModel.collectUiState()
     val players = state.players
-    val labels = viewModel.labels
+    val labels = state.labels
     val shader = rememberAnimatedShader(ClubBackgroundShader)
     val contentPadding = LocalScreenPadding.current
 

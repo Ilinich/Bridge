@@ -64,6 +64,7 @@ data class MatchDetailUi(
 )
 
 data class MatchDetailUiState(
+    val labels: MatchDetailLabels,
     val match: MatchDetailUi? = null,
     /** True until both the fixture and the labels have answered; absent is not the same as loading. */
     val isLoading: Boolean = true,
@@ -74,12 +75,12 @@ internal class MatchDetailViewModel(
     scope: CoroutineScope,
     private val matchRepository: MatchRepository,
     private val club: FollowedClub,
-    val labels: MatchDetailLabels,
+    private val labels: MatchDetailLabels,
     private val router: AppRouter,
     private val ioDispatcher: CoroutineDispatcher,
     private val logger: Logger,
 ) : ViewModel(scope),
-    UiStateDelegate<MatchDetailUiState> by UiStateDelegateImpl(MatchDetailUiState()) {
+    UiStateDelegate<MatchDetailUiState> by UiStateDelegateImpl(MatchDetailUiState(labels = labels)) {
 
     init {
         viewModelScope.safeLaunch(dispatcher = ioDispatcher, logger = logger, tag = Tag) {
@@ -87,7 +88,11 @@ internal class MatchDetailViewModel(
                 val match = (loadable as? Loadable.Content)?.value
                 val ui = match?.let { it.toUi() }
                 updateUiState {
-                    MatchDetailUiState(match = ui, isLoading = loadable is Loadable.Loading)
+                    MatchDetailUiState(
+                        labels = labels,
+                        match = ui,
+                        isLoading = loadable is Loadable.Loading,
+                    )
                 }
             }
         }

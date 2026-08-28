@@ -80,6 +80,7 @@ data class GroundUi(
 )
 
 data class ClubUiState(
+    val labels: ClubLabels,
     val club: ClubUi? = null,
     val ground: GroundUi? = null,
     val isLoading: Boolean = true,
@@ -90,12 +91,12 @@ internal class ClubViewModel(
     scope: CoroutineScope,
     private val repository: ClubRepository,
     private val club: FollowedClub,
-    val labels: ClubLabels,
+    private val labels: ClubLabels,
     private val ioDispatcher: CoroutineDispatcher,
     private val logger: Logger,
     private val analytics: Analytics,
 ) : ViewModel(scope),
-    UiStateDelegate<ClubUiState> by UiStateDelegateImpl(ClubUiState()) {
+    UiStateDelegate<ClubUiState> by UiStateDelegateImpl(ClubUiState(labels = labels)) {
 
     private var refreshJob: Job? = null
 

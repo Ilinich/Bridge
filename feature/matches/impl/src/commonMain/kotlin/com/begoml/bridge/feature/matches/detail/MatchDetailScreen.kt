@@ -53,7 +53,7 @@ internal fun MatchDetailScreen(viewModel: MatchDetailViewModel, modifier: Modifi
             modifier = Modifier.fillMaxSize().padding(contentPadding),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            val labels = viewModel.labels
+            val labels = state.labels
             BridgeTopBar(
                 title = labels.title,
                 leading = {

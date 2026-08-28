@@ -107,6 +107,7 @@ data class RecentMatchUi(
 )
 
 data class MatchdayUiState(
+    val labels: MatchdayLabels,
     val backdropUrl: String? = null,
     val stadium: StadiumUi? = null,
     val hasClub: Boolean = false,
@@ -128,12 +129,12 @@ internal class MatchdayViewModel(
     private val feature: MatchdayFeature,
     private val connectivity: Connectivity,
     private val clock: Clock,
-    val labels: MatchdayLabels,
+    private val labels: MatchdayLabels,
     private val router: AppRouter,
     private val ioDispatcher: CoroutineDispatcher,
     private val logger: Logger,
 ) : ViewModel(scope),
-    UiStateDelegate<MatchdayUiState> by UiStateDelegateImpl(MatchdayUiState()) {
+    UiStateDelegate<MatchdayUiState> by UiStateDelegateImpl(MatchdayUiState(labels = labels)) {
 
     /**
      * The countdown's clock.
@@ -175,6 +176,7 @@ internal class MatchdayViewModel(
                 connectivity.status,
             ) { content, recentUi, nextMatchUi, stadiumUi, network ->
                 MatchdayUiState(
+                    labels = labels,
                     backdropUrl = content.club?.media?.fanartUrls?.firstOrNull(),
                     stadium = stadiumUi,
                     hasClub = content.club != null,

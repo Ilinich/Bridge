@@ -62,9 +62,6 @@ class MatchdayFeature(
         observeFollowed()
         awaitActionsIn(scope) { action ->
             when (action) {
-                // Retry fetches; it does not resubscribe. Re-collecting was how a fetch used to
-                // be triggered, which meant every retry left another collector writing into one
-                // state and re-seeded the screen with Loading after it had already drawn.
                 MatchdayAction.Retry -> {
                     clubRepository.refresh(club.id)
                     matchRepository.refreshFixtures(club.id)

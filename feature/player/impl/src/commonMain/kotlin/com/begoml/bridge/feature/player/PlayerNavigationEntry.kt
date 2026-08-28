@@ -10,9 +10,6 @@ import org.koin.compose.viewmodel.koinViewModel
 internal class PlayerNavigationEntry : FeatureNavigationEntry {
 
     override fun register(scope: EntryProviderScope<NavKey>) {
-        // The pager owns the horizontal drag, but only while it has somewhere to go: on the first
-        // player it stops consuming, and the leftover reaches the dismiss layer through nested
-        // scroll. So the gesture closes the screen exactly where paging runs out.
         scope.entry<PlayerDetailRoute>(metadata = swipeBackMetadata()) { route ->
             PlayerScreen(
                 viewModel = koinViewModel<PlayerViewModel>(),

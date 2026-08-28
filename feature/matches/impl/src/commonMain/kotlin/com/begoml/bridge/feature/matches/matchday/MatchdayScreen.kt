@@ -38,7 +38,7 @@ internal fun MatchdayScreen(viewModel: MatchdayViewModel, modifier: Modifier = M
             error = state.error.takeIf { !state.hasClub && state.nextMatch == null },
             onRetry = viewModel::retry,
         ) {
-            val labels = viewModel.labels
+            val labels = state.labels
             Column(
                 modifier = Modifier
                     .fillMaxSize()

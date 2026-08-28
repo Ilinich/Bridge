@@ -55,6 +55,7 @@ data class PlayerPageUi(
 )
 
 data class PlayerUiState(
+    val labels: PlayerLabels,
     val players: ImmutableList<PlayerPageUi> = persistentListOf(),
     val isLoading: Boolean = true,
 )
@@ -65,11 +66,11 @@ internal class PlayerViewModel(
     private val repository: SquadRepository,
     private val club: FollowedClub,
     private val following: FollowingFeature,
-    val labels: PlayerLabels,
+    private val labels: PlayerLabels,
     private val router: AppRouter,
     private val ioDispatcher: CoroutineDispatcher,
     private val logger: Logger,
-) : ViewModel(scope), UiStateDelegate<PlayerUiState> by UiStateDelegateImpl(PlayerUiState()) {
+) : ViewModel(scope), UiStateDelegate<PlayerUiState> by UiStateDelegateImpl(PlayerUiState(labels = labels)) {
 
     init {
         viewModelScope.safeLaunch(dispatcher = ioDispatcher, logger = logger, tag = Tag) {
@@ -96,14 +97,15 @@ internal class PlayerViewModel(
         followed: Set<String>,
     ): PlayerUiState = when (loadable) {
         is Loadable.Content -> PlayerUiState(
+            labels = labels,
             players = loadable.value.map { player -> player.toPageUi(followed) }.toImmutableList(),
             isLoading = false,
         )
-        is Loadable.Loading -> PlayerUiState(isLoading = true)
+        is Loadable.Loading -> PlayerUiState(labels = labels, isLoading = true)
         // A pager with nothing to page has nothing to say either way, so a failure reads the same
         // as an empty squad: the screen states that the player is not loaded, and offers no retry
         // it could not honour — the squad is fetched by the grid this screen was opened from.
-        is Loadable.Failed -> PlayerUiState(isLoading = false)
+        is Loadable.Failed -> PlayerUiState(labels = labels, isLoading = false)
     }
 
     private fun Player.toPageUi(followed: Set<String>) = PlayerPageUi(

@@ -94,7 +94,7 @@ internal fun ClubScreen(viewModel: ClubViewModel, modifier: Modifier = Modifier)
             onRetry = viewModel::retry,
         ) {
             val club = state.club ?: return@LoadableContent
-            val labels = viewModel.labels
+            val labels = state.labels
             Column(
                 modifier = Modifier
                     .fillMaxSize()

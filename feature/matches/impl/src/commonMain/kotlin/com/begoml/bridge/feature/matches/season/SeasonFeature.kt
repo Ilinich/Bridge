@@ -41,8 +41,6 @@ class SeasonFeature(
         observeSeason()
         awaitActionsIn(scope) { action ->
             when (action) {
-                // Fetch, not resubscribe: the calendar arrives through the subscription that is
-                // already running, and a second one would write into the same state.
                 SeasonAction.Retry -> matchRepository.refresh()
             }
         }
