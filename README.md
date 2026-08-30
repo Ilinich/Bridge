@@ -162,6 +162,12 @@ rule appears that two screens must agree on, that is when the layer earns its pl
 
 ## Modules
 
+![Architecture](docs/architecture.png)
+
+Every arrow in that diagram is a `projects.*` line in a `build.gradle.kts` rather than an
+intention, and the right half follows one screen from a tap to the network. The editable source is
+[docs/architecture.excalidraw](docs/architecture.excalidraw).
+
 | Module | Contains |
 |---|---|
 | `foundation:tessera` | state holders: `feature()` and `UiStateDelegate` ([readme](foundation/tessera/README.md)) |
