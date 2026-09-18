@@ -5,15 +5,17 @@ struct PlayerScreen: View {
 
     let playerId: String
 
-    @StateObject private var model: ScreenModel<ImplPlayerUiState>
-    private let component: ImplPlayerComponent
+
+    @StateObject private var model: ScreenModel<ImplPlayerComponent, ImplPlayerUiState>
 
     init(playerId: String) {
         self.playerId = playerId
-        let component = IosBridge.shared.player()
-        self.component = component
         _model = StateObject(
-            wrappedValue: ScreenModel(flow: component.state, close: component.close)
+            wrappedValue: ScreenModel(
+                component: IosBridge.shared.player(),
+                state: { $0.state },
+                close: { $0.close() }
+            )
         )
     }
 
@@ -28,25 +30,27 @@ struct PlayerScreen: View {
                 ScrollView {
                     VStack(spacing: 16) {
                         Badge(url: player.cutoutUrl, code: player.shirtNumber ?? "", size: 180)
-                        Text(player.name).font(.title2).foregroundStyle(.white)
-                        Panel(title: nil) {
-                            HStack(alignment: .top, spacing: 18) {
-                                if let number = player.shirtNumber {
-                                    Fact(label: labels.number.localized(), value: number)
-                                }
-                                if let position = player.position {
-                                    Fact(label: labels.position.localized(), value: position)
-                                }
-                                if let nationality = player.nationality {
-                                    Fact(label: labels.country.localized(), value: nationality)
-                                }
-                                if let height = player.height {
-                                    Fact(label: labels.height.localized(), value: height)
-                                }
+                        Text(player.name).font(.headline).foregroundStyle(Color.textPrimary)
+                        SurfaceRow(spacing: 6) {
+                            if let number = player.shirtNumber {
+                                Fact(label: labels.number.localized(), value: number)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                            if let position = player.position {
+                                Fact(label: labels.position.localized(), value: position)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                            if let nationality = player.nationality {
+                                Fact(label: labels.country.localized(), value: nationality)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                            if let height = player.height {
+                                Fact(label: labels.height.localized(), value: height)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
                             }
                         }
                         Button {
-                            component.viewModel.onFollowClick(playerId: player.id)
+                            model.component.viewModel.onFollowClick(playerId: player.id)
                         } label: {
                             Label(
                                 player.followed ? "Following" : "Follow",
@@ -54,13 +58,13 @@ struct PlayerScreen: View {
                             )
                         }
                     }
-                    .padding(20)
+                    .padding(.horizontal, 14)
                 }
                 .tag(index)
             }
         }
         .tabViewStyle(.page)
-        .screenBackground()
+        .background(Backdrop(url: nil))
         .navigationTitle(labels.title.localized())
         .navigationBarTitleDisplayMode(.inline)
     }

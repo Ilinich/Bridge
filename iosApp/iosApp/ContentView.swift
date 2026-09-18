@@ -6,22 +6,20 @@ struct ContentView: View {
     @StateObject private var navigation = AppNavigation()
 
     var body: some View {
-        TabView(selection: $navigation.tab) {
-            stack(.matchday) { MatchdayScreen() }
-                .tabItem { Label("Matchday", systemImage: "shield") }
-                .tag(Tab.matchday)
-            stack(.season) { SeasonScreen() }
-                .tabItem { Label("Season", systemImage: "calendar") }
-                .tag(Tab.season)
-            stack(.squad) { SquadScreen() }
-                .tabItem { Label("Squad", systemImage: "person.2") }
-                .tag(Tab.squad)
-            stack(.club) { ClubScreen() }
-                .tabItem { Label("Club", systemImage: "flag") }
-                .tag(Tab.club)
+        ZStack(alignment: .bottom) {
+            TabView(selection: $navigation.tab) {
+                stack(.matchday) { MatchdayScreen() }.tag(Tab.matchday)
+                stack(.season) { SeasonScreen() }.tag(Tab.season)
+                stack(.squad) { SquadScreen() }.tag(Tab.squad)
+                stack(.club) { ClubScreen() }.tag(Tab.club)
+            }
+            .toolbar(.hidden, for: .tabBar)
+
+            TabBar(selection: $navigation.tab)
         }
+        .background(Color.ground)
         .preferredColorScheme(.dark)
-        .tint(.blue)
+        .tint(.clubBright)
     }
 
     /// Each tab keeps its own history, which is what makes leaving a player open and coming back

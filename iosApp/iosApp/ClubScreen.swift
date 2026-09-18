@@ -3,76 +3,91 @@ import Shared
 
 struct ClubScreen: View {
 
-    @StateObject private var model: ScreenModel<ImplClubUiState>
-    private let component: ImplClubComponent
 
-    init() {
-        let component = IosBridge.shared.club()
-        self.component = component
-        _model = StateObject(
-            wrappedValue: ScreenModel(flow: component.state, close: component.close)
-        )
-    }
+    @StateObject private var model = ScreenModel(
+        component: IosBridge.shared.club(),
+        state: { $0.state },
+        close: { $0.close() }
+    )
 
     var body: some View {
         let state = model.state
         let labels = state.labels
-        ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
+        Screen(backdropUrl: state.club?.backdropUrl) {
                 if let club = state.club {
-                    Panel(title: nil) {
-                        HStack(spacing: 14) {
-                            Badge(url: club.badgeUrl, code: club.code, size: 56)
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(club.name).font(.title3).foregroundStyle(.white)
-                                if let nicknames = club.nicknames {
-                                    Text(nicknames).font(.caption).foregroundStyle(.secondary)
-                                }
+                    SurfaceRow(spacing: 14) {
+                        Badge(url: club.badgeUrl, code: club.code, size: 48)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(club.name)
+                                .font(.headline)
+                                .foregroundStyle(Color.textPrimary)
+                            if let nicknames = club.nicknames {
+                                Text(nicknames).labelStyle()
                             }
                         }
-                        HStack(spacing: 24) {
-                            if let founded = club.founded {
-                                Fact(label: labels.founded.localized(), value: founded)
-                            }
+                        Spacer(minLength: 8)
+                        if let founded = club.founded {
+                            Fact(label: labels.founded.localized(), value: founded)
                         }
                     }
 
                     if let summary = club.summary {
-                        Panel(title: labels.about.localized()) {
-                            Text(summary).font(.footnote).foregroundStyle(.secondary)
+                        Section(title: labels.about.localized()) {
+                            SurfaceRow {
+                                Text(summary)
+                                    .font(.system(size: 14))
+                                    .foregroundStyle(Color.textMuted)
+                                    .lineSpacing(3)
+                            }
                         }
                     }
 
                     if !club.links.isEmpty {
-                        Panel(title: labels.links.localized()) {
-                            ForEach(club.links, id: \.url) { link in
-                                Link(link.label.localized(), destination: URL(string: link.url)!)
-                                    .font(.footnote)
+                        Section(title: labels.links.localized()) {
+                            VStack(spacing: 6) {
+                                ForEach(club.links, id: \.url) { link in
+                                    if let url = URL(string: link.url) {
+                                        Link(destination: url) {
+                                            SurfaceRow {
+                                                Text(link.label.localized())
+                                                    .font(.labelLarge)
+                                                    .foregroundStyle(Color.clubBright)
+                                                Spacer(minLength: 0)
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
                 }
 
                 if let ground = state.ground {
-                    Panel(title: labels.ground.localized()) {
-                        Text(ground.name).foregroundStyle(.white)
-                        HStack(spacing: 24) {
-                            if let capacity = ground.capacity {
-                                Fact(label: labels.capacity.localized(), value: capacity)
+                    Section(title: labels.ground.localized()) {
+                        VStack(alignment: .leading, spacing: 6) {
+                            SurfaceRow {
+                                Text(ground.name)
+                                    .font(.labelLarge)
+                                    .foregroundStyle(Color.textPrimary)
+                                Spacer(minLength: 0)
                             }
-                            if let opened = ground.opened {
-                                Fact(label: labels.opened.localized(), value: opened)
-                            }
-                            if let location = ground.location {
-                                Fact(label: labels.location.localized(), value: location)
+                            SurfaceRow(spacing: 6) {
+                                if let capacity = ground.capacity {
+                                    Fact(label: labels.capacity.localized(), value: capacity)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                }
+                                if let opened = ground.opened {
+                                    Fact(label: labels.opened.localized(), value: opened)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                }
+                                if let location = ground.location {
+                                    Fact(label: labels.location.localized(), value: location)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                }
                             }
                         }
                     }
                 }
-            }
-            .padding(20)
         }
-        .screenBackground()
-        .navigationTitle("Club")
     }
 }

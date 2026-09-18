@@ -3,14 +3,16 @@ import Shared
 
 struct MatchDetailScreen: View {
 
-    @StateObject private var model: ScreenModel<ImplMatchDetailUiState>
-    private let component: ImplMatchDetailComponent
+
+    @StateObject private var model: ScreenModel<ImplMatchDetailComponent, ImplMatchDetailUiState>
 
     init(matchId: String) {
-        let component = IosBridge.shared.matchDetail(matchId: matchId)
-        self.component = component
         _model = StateObject(
-            wrappedValue: ScreenModel(flow: component.state, close: component.close)
+            wrappedValue: ScreenModel(
+                component: IosBridge.shared.matchDetail(matchId: matchId),
+                state: { $0.state },
+                close: { $0.close() }
+            )
         )
     }
 
@@ -20,26 +22,27 @@ struct MatchDetailScreen: View {
         ScrollView {
             VStack(spacing: 18) {
                 if let match = state.match {
-                    Panel(title: nil) {
+                    GlassPanel {
                         HStack {
-                            Text(match.homeName).foregroundStyle(.white)
+                            Text(match.homeName).font(.system(size: 17, weight: .semibold)).foregroundStyle(Color.textPrimary)
                             Spacer()
                             Text(match.scoreline.localized())
-                                .font(.system(.title2, design: .monospaced))
-                                .foregroundStyle(.white)
+                                .font(.figure)
+                                .foregroundStyle(Color.textPrimary)
                             Spacer()
-                            Text(match.awayName).foregroundStyle(.white)
+                            Text(match.awayName).font(.system(size: 17, weight: .semibold)).foregroundStyle(Color.textPrimary)
                         }
                         Fact(label: labels.kickoff.localized(), value: match.kickoff)
-                        Text(match.round.localized()).font(.caption).foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        Text(match.round.localized()).labelStyle()
                     }
                 } else if !state.isLoading {
-                    Text(labels.notFound.localized()).foregroundStyle(.secondary)
+                    Text(labels.notFound.localized()).foregroundStyle(Color.textMuted)
                 }
             }
-            .padding(20)
+            .padding(.horizontal, 14)
         }
-        .screenBackground()
+        .background(Backdrop(url: nil))
         .navigationTitle(labels.title.localized())
         .navigationBarTitleDisplayMode(.inline)
     }

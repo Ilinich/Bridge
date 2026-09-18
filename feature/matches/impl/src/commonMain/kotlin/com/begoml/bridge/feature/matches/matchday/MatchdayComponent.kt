@@ -10,6 +10,7 @@ class MatchdayComponent internal constructor(
     val viewModel: MatchdayViewModel,
 ) : ScreenComponent(scope) {
 
+
     /**
      * The state, as a concrete type.
      *

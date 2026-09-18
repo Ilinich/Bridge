@@ -3,42 +3,35 @@ import Shared
 
 struct SquadScreen: View {
 
-    @StateObject private var model: ScreenModel<ImplSquadUiState>
-    private let component: ImplSquadComponent
 
     private let columns = [GridItem(.adaptive(minimum: 150), spacing: 14)]
 
-    init() {
-        let component = IosBridge.shared.squad()
-        self.component = component
-        _model = StateObject(
-            wrappedValue: ScreenModel(flow: component.state, close: component.close)
-        )
-    }
+    @StateObject private var model = ScreenModel(
+        component: IosBridge.shared.squad(),
+        state: { $0.state },
+        close: { $0.close() }
+    )
 
     var body: some View {
-        ScrollView {
+        Screen(backdropUrl: nil) {
             LazyVGrid(columns: columns, spacing: 14) {
                 ForEach(model.state.players, id: \.id) { player in
                     Button {
-                        component.viewModel.onPlayerClick(playerId: player.id)
+                        model.component.viewModel.onPlayerClick(playerId: player.id)
                     } label: {
                         VStack(spacing: 8) {
-                            Badge(url: player.cutoutUrl, code: player.shirtNumber ?? "", size: 72)
-                            Text(player.name).font(.subheadline).foregroundStyle(.white)
+                            Badge(url: player.cutoutUrl, code: player.shirtNumber ?? "", size: 84)
+                            Text(player.name).font(.labelLarge).foregroundStyle(Color.textPrimary).lineLimit(1)
                             if let position = player.position {
-                                Text(position).font(.caption2).foregroundStyle(.secondary)
+                                Text(position).labelStyle()
                             }
                         }
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
-                        .background(Color.panel, in: RoundedRectangle(cornerRadius: 16))
+                        .padding(.vertical, 12)
+                        .background(Color.surface, in: RoundedRectangle(cornerRadius: 12))
                     }
                 }
             }
-            .padding(20)
         }
-        .screenBackground()
-        .navigationTitle("Squad")
     }
 }
