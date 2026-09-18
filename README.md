@@ -1,8 +1,17 @@
 # Bridge
 
-**A worked example of a Kotlin Multiplatform app.** One codebase, two platforms, and a real
-feature set rather than a template: networking, a database, navigation with its own gesture,
-runtime shaders, a video player, background work and tests that run on both platforms.
+**A worked example of a Kotlin Multiplatform app, built twice.** One feature set — networking, a
+database, navigation with its own gesture, runtime shaders, a video player, background work — and
+two answers to the question every KMP project has to answer: how much of the UI is shared?
+
+| Branch | UI | Shared |
+|---|---|---|
+| `master` | Compose Multiplatform, one set of screens | everything, including the screens |
+| `feature/native-ui` (this one) | Compose on Android, SwiftUI on iOS | everything below the state holder |
+
+This branch is the second answer. The iOS framework it produces links **zero** Compose artifacts;
+the state holders, the navigation decisions, the data layer and the shader maths are still written
+once. What each platform owns is the drawing.
 
 It is a football supporter app because an example needs a subject. Clone it and run it — there is
 no API key to obtain and no account to create.
@@ -11,15 +20,17 @@ no API key to obtain and no account to create.
 > No club artwork is stored in this repository; every image is loaded at runtime from the data
 > sources listed below.
 
-### iOS
+### iOS — SwiftUI, on the shared state holders
 
-| Matchday | Season |
-|---|---|
-| ![Matchday](docs/screenshots/ios-matchday.jpg) | ![Season](docs/screenshots/ios-season.jpg) |
+| Matchday | Squad | Player |
+|---|---|---|
+| ![Matchday](docs/screenshots/ios-native-matchday.jpg) | ![Squad](docs/screenshots/ios-native-squad.jpg) | ![Player](docs/screenshots/ios-native-player.jpg) |
 
-| Squad | Club |
-|---|---|
-| ![Squad](docs/screenshots/ios-squad.jpg) | ![Club](docs/screenshots/ios-club.jpg) |
+The same screens on `master`, drawn by Compose Multiplatform:
+
+| Matchday | Squad | Club |
+|---|---|---|
+| ![Matchday](docs/screenshots/ios-matchday.jpg) | ![Squad](docs/screenshots/ios-squad.jpg) | ![Club](docs/screenshots/ios-club.jpg) |
 
 ### Android — the same shared code
 
@@ -29,25 +40,26 @@ no API key to obtain and no account to create.
 
 ## What is shared, and what is not
 
-Every screen, every state holder, every repository and every test below is written once in
-`commonMain`. The platform code is the short list on the right, and it is short on purpose: an
-`expect`/`actual` pair is used where the platforms genuinely differ, not to organise the code.
+The line is drawn under the state holder. Everything that decides — what the screen shows, where a
+tap leads, when data is stale — is written once; everything that draws is written twice, on purpose,
+because that is where the platforms differ in kind rather than in detail.
 
 | Concern | Shared | Platform-specific |
 |---|---|---|
-| UI | Compose Multiplatform 1.11.1 — all screens | — |
-| Navigation | Navigation3, routes, router, per-tab stacks, swipe-to-dismiss | — |
-| State | `tessera`: `feature()` / `UiStateDelegate`, ViewModels | — |
-| DI | Koin 4.2 | Android `Context` binding |
+| UI | — | Compose Multiplatform / SwiftUI, screen for screen |
+| Navigation | routes, commands, the router that emits them | the back stacks that obey: Navigation3 / NavigationStack |
+| State | `tessera`: `feature()` / `UiStateDelegate`, ViewModels, `ScreenComponent` | how a screen holds one: a ViewModel store / `deinit` |
+| Strings | the ids and the format arguments, as `StringDesc` | resolving them: `toString(context)` / `localized()` |
+| DI | Koin 4.2, one graph | the host's own bindings, passed in at startup |
 | Network | Ktor 3.5, kotlinx.serialization | OkHttp / Darwin engines |
 | Database | Room 2.8 KMP, bundled SQLite | database file location |
-| Images | coil3 | — |
-| Blur | Haze 2.0 | — |
-| Runtime shaders | one source in a dialect both accept | AGSL / SkSL runtime |
-| Video | playback contract, transport controls | ExoPlayer / AVPlayer |
+| Images | the urls | coil3 / `AsyncImage` |
+| Blur | — | Haze / `.ultraThinMaterial` |
+| Shaders | the maths, constant for constant | three dialects: AGSL, SkSL, MSL |
+| Video | playback contract, the clip | ExoPlayer / `AVPlayer` |
 | Logging | levels, tags, the debug gate | `Log` / `NSLog` |
 | Background refresh | what to refresh | WorkManager / `BGTaskScheduler` |
-| Tests | unit tests and a Compose UI test in `commonTest` | run natively on iOS, on a device on Android |
+| Tests | unit tests in `commonTest`, plus the iOS mapping tests | run natively on iOS, on a device on Android |
 
 Kotlin 2.4.10, Gradle 9.1, AGP 9.0, JDK 21, minSdk 26. Static analysis is detekt with a rule
 written for this repository; performance has a Macrobenchmark module and a recorded baseline
@@ -93,12 +105,58 @@ no-op on iOS — no error, no log. `GlassBackdrop` makes the two siblings by con
 `Modifier.glass()` exists only inside its scope, so the mistake is unrepresentable rather than
 merely documented.
 
-**Strings are never read on the frame.** A Compose resource is a `suspend` call, so reading one
-while composing means either blocking the frame or rendering a screen that has no words yet. Each
-feature instead declares the ids it needs and asks a `StringResolver` for them once, off the main
-thread, before its first frame; the resolved labels then live in the state next to everything else
-the screen draws. The host never names a feature — it asks the graph for every `LabelsLoader` and
-runs them — so a new feature brings its own strings with it.
+**A shared string that neither platform has to resolve.** A Compose resource is a `suspend` call —
+the words live in a bundle Compose ships — so on `master` a whole machinery grew around that: a
+resolver, a loader per feature, and a gate the host waited on before it drew anything. Here a state
+holder carries `StringDesc` from moko-resources: a description of a string rather than a string, and
+the platform that draws it resolves it with `toString(context)` or `localized()`. Nothing is read
+ahead of the first frame because nothing is read at all until something draws.
+
+```kotlin
+data class PlayerLabels(
+    val title: StringDesc = PlayerStrings.strings.player_title.desc(),
+    val number: StringDesc = PlayerStrings.strings.player_number.desc(),
+)
+```
+
+The cost is one Xcode build phase: a static framework carries no resources of its own, so the
+generated bundles are copied into the app — and the crash when they are not is at the first word
+drawn, not at build time.
+
+**A state holder with no store to live in.** Android has a `ViewModelStore` and something that
+empties it; SwiftUI has neither. `ScreenComponent` is what a Swift view holds instead: the state
+holder, its state under a concrete type, and a `close()` the view calls in `deinit`. The DI builds
+the wiring once and hands Compose the ViewModel, Swift the component.
+
+```swift
+@StateObject private var model = ScreenModel(
+    component: IosBridge.shared.matchday(),
+    state: { $0.state },
+    close: { $0.close() }
+)
+```
+
+The component is built **inside** the `StateObject` rather than in the view's `init`. A SwiftUI view
+is a struct that gets rebuilt constantly; building it there makes one per rebuild, and the ones
+SwiftUI discards close on deinit — cancelling the scope the surviving model is waiting on. The
+screen then sits at "loading" for ever, which is exactly what it did.
+
+**Navigation that decides in Kotlin and moves in Swift.** The router holds no stack. It repeats
+decisions — `navigateTo`, `up` — and each host applies them to the stack it owns: a Compose back
+stack on one side, four `NavigationStack`s on the other. The rule that a tab root selects its tab
+instead of being pushed is stated twice, once per host, because it is a statement about tabs rather
+than about routing. Nothing is replayed: a decision nobody is listening to is dropped, because
+obeying it later would move a user who has since gone elsewhere.
+
+Swift gets a vocabulary of its own — `IosNavigation`, a sealed interface SKIE turns into an enum it
+can switch on exhaustively. Route classes stay the features' business: a Swift view has no reason to
+import four `api` modules, and the export only carries types the exported API mentions.
+
+**One shader, three dialects.** The club-blue wash behind the squad cards and the player pager is
+written once in the subset AGSL and SkSL share, and again in Metal for SwiftUI, constant for
+constant — the wave across x, the sweep along x+y, and the half-step dither that keeps a gradient
+this shallow from banding on an 8-bit ramp. Copied, not re-tuned by eye, which is what makes the two
+backgrounds move the same way rather than merely look alike.
 
 **A composition API that refuses to starve.** `combine` emits nothing until every source has
 spoken, so one silent source leaves a screen blank forever. `composeState` therefore accepts only
@@ -168,15 +226,16 @@ rule appears that two screens must agree on, that is when the layer earns its pl
 
 ![Architecture](docs/architecture.png)
 
-Every arrow in that diagram is a `projects.*` line in a `build.gradle.kts` rather than an
-intention, and the right half follows one screen from a tap to the network. The editable source is
+Every arrow in that diagram is a `projects.*` line in a `build.gradle.kts` rather than an intention.
+The dotted line across it is the seam: nothing above it reaches the other platform, and the right
+column says what crosses and in what form. The editable source is
 [docs/architecture.excalidraw](docs/architecture.excalidraw).
 
 | Module | Contains |
 |---|---|
 | `foundation:tessera` | state holders: `feature()` and `UiStateDelegate` ([readme](foundation/tessera/README.md)) |
 | `foundation:coroutines` | the dispatchers a state holder is given, and `safeLaunch`: a launch whose failure is logged instead of reaching the platform handler |
-| `foundation:strings` | `StringResolver`: the only way a feature reads a string resource, and the loader contract the host drives at startup |
+| `foundation:format` | figures a state holder formats before a screen sees them, starting with grouped thousands |
 | `foundation:resource` | how a value is loaded and reported: `Loadable`, the in-memory cache with soft and hard TTL, and the two builders that turn a source into the three states a screen can be in |
 | `foundation:logger:api` / `:impl` | the logging contract, and the platform sink behind it |
 | `core:analytics:api` / `:impl` | the `track` entry point; each feature declares its own events |
@@ -185,21 +244,26 @@ intention, and the right half follows one screen from a tap to the network. The 
 | `core:features:following:api` / `:impl` | followed players: a state holder with no screen, shared by three feature modules |
 | `core:domain` | what the app is about: models and the repository contracts |
 | `core:data` | how it is fetched: HTTP clients, DTOs, Room, mappers, the repository implementations |
-| `uikit` | theme, glass surfaces, runtime-shader brushes, components |
-| `navigation:core` | the routing contract, the router, per-tab stacks ([readme](navigation/core/README.md)) |
+| `navigation:routes` | the vocabulary both hosts share: `Route`, `NavigationCommand`, `AppRouter`. Plain Kotlin — no navigation library, no toolkit |
+| `navigation:core` | the Compose host: `NavDisplay`, per-tab stacks ([readme](navigation/core/README.md)) |
 | `navigation:swipe` | swipe-to-dismiss, knowing nothing about this app ([readme](navigation/swipe/README.md)) |
-| `feature:club:api` / `:impl` | club profile and its ground |
-| `feature:matches:api` / `:impl` | matchday, season calendar, match detail |
-| `feature:squad:api` / `:impl` | squad grid |
-| `feature:player:api` / `:impl` | player pager, and the only screen that writes |
+| `uikit` | theme, glass surfaces, runtime-shader brushes, components — Compose, and therefore Android |
+| `feature:club:api` / `:impl` / `:ui` | club profile and its ground |
+| `feature:matches:api` / `:impl` / `:ui` | matchday, season calendar, match detail |
+| `feature:squad:api` / `:impl` / `:ui` | squad grid |
+| `feature:player:api` / `:impl` / `:ui` | player pager, and the only screen that writes |
 | `detekt-rules` | the custom static-analysis rule |
 | `benchmark` | baseline-profile generator and startup / scroll benchmarks |
-| `shared` | dependency graph, navigation host, iOS framework |
+| `shared` | the dependency graph, the iOS framework, and `IosBridge`: what Swift calls to start and to ask for a component |
+| `androidUi` | the Compose host: tabs, back stacks, the bindings a Compose UI needs |
 | `androidApp` / `iosApp` | platform shells |
 
-Feature modules never depend on each other. Each is split in two: `api` holds the destinations it
-owns, `impl` holds its screens, state holders and wiring. Only the composition root may depend on
-an `impl`, and it does so from one file — the DI graph.
+Feature modules never depend on each other. Each is split in three: `api` holds the destinations it
+owns, `impl` holds the state holder and its wiring, `ui` holds the Compose screens. The third part
+exists because of a compiler rather than a preference — the Compose plugin runs over every
+compilation in a project and refuses to work without its runtime, so a module cannot be Compose on
+Android and nothing on iOS. Only the composition root may depend on an `impl`, and only the Android
+host may depend on a `ui`.
 
 **Features reach each other by naming a destination.** Tapping the stadium card on matchday opens
 the club screen: `feature:matches:impl` depends on `feature:club:api` and calls
@@ -214,6 +278,34 @@ editing the host.
 Shared configuration lives in three convention plugins under `build-logic`, so a module's build
 file is a plugin id and its dependencies.
 
+## The iOS side, concretely
+
+Swift starts the graph itself and asks it for components:
+
+```swift
+@main
+struct iOSApp: App {
+    init() { IosBridge.shared.start() }
+    …
+}
+```
+
+Three things make that workable, and each is a choice worth knowing about:
+
+- **SKIE** turns `StateFlow` into something Swift iterates with `for await`, and a sealed interface
+  into an enum with an exhaustive `switch`. Its analytics upload is switched off — a build of this
+  repository should not phone anywhere.
+- **State is exposed as a concrete type.** `uiStateFlow` is declared on a generic interface, and a
+  generic interface is the one shape the Swift export handles worst, so `ScreenComponent` exposes
+  `StateFlow<MatchdayUiState>` directly.
+- **The export carries only what the exported API mentions.** A type nobody names never reaches
+  Swift — which is why `Countdown` is returned by a function on the component rather than left for
+  Swift to construct.
+
+Two names had to change for the interop rather than for taste: `ClubUi.description` became `summary`,
+because every Swift object inherits `description` from `NSObject` and a Kotlin field of that name is
+shadowed by it.
+
 ## Building
 
 Requires JDK 21 and an Android SDK; Gradle provisions its own toolchain.
@@ -226,6 +318,9 @@ Requires JDK 21 and an Android SDK; Gradle provisions its own toolchain.
 ```
 
 For iOS, open `iosApp/iosApp.xcodeproj` in Xcode and run.
+
+The framework the Xcode build embeds contains no Compose: the classpath went from 198 Compose
+artifacts on `master` to none here, and the debug binary from 248 MB to 162 MB.
 
 ## License
 
