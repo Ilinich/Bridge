@@ -1,5 +1,5 @@
 plugins {
-    id("bridge.kmp.compose")
+    id("bridge.kmp.library")
     alias(libs.plugins.mokoResources)
 }
 
@@ -17,17 +17,9 @@ kotlin {
             implementation(projects.foundation.tessera)
             implementation(projects.foundation.coroutines)
             implementation(projects.core.domain)
-            implementation(projects.navigation.core)
-            implementation(projects.uikit)
-
             api(libs.moko.resources)
-            implementation(libs.moko.resources.compose)
-            implementation(libs.compose.material3)
+            implementation(libs.kotlinx.collections.immutable)
             implementation(libs.koin.core)
-            implementation(libs.koin.compose)
-            implementation(libs.koin.composeViewModel)
-            implementation(libs.androidx.lifecycle.viewmodelCompose)
-            implementation(libs.androidx.lifecycle.runtimeCompose)
         }
     }
 }

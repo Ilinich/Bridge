@@ -1,3 +1,7 @@
+/**
+ * For a module with a Compose side on Android and shared code that must stay toolkit-free.
+ * A module whose common code is itself Compose uses `bridge.kmp.compose.ui`.
+ */
 plugins {
     id("bridge.kmp.library")
     id("org.jetbrains.compose")
@@ -26,11 +30,17 @@ kotlin {
         // empty suite. This is what puts them on a device.
         named("androidDeviceTest") { dependsOn(commonTest.get()) }
         commonMain.dependencies {
+            // Immutable collections are a Compose stability concern, but they are plain data and
+            // the state holders they live in are shared, so they stay common.
+            implementation(libs.findLibrary("kotlinx-collections-immutable").get())
+        }
+        // The toolkit itself is the Android UI's. A module that applies this plugin has Compose
+        // code on Android only, and its iOS klib carries none of it.
+        androidMain.dependencies {
             implementation(libs.findLibrary("compose-runtime").get())
             implementation(libs.findLibrary("compose-foundation").get())
             implementation(libs.findLibrary("compose-ui").get())
             implementation(libs.findLibrary("androidx-lifecycle-runtimeCompose").get())
-            implementation(libs.findLibrary("kotlinx-collections-immutable").get())
         }
     }
 }

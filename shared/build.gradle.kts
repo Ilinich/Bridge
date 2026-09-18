@@ -1,11 +1,12 @@
 plugins {
-    id("bridge.kmp.compose")
+    id("bridge.kmp.library")
     alias(libs.plugins.mokoResources)
     alias(libs.plugins.skie)
 }
 
 multiplatformResources {
-    resourcesPackage.set("com.begoml.bridge.shared")
+    resourcesPackage.set("com.begoml.bridge")
+    resourcesClassName.set("HostStrings")
 }
 
 skie {
@@ -37,7 +38,6 @@ kotlin {
             implementation(projects.foundation.logger.impl)
             implementation(projects.core.domain)
             implementation(projects.core.data)
-            implementation(libs.coil.compose)
             implementation(libs.coil.networkKtor)
             implementation(projects.feature.club.api)
             implementation(projects.feature.club.impl)
@@ -46,23 +46,11 @@ kotlin {
             implementation(projects.feature.squad.api)
             implementation(projects.feature.player.impl)
             implementation(projects.feature.squad.impl)
-            implementation(projects.navigation.core)
-            implementation(projects.uikit)
+            implementation(projects.navigation.routes)
 
-            implementation(libs.compose.components.resources)
-            implementation(libs.compose.material3)
-            implementation(libs.compose.uiToolingPreview)
-            implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.koin.core)
-            implementation(libs.koin.compose)
-        }
-        androidMain.dependencies {
-            implementation(libs.compose.uiTooling)
-            implementation(libs.compose.uiToolingPreview)
+            api(libs.moko.resources)
         }
     }
 }
 
-dependencies {
-    androidRuntimeClasspath(libs.compose.uiTooling)
-}

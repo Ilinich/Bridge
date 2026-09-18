@@ -1,4 +1,4 @@
-package com.begoml.bridge
+package com.begoml.bridge.host
 
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
@@ -22,11 +22,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.dp
-import bridge.shared.generated.resources.Res
-import bridge.shared.generated.resources.tab_club
-import bridge.shared.generated.resources.tab_matchday
-import bridge.shared.generated.resources.tab_season
-import bridge.shared.generated.resources.tab_squad
 import coil3.ImageLoader
 import coil3.compose.setSingletonImageLoaderFactory
 import coil3.network.ktor3.KtorNetworkFetcherFactory
@@ -38,8 +33,8 @@ import com.begoml.bridge.feature.squad.api.SquadRoute
 import com.begoml.bridge.core.analytics.Analytics
 import com.begoml.bridge.foundation.logger.Logger
 import com.begoml.bridge.foundation.logger.warn
-import com.begoml.bridge.analytics.AppOpened
-import com.begoml.bridge.analytics.TabSelected
+import com.begoml.bridge.host.analytics.AppOpened
+import com.begoml.bridge.host.analytics.TabSelected
 import com.begoml.bridge.navigation.BridgeTabPager
 import com.begoml.bridge.navigation.FeatureNavigationEntry
 import com.begoml.bridge.navigation.apply
@@ -56,7 +51,12 @@ import com.begoml.bridge.uikit.component.BridgeTabBar
 import com.begoml.bridge.uikit.glass.GlassBackdrop
 import com.begoml.bridge.uikit.theme.BridgeColors
 import com.begoml.bridge.uikit.theme.BridgeTheme
-import org.jetbrains.compose.resources.stringResource
+import com.begoml.bridge.HostStrings
+import com.begoml.bridge.tab_club
+import com.begoml.bridge.tab_matchday
+import com.begoml.bridge.tab_season
+import com.begoml.bridge.tab_squad
+import dev.icerock.moko.resources.compose.stringResource
 import org.koin.compose.currentKoinScope
 import org.koin.compose.koinInject
 
@@ -172,8 +172,8 @@ private fun screenPadding(): PaddingValues {
 
 @Composable
 private fun bridgeTabs(): ImmutableList<BridgeTab> = persistentListOf(
-    BridgeTab(BridgeIcon.Matchday, stringResource(Res.string.tab_matchday)),
-    BridgeTab(BridgeIcon.Season, stringResource(Res.string.tab_season)),
-    BridgeTab(BridgeIcon.Squad, stringResource(Res.string.tab_squad)),
-    BridgeTab(BridgeIcon.Club, stringResource(Res.string.tab_club)),
+    BridgeTab(BridgeIcon.Matchday, stringResource(HostStrings.strings.tab_matchday)),
+    BridgeTab(BridgeIcon.Season, stringResource(HostStrings.strings.tab_season)),
+    BridgeTab(BridgeIcon.Squad, stringResource(HostStrings.strings.tab_squad)),
+    BridgeTab(BridgeIcon.Club, stringResource(HostStrings.strings.tab_club)),
 )

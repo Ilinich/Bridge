@@ -1,4 +1,4 @@
-package com.begoml.bridge.analytics
+package com.begoml.bridge.host.analytics
 
 import com.begoml.bridge.core.analytics.AnalyticsEvent
 

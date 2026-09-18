@@ -11,7 +11,7 @@ import com.begoml.bridge.core.domain.model.Venue
 import com.begoml.bridge.core.domain.model.FollowedClub
 import com.begoml.bridge.core.domain.repository.ClubRepository
 import com.begoml.bridge.foundation.resource.Loadable
-import com.begoml.bridge.uikit.groupedThousands
+import com.begoml.bridge.foundation.format.groupedThousands
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.Job

@@ -5,6 +5,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
+import com.begoml.bridge.host.App
 import androidx.activity.enableEdgeToEdge
 
 class MainActivity : ComponentActivity() {

@@ -27,7 +27,7 @@ import androidx.lifecycle.viewModelScope
 import com.begoml.bridge.core.domain.model.Club
 import kotlin.time.Clock
 import com.begoml.bridge.feature.matches.formatKickoff
-import com.begoml.bridge.uikit.groupedThousands
+import com.begoml.bridge.foundation.format.groupedThousands
 import com.begoml.bridge.core.domain.model.Match
 import com.begoml.bridge.foundation.tessera.UiStateDelegate
 import com.begoml.bridge.foundation.tessera.UiStateDelegateImpl

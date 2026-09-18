@@ -12,6 +12,7 @@ import com.begoml.bridge.feature.matches.di.matchesModule
 import com.begoml.bridge.feature.player.di.playerModule
 import com.begoml.bridge.feature.squad.di.squadModule
 import org.koin.core.KoinApplication
+import org.koin.core.module.Module
 import org.koin.core.context.startKoin
 import org.koin.dsl.KoinAppDeclaration
 
@@ -20,9 +21,13 @@ import org.koin.dsl.KoinAppDeclaration
  *
  * Both platforms call this, and iOS calls it from its own entry point rather than inheriting one,
  * which is why it lives here instead of inside the Android application class.
+ *
+ * [hostModules] is what a UI brings with it — navigation entries and ViewModel-store definitions
+ * on Android, nothing at all on iOS, where the screens are Swift and hold components instead.
  */
 fun startBridge(
     isLoggingEnabled: Boolean = true,
+    hostModules: List<Module> = emptyList(),
     declaration: KoinAppDeclaration = {},
 ): KoinApplication = startKoin {
     declaration()
@@ -36,6 +41,6 @@ fun startBridge(
             refreshModule(),
         ) +
             dataModules() + navigationModule() +
-            matchesModule() + squadModule() + playerModule() + clubModule(),
+            matchesModule() + squadModule() + playerModule() + clubModule() + hostModules,
     )
 }

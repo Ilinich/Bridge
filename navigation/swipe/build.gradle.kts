@@ -1,5 +1,5 @@
 plugins {
-    id("bridge.kmp.compose")
+    id("bridge.kmp.compose.ui")
 }
 
 kotlin {

@@ -1,4 +1,4 @@
-package com.begoml.bridge.uikit
+package com.begoml.bridge.foundation.format
 
 /** Splits a number into thousands with a thin space, the way scores and capacities are read. */
 fun Int.groupedThousands(): String {
