@@ -133,7 +133,11 @@ data class MatchdayUiState(
 
 private const val TickMillis = 1_000L
 
-internal class MatchdayViewModel(
+/**
+ * Public because a platform UI is the thing that reads it: on iOS the screen is Swift, and a Swift
+ * view cannot see an internal Kotlin class.
+ */
+class MatchdayViewModel(
     scope: CoroutineScope,
     private val feature: MatchdayFeature,
     private val connectivity: Connectivity,

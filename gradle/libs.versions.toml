@@ -25,6 +25,7 @@ kotlinxDatetime = "0.8.0"
 kotlinxSerialization = "1.11.0"
 ktor = "3.5.1"
 moko-resources = "0.27.1"
+skie = "0.10.14"
 navigation3 = "1.1.1"
 media3 = "1.5.1"
 datastore = "1.1.7"
@@ -104,6 +105,7 @@ detekt-api = { module = "io.gitlab.arturbosch.detekt:detekt-api", version.ref = 
 detekt-test = { module = "io.gitlab.arturbosch.detekt:detekt-test", version.ref = "detekt" }
 
 [plugins]
+skie = { id = "co.touchlab.skie", version.ref = "skie" }
 mokoResources = { id = "dev.icerock.mobile.multiplatform-resources", version.ref = "moko-resources" }
 androidApplication = { id = "com.android.application", version.ref = "agp" }
 baselineProfile = { id = "androidx.baselineprofile", version.ref = "androidx-benchmark" }

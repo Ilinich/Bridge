@@ -4,6 +4,7 @@ import com.begoml.bridge.foundation.coroutines.DispatcherProvider
 import com.begoml.bridge.feature.matches.MatchesNavigationEntry
 import com.begoml.bridge.feature.matches.api.MatchesRouteCodec
 import com.begoml.bridge.feature.matches.detail.MatchDetailViewModel
+import com.begoml.bridge.feature.matches.matchday.MatchdayComponent
 import com.begoml.bridge.feature.matches.matchday.MatchdayFeature
 import com.begoml.bridge.feature.matches.matchday.MatchdayViewModel
 import com.begoml.bridge.feature.matches.season.SeasonFeature
@@ -16,25 +17,31 @@ import org.koin.dsl.bind
 import org.koin.dsl.module
 
 fun matchesModule() = module {
-    viewModel {
+    factory {
         val scope = stateHolderScope()
-        MatchdayViewModel(
+        MatchdayComponent(
             scope = scope,
-            feature = MatchdayFeature(
+            viewModel = MatchdayViewModel(
                 scope = scope,
-                club = get(),
-                clubRepository = get(),
-                matchRepository = get(),
-                squadRepository = get(),
-                following = get(),
+                feature = MatchdayFeature(
+                    scope = scope,
+                    club = get(),
+                    clubRepository = get(),
+                    matchRepository = get(),
+                    squadRepository = get(),
+                    following = get(),
+                ),
+                connectivity = get(),
+                clock = get(),
+                router = get(),
+                ioDispatcher = get<DispatcherProvider>().io,
+                logger = get(),
             ),
-            connectivity = get(),
-            clock = get(),
-            router = get(),
-            ioDispatcher = get<DispatcherProvider>().io,
-            logger = get(),
         )
     }
+    // One wiring, two ways in: Compose asks for the state holder and lets its store clear it,
+    // a Swift screen asks for the component and closes it itself.
+    viewModel { get<MatchdayComponent>().viewModel }
     viewModel {
         val scope = stateHolderScope()
         SeasonViewModel(

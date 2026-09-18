@@ -1,10 +1,18 @@
 plugins {
     id("bridge.kmp.compose")
     alias(libs.plugins.mokoResources)
+    alias(libs.plugins.skie)
 }
 
 multiplatformResources {
     resourcesPackage.set("com.begoml.bridge.shared")
+}
+
+skie {
+    // A build of this repository should not phone anywhere.
+    analytics {
+        enabled.set(false)
+    }
 }
 
 kotlin {
