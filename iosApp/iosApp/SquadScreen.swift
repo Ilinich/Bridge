@@ -15,15 +15,20 @@ struct SquadScreen: View {
     ]
 
     var body: some View {
-        Screen {
-            LazyVGrid(columns: columns, spacing: 9) {
-                ForEach(model.state.players, id: \.id) { player in
-                    Button {
-                        model.component.viewModel.onPlayerClick(playerId: player.id)
-                    } label: {
-                        PlayerCard(player: player)
+        // One clock for the whole grid: the Compose cards share a single compiled program and a
+        // single animation, and a card per timeline would be N animations for one effect.
+        TimelineView(.animation) { context in
+            let time = context.date.timeIntervalSinceReferenceDate
+            Screen {
+                LazyVGrid(columns: columns, spacing: 9) {
+                    ForEach(model.state.players, id: \.id) { player in
+                        Button {
+                            model.component.viewModel.onPlayerClick(playerId: player.id)
+                        } label: {
+                            PlayerCard(player: player, time: time)
+                        }
+                        .buttonStyle(.plain)
                     }
-                    .buttonStyle(.plain)
                 }
             }
         }
@@ -33,16 +38,12 @@ struct SquadScreen: View {
 private struct PlayerCard: View {
 
     let player: ImplPlayerCardUi
+    let time: Double
 
     var body: some View {
         ZStack {
-            // The Compose card is washed by a runtime shader — club blue swept over the ground
-            // colour. Its two ends are these, and the sweep between them is a gradient here.
-            LinearGradient(
-                colors: [Color.club, Color.ground],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
+            // The same wash the Compose card carries, from the same shader.
+            ClubWash(time: time)
 
             if let number = player.shirtNumber {
                 Text(number)
