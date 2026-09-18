@@ -20,6 +20,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import dev.icerock.moko.resources.compose.localized
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -105,8 +106,8 @@ internal fun ClubScreen(viewModel: ClubViewModel, modifier: Modifier = Modifier)
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
                 with(this@GlassBackdrop) { Header(club = club, labels = labels) }
-                MediaSection(title = labels.media, onStarted = viewModel::onVideoStarted)
-                club.description?.let { Section(title = labels.about) { Prose(it) } }
+                MediaSection(title = labels.media.localized(), onStarted = viewModel::onVideoStarted)
+                club.description?.let { Section(title = labels.about.localized()) { Prose(it) } }
                 state.ground?.let { GroundSection(ground = it, labels = labels) }
                 LinksSection(club = club, labels = labels)
             }
@@ -150,8 +151,8 @@ private fun GlassScope.Header(club: ClubUi, labels: ClubLabels) {
                 horizontalArrangement = Arrangement.spacedBy(18.dp, Alignment.CenterHorizontally),
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                club.founded?.let { Fact(labels.founded, it) }
-                ColourStrip(club = club, label = labels.colours)
+                club.founded?.let { Fact(labels.founded.localized(), it) }
+                ColourStrip(club = club, label = labels.colours.localized())
             }
         }
     }
@@ -219,7 +220,7 @@ private fun MediaSection(title: String, onStarted: () -> Unit) {
 
 @Composable
 private fun GroundSection(ground: GroundUi, labels: ClubLabels) {
-    Section(title = labels.ground) {
+    Section(title = labels.ground.localized()) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             ground.thumbUrl?.let { url ->
                 Box(
@@ -237,10 +238,10 @@ private fun GroundSection(ground: GroundUi, labels: ClubLabels) {
                 color = BridgeColors.TextPrimary,
             )
             Row(modifier = Modifier.fillMaxWidth()) {
-                ground.capacity?.let { Fact(labels.capacity, it, Modifier.weight(1f)) }
-                ground.opened?.let { Fact(labels.opened, it, Modifier.weight(1f)) }
+                ground.capacity?.let { Fact(labels.capacity.localized(), it, Modifier.weight(1f)) }
+                ground.opened?.let { Fact(labels.opened.localized(), it, Modifier.weight(1f)) }
                 ground.location?.let {
-                    Fact(labels.location, it, Modifier.weight(1.6f))
+                    Fact(labels.location.localized(), it, Modifier.weight(1.6f))
                 }
             }
             ground.description?.let { Prose(it) }
@@ -253,11 +254,11 @@ private fun LinksSection(club: ClubUi, labels: ClubLabels) {
     val opener = rememberUrlOpener()
     if (club.links.isEmpty()) return
 
-    Section(title = labels.links) {
+    Section(title = labels.links.localized()) {
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             club.links.forEach { link ->
                 Text(
-                    text = link.label,
+                    text = link.label.localized(),
                     style = LabelStyle,
                     color = BridgeColors.TextPrimary,
                     modifier = Modifier

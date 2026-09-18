@@ -13,6 +13,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import dev.icerock.moko.resources.compose.localized
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -41,7 +42,7 @@ internal fun GlassScope.HeroCard(state: MatchdayUiState, labels: MatchdayLabels,
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 Text(
-                    text = state.nextMatch?.competition ?: labels.nextMatch,
+                    text = state.nextMatch?.competition ?: labels.nextMatch.localized(),
                     style = LabelStyle,
                     color = BridgeColors.TextMuted,
                 )
@@ -54,16 +55,16 @@ internal fun GlassScope.HeroCard(state: MatchdayUiState, labels: MatchdayLabels,
             if (match == null) {
                 Text(
                     text = when {
-                        state.nextMatchFailed -> labels.fixtureFailed
-                        state.nextMatchLoaded -> labels.noFixture
-                        else -> labels.loadingFixture
+                        state.nextMatchFailed -> labels.fixtureFailed.localized()
+                        state.nextMatchLoaded -> labels.noFixture.localized()
+                        else -> labels.loadingFixture.localized()
                     },
                     color = BridgeColors.TextMuted,
                     modifier = Modifier.fillMaxWidth(),
                     textAlign = TextAlign.Center,
                 )
             } else {
-                Versus(match = match, versus = labels.versus)
+                Versus(match = match, versus = labels.versus.localized())
                 Column(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -75,7 +76,7 @@ internal fun GlassScope.HeroCard(state: MatchdayUiState, labels: MatchdayLabels,
                         color = BridgeColors.TextPrimary,
                     )
                     Text(
-                        text = labels.kickoffLocal,
+                        text = labels.kickoffLocal.localized(),
                         style = LabelStyle,
                         color = BridgeColors.TextMuted,
                     )
@@ -132,7 +133,7 @@ private fun TeamColumn(name: String, code: String, badge: String?) {
 private fun CountdownRow(labels: MatchdayLabels, countdown: Countdown) {
     if (countdown.hasStarted) {
         Text(
-            text = labels.kickoffNow,
+            text = labels.kickoffNow.localized(),
             style = FigureStyle,
             color = BridgeColors.ClubBright,
             modifier = Modifier.fillMaxWidth(),
@@ -145,10 +146,10 @@ private fun CountdownRow(labels: MatchdayLabels, countdown: Countdown) {
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
     ) {
-        CountdownCell(countdown.days, labels.days)
-        CountdownCell(countdown.hours, labels.hours)
-        CountdownCell(countdown.minutes, labels.minutes)
-        CountdownCell(countdown.seconds, labels.seconds)
+        CountdownCell(countdown.days, labels.days.localized())
+        CountdownCell(countdown.hours, labels.hours.localized())
+        CountdownCell(countdown.minutes, labels.minutes.localized())
+        CountdownCell(countdown.seconds, labels.seconds.localized())
     }
 }
 

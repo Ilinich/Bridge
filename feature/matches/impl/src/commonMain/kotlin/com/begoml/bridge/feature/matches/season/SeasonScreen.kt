@@ -26,6 +26,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import dev.icerock.moko.resources.compose.localized
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
@@ -117,7 +118,7 @@ private fun RoundPills(
         ) { index, round ->
             val selected = index == selectedIndex
             Text(
-                text = round.title,
+                text = round.title.localized(),
                 style = LabelStyle,
                 color = if (selected) BridgeColors.TextPrimary else BridgeColors.TextMuted,
                 modifier = Modifier
@@ -181,7 +182,7 @@ private fun FixtureRow(match: FixtureRowUi, onClick: () -> Unit) {
         TeamMonogram(code = match.homeCode, size = 22.dp, highlighted = highlighted)
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = match.teams,
+                text = match.teams.localized(),
                 style = MaterialTheme.typography.labelLarge,
                 color = BridgeColors.TextPrimary,
                 maxLines = 1,
@@ -194,7 +195,7 @@ private fun FixtureRow(match: FixtureRowUi, onClick: () -> Unit) {
             )
         }
         Text(
-            text = match.trailing,
+            text = match.trailing.localized(),
             style = FigureStyle,
             color = if (match.hasScore) BridgeColors.TextPrimary else BridgeColors.TextMuted,
         )

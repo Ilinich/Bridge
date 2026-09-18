@@ -16,6 +16,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import dev.icerock.moko.resources.compose.localized
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -77,7 +78,7 @@ internal fun PlayerScreen(
         val labels = state.value.labels
         if (players.isEmpty()) {
             Text(
-                text = labels.notFound,
+                text = labels.notFound.localized(),
                 color = BridgeColors.TextMuted,
                 modifier = Modifier.align(Alignment.Center).padding(24.dp),
                 textAlign = TextAlign.Center,
@@ -114,8 +115,8 @@ internal fun PlayerScreen(
 
         PlayerTopBar(
             glass = glass,
-            title = players.getOrNull(pagerState.currentPage)?.name ?: labels.title,
-            back = labels.back,
+            title = players.getOrNull(pagerState.currentPage)?.name ?: labels.title.localized(),
+            back = labels.back.localized(),
             onBack = viewModel::onBack,
         )
 
@@ -219,10 +220,10 @@ private fun PlayerFacts(
             FollowButton(followed = followed, onClick = onFollowClick)
         }
         Row(modifier = Modifier.fillMaxWidth()) {
-            Fact(labels.number, player.shirtNumber, Modifier.weight(1f))
-            Fact(labels.position, player.position, Modifier.weight(1.6f))
-            Fact(labels.country, player.nationality, Modifier.weight(1.2f))
-            Fact(labels.height, player.height, Modifier.weight(1f))
+            Fact(labels.number.localized(), player.shirtNumber, Modifier.weight(1f))
+            Fact(labels.position.localized(), player.position, Modifier.weight(1.6f))
+            Fact(labels.country.localized(), player.nationality, Modifier.weight(1.2f))
+            Fact(labels.height.localized(), player.height, Modifier.weight(1f))
         }
     }
 }

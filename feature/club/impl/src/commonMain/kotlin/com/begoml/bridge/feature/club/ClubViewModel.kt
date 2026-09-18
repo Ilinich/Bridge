@@ -1,5 +1,7 @@
 package com.begoml.bridge.feature.club
 
+import dev.icerock.moko.resources.desc.StringDesc
+import dev.icerock.moko.resources.desc.desc
 import com.begoml.bridge.foundation.logger.Logger
 import com.begoml.bridge.foundation.coroutines.safeLaunch
 import androidx.lifecycle.ViewModel
@@ -24,20 +26,27 @@ import kotlinx.coroutines.launch
 private const val Tag = "Club"
 
 /** Every fixed word on the club screen, resolved once away from the composition. */
+/**
+ * Every fixed word on this screen — as descriptions, not as words.
+ *
+ * A [StringDesc] names which string is meant; the platform that draws it decides what that reads
+ * like, because only it knows the device's locale. Nothing is resolved here, so nothing has to be
+ * awaited before the first frame.
+ */
 data class ClubLabels(
-    val about: String,
-    val media: String,
-    val ground: String,
-    val links: String,
-    val founded: String,
-    val colours: String,
-    val capacity: String,
-    val opened: String,
-    val location: String,
-    val website: String,
-    val youtube: String,
-    val twitter: String,
-    val instagram: String,
+    val about: StringDesc = ClubStrings.strings.club_about.desc(),
+    val media: StringDesc = ClubStrings.strings.club_media.desc(),
+    val ground: StringDesc = ClubStrings.strings.club_ground.desc(),
+    val links: StringDesc = ClubStrings.strings.club_links.desc(),
+    val founded: StringDesc = ClubStrings.strings.club_founded.desc(),
+    val colours: StringDesc = ClubStrings.strings.club_colours.desc(),
+    val capacity: StringDesc = ClubStrings.strings.club_capacity.desc(),
+    val opened: StringDesc = ClubStrings.strings.club_opened.desc(),
+    val location: StringDesc = ClubStrings.strings.club_location.desc(),
+    val website: StringDesc = ClubStrings.strings.club_website.desc(),
+    val youtube: StringDesc = ClubStrings.strings.club_youtube.desc(),
+    val twitter: StringDesc = ClubStrings.strings.club_twitter.desc(),
+    val instagram: StringDesc = ClubStrings.strings.club_instagram.desc(),
 )
 
 /** The club as the screen draws it: figures already formatted, colours already parsed. */
@@ -53,7 +62,7 @@ data class ClubUi(
     val links: ImmutableList<ClubLinkUi>,
 )
 
-data class ClubLinkUi(val label: String, val url: String)
+data class ClubLinkUi(val label: StringDesc, val url: String)
 
 data class GroundUi(
     val name: String,
@@ -65,7 +74,7 @@ data class GroundUi(
 )
 
 data class ClubUiState(
-    val labels: ClubLabels,
+    val labels: ClubLabels = ClubLabels(),
     val club: ClubUi? = null,
     val ground: GroundUi? = null,
     val isLoading: Boolean = true,
@@ -76,12 +85,11 @@ internal class ClubViewModel(
     scope: CoroutineScope,
     private val repository: ClubRepository,
     private val club: FollowedClub,
-    private val labels: ClubLabels,
     private val ioDispatcher: CoroutineDispatcher,
     private val logger: Logger,
     private val analytics: Analytics,
 ) : ViewModel(scope),
-    UiStateDelegate<ClubUiState> by UiStateDelegateImpl(ClubUiState(labels = labels)) {
+    UiStateDelegate<ClubUiState> by UiStateDelegateImpl(ClubUiState()) {
 
     private var refreshJob: Job? = null
 
@@ -93,7 +101,7 @@ internal class ClubViewModel(
             launch {
                 repository.club(club.id).collect { loadable ->
                     val mapped = (loadable as? Loadable.Content)
-                        ?.let { it.value.toUi(labels) }
+                        ?.let { it.value.toUi() }
                     updateUiState { state ->
                         state.copy(
                             club = mapped ?: state.club,
@@ -128,7 +136,7 @@ internal class ClubViewModel(
         ) { repository.refresh(club.id) }
     }
 
-    private fun Club.toUi(labels: ClubLabels) = ClubUi(
+    private fun Club.toUi(labels: ClubLabels = ClubLabels()) = ClubUi(
         name = name,
         code = code,
         badgeUrl = media.badgeUrl,

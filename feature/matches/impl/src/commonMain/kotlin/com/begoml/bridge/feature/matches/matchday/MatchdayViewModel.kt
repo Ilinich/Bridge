@@ -1,12 +1,29 @@
 package com.begoml.bridge.feature.matches.matchday
 
+import com.begoml.bridge.feature.matches.fixture_score
+import com.begoml.bridge.feature.matches.fixture_teams
+import com.begoml.bridge.feature.matches.fixture_versus
+import com.begoml.bridge.feature.matches.matchday_arena
+import com.begoml.bridge.feature.matches.matchday_capacity
+import com.begoml.bridge.feature.matches.matchday_days
+import com.begoml.bridge.feature.matches.matchday_fixture_failed
+import com.begoml.bridge.feature.matches.matchday_following
+import com.begoml.bridge.feature.matches.matchday_founded
+import com.begoml.bridge.feature.matches.matchday_hours
+import com.begoml.bridge.feature.matches.matchday_kickoff_local
+import com.begoml.bridge.feature.matches.matchday_kickoff_now
+import com.begoml.bridge.feature.matches.matchday_loading_fixture
+import com.begoml.bridge.feature.matches.matchday_minutes
+import com.begoml.bridge.feature.matches.matchday_next_match
+import com.begoml.bridge.feature.matches.matchday_no_fixture
+import com.begoml.bridge.feature.matches.matchday_recent
+import com.begoml.bridge.feature.matches.matchday_seconds
+import com.begoml.bridge.feature.matches.matchday_stadium
+import com.begoml.bridge.feature.matches.MatchesStrings
 import com.begoml.bridge.foundation.logger.Logger
 import com.begoml.bridge.foundation.coroutines.safeLaunch
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import bridge.feature.matches.impl.generated.resources.Res
-import bridge.feature.matches.impl.generated.resources.fixture_score
-import bridge.feature.matches.impl.generated.resources.fixture_teams
 import com.begoml.bridge.core.domain.model.Club
 import kotlin.time.Clock
 import com.begoml.bridge.feature.matches.formatKickoff
@@ -19,6 +36,9 @@ import com.begoml.bridge.core.connectivity.NetworkStatus
 import com.begoml.bridge.feature.club.api.ClubRoute
 import com.begoml.bridge.feature.player.api.PlayerDetailRoute
 import com.begoml.bridge.navigation.router.AppRouter
+import dev.icerock.moko.resources.desc.ResourceFormatted
+import dev.icerock.moko.resources.desc.StringDesc
+import dev.icerock.moko.resources.desc.desc
 import com.begoml.bridge.navigation.router.navigateTo
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
@@ -31,29 +51,35 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.combine
-import org.jetbrains.compose.resources.getString
 
 private const val Tag = "Matchday"
 
 /** Every fixed word on the matchday screen, resolved once away from the composition. */
+/**
+ * Every fixed word on this screen — as descriptions, not as words.
+ *
+ * A [StringDesc] names which string is meant; the platform that draws it decides what that reads
+ * like, because only it knows the device's locale. Nothing is resolved here, so nothing has to be
+ * awaited before the first frame.
+ */
 data class MatchdayLabels(
-    val nextMatch: String,
-    val fixtureFailed: String,
-    val noFixture: String,
-    val loadingFixture: String,
-    val kickoffLocal: String,
-    val kickoffNow: String,
-    val versus: String,
-    val days: String,
-    val hours: String,
-    val minutes: String,
-    val seconds: String,
-    val recent: String,
-    val following: String,
-    val stadium: String,
-    val arena: String,
-    val capacity: String,
-    val founded: String,
+    val nextMatch: StringDesc = MatchesStrings.strings.matchday_next_match.desc(),
+    val fixtureFailed: StringDesc = MatchesStrings.strings.matchday_fixture_failed.desc(),
+    val noFixture: StringDesc = MatchesStrings.strings.matchday_no_fixture.desc(),
+    val loadingFixture: StringDesc = MatchesStrings.strings.matchday_loading_fixture.desc(),
+    val kickoffLocal: StringDesc = MatchesStrings.strings.matchday_kickoff_local.desc(),
+    val kickoffNow: StringDesc = MatchesStrings.strings.matchday_kickoff_now.desc(),
+    val versus: StringDesc = MatchesStrings.strings.fixture_versus.desc(),
+    val days: StringDesc = MatchesStrings.strings.matchday_days.desc(),
+    val hours: StringDesc = MatchesStrings.strings.matchday_hours.desc(),
+    val minutes: StringDesc = MatchesStrings.strings.matchday_minutes.desc(),
+    val seconds: StringDesc = MatchesStrings.strings.matchday_seconds.desc(),
+    val recent: StringDesc = MatchesStrings.strings.matchday_recent.desc(),
+    val following: StringDesc = MatchesStrings.strings.matchday_following.desc(),
+    val stadium: StringDesc = MatchesStrings.strings.matchday_stadium.desc(),
+    val arena: StringDesc = MatchesStrings.strings.matchday_arena.desc(),
+    val capacity: StringDesc = MatchesStrings.strings.matchday_capacity.desc(),
+    val founded: StringDesc = MatchesStrings.strings.matchday_founded.desc(),
 )
 
 /** A followed player, carrying the id the screen needs to open them. */
@@ -82,15 +108,15 @@ data class StadiumUi(
 
 /** A result row with its text already built, so the list draws strings rather than formats them. */
 data class RecentMatchUi(
-    val teams: String,
+    val teams: StringDesc,
     val competition: String,
-    val score: String?,
+    val score: StringDesc?,
     val awayBadgeUrl: String?,
     val awayCode: String,
 )
 
 data class MatchdayUiState(
-    val labels: MatchdayLabels,
+    val labels: MatchdayLabels = MatchdayLabels(),
     val backdropUrl: String? = null,
     val stadium: StadiumUi? = null,
     val hasClub: Boolean = false,
@@ -112,12 +138,11 @@ internal class MatchdayViewModel(
     private val feature: MatchdayFeature,
     private val connectivity: Connectivity,
     private val clock: Clock,
-    private val labels: MatchdayLabels,
     private val router: AppRouter,
     private val ioDispatcher: CoroutineDispatcher,
     private val logger: Logger,
 ) : ViewModel(scope),
-    UiStateDelegate<MatchdayUiState> by UiStateDelegateImpl(MatchdayUiState(labels = labels)) {
+    UiStateDelegate<MatchdayUiState> by UiStateDelegateImpl(MatchdayUiState()) {
 
     /**
      * The countdown's clock.
@@ -159,7 +184,6 @@ internal class MatchdayViewModel(
                 connectivity.status,
             ) { content, recentUi, nextMatchUi, stadiumUi, network ->
                 MatchdayUiState(
-                    labels = labels,
                     backdropUrl = content.club?.media?.fanartUrls?.firstOrNull(),
                     stadium = stadiumUi,
                     hasClub = content.club != null,
@@ -212,10 +236,10 @@ internal class MatchdayViewModel(
         founded = foundedYear?.toString().orEmpty(),
     )
 
-    private suspend fun Match.toRecentUi() = RecentMatchUi(
-        teams = getString(Res.string.fixture_teams, home.name, away.name),
+    private fun Match.toRecentUi() = RecentMatchUi(
+        teams = StringDesc.ResourceFormatted(MatchesStrings.strings.fixture_teams, home.name, away.name),
         competition = competition,
-        score = score?.let { getString(Res.string.fixture_score, it.home, it.away) },
+        score = score?.let { StringDesc.ResourceFormatted(MatchesStrings.strings.fixture_score, it.home, it.away) },
         awayBadgeUrl = away.badgeUrl,
         awayCode = away.code,
     )

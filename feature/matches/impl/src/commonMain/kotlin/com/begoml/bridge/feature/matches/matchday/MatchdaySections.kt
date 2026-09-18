@@ -12,6 +12,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import dev.icerock.moko.resources.compose.localized
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -33,7 +34,7 @@ internal fun FollowingSection(
     onPlayerClick: (String) -> Unit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
-        Text(text = labels.following, style = LabelStyle, color = BridgeColors.TextMuted)
+        Text(text = labels.following.localized(), style = LabelStyle, color = BridgeColors.TextMuted)
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
             players.forEach { player ->
                 Row(
@@ -64,7 +65,7 @@ internal fun FollowingSection(
 internal fun RecentSection(recent: RecentMatchUi, labels: MatchdayLabels) {
     Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
         Text(
-            text = labels.recent,
+            text = labels.recent.localized(),
             style = LabelStyle,
             color = BridgeColors.TextMuted,
         )
@@ -79,7 +80,7 @@ internal fun RecentSection(recent: RecentMatchUi, labels: MatchdayLabels) {
             BadgeImage(url = recent.awayBadgeUrl, code = recent.awayCode, size = 22.dp)
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = recent.teams,
+                    text = recent.teams.localized(),
                     style = MaterialTheme.typography.labelLarge,
                     color = BridgeColors.TextPrimary,
                     maxLines = 1,
@@ -89,7 +90,7 @@ internal fun RecentSection(recent: RecentMatchUi, labels: MatchdayLabels) {
             }
             recent.score?.let {
                 Text(
-                    text = it,
+                    text = it.localized(),
                     style = FigureStyle,
                     color = BridgeColors.TextPrimary,
                 )
@@ -102,7 +103,7 @@ internal fun RecentSection(recent: RecentMatchUi, labels: MatchdayLabels) {
 internal fun StadiumSection(stadium: StadiumUi, labels: MatchdayLabels, onClick: () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
         Text(
-            text = labels.stadium,
+            text = labels.stadium.localized(),
             style = LabelStyle,
             color = BridgeColors.TextMuted,
         )
@@ -115,17 +116,17 @@ internal fun StadiumSection(stadium: StadiumUi, labels: MatchdayLabels, onClick:
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             Fact(
-                label = labels.arena,
+                label = labels.arena.localized(),
                 value = stadium.arena,
                 modifier = Modifier.weight(1.7f),
             )
             Fact(
-                label = labels.capacity,
+                label = labels.capacity.localized(),
                 value = stadium.capacity,
                 modifier = Modifier.weight(1f),
             )
             Fact(
-                label = labels.founded,
+                label = labels.founded.localized(),
                 value = stadium.founded,
                 modifier = Modifier.weight(1f),
             )

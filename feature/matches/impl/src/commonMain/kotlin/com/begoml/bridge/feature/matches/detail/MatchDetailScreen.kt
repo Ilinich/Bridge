@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import dev.icerock.moko.resources.compose.localized
 import androidx.compose.runtime.getValue
 import com.begoml.bridge.foundation.tessera.collectUiState
 import androidx.compose.ui.Alignment
@@ -55,12 +56,12 @@ internal fun MatchDetailScreen(viewModel: MatchDetailViewModel, modifier: Modifi
         ) {
             val labels = state.labels
             BridgeTopBar(
-                title = labels.title,
+                title = labels.title.localized(),
                 leading = {
                     with(glass) {
                         BridgeBackButton(
                             onClick = viewModel::onBack,
-                            contentDescription = labels.back,
+                            contentDescription = labels.back.localized(),
                         )
                     }
                 },
@@ -69,7 +70,7 @@ internal fun MatchDetailScreen(viewModel: MatchDetailViewModel, modifier: Modifi
             val current = state.match
             if (current == null) {
                 Text(
-                    text = labels.notFound,
+                    text = labels.notFound.localized(),
                     color = BridgeColors.TextMuted,
                     modifier = Modifier.fillMaxWidth().padding(24.dp),
                     textAlign = TextAlign.Center,
@@ -97,7 +98,7 @@ private fun GlassScope.FixtureCard(match: MatchDetailUi, labels: MatchDetailLabe
             ) {
                 Side(name = match.homeName, code = match.homeCode)
                 Text(
-                    text = match.scoreline,
+                    text = match.scoreline.localized(),
                     style = FigureStyle.copy(
                         fontSize = MaterialTheme.typography.headlineSmall.fontSize,
                     ),
@@ -111,7 +112,7 @@ private fun GlassScope.FixtureCard(match: MatchDetailUi, labels: MatchDetailLabe
             ) {
                 MatchFacts(match = match, labels = labels)
                 Text(
-                    text = labels.kickoff,
+                    text = labels.kickoff.localized(),
                     style = LabelStyle,
                     color = BridgeColors.TextMuted,
                 )
@@ -132,16 +133,16 @@ private fun MatchFacts(match: MatchDetailUi, labels: MatchDetailLabels) {
         horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Chip(text = match.round)
+        Chip(text = match.round.localized())
         match.side?.let { side ->
-            Chip(text = if (side == MatchSide.Home) labels.homeLabel else labels.awayLabel)
+            Chip(text = if (side == MatchSide.Home) labels.homeLabel.localized() else labels.awayLabel.localized())
         }
         match.outcome?.let { outcome ->
             Chip(
                 text = when (outcome) {
-                    MatchOutcome.Win -> labels.win
-                    MatchOutcome.Draw -> labels.draw
-                    MatchOutcome.Loss -> labels.loss
+                    MatchOutcome.Win -> labels.win.localized()
+                    MatchOutcome.Draw -> labels.draw.localized()
+                    MatchOutcome.Loss -> labels.loss.localized()
                 },
                 color = when (outcome) {
                     MatchOutcome.Win -> BridgeColors.Win

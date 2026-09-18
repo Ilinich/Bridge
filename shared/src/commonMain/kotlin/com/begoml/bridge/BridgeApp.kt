@@ -3,9 +3,7 @@ package com.begoml.bridge
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.collections.immutable.ImmutableList
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.begoml.bridge.navigation.TabbedBackStack
-import com.begoml.bridge.di.StringsGate
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -107,16 +105,6 @@ fun App() {
             onDispose { host.detach() }
         }
 
-        // Nothing is built until the words are in the graph: a ViewModel takes its labels by
-        // constructor, so a screen composed before the read finished would have nothing to take.
-        // The read itself was started by the graph, off this thread.
-        val stringsGate: StringsGate = koinInject()
-        val stringsReady by stringsGate.ready.collectAsStateWithLifecycle()
-        if (!stringsReady) {
-            Box(modifier = Modifier.fillMaxSize().background(BridgeColors.Ground))
-            return@BridgeTheme
-        }
-
         Shell(backStack = backStack, entries = entries, analytics = analytics)
     }
 }
@@ -124,8 +112,8 @@ fun App() {
 /**
  * The tabs, the bars and the host under them.
  *
- * Separate from [App] because the two answer different questions: [App] decides when there is
- * enough to draw anything at all, this decides what the app looks like once there is.
+ * Separate from [App] because the two answer different questions: [App] wires the back stack to
+ * the router, this decides what the app looks like on top of it.
  */
 @Composable
 private fun Shell(

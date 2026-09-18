@@ -1,13 +1,16 @@
 package com.begoml.bridge.feature.matches.season
 
+import com.begoml.bridge.feature.matches.fixture_score
+import com.begoml.bridge.feature.matches.fixture_teams
+import com.begoml.bridge.feature.matches.season_round
+import com.begoml.bridge.feature.matches.MatchesStrings
+import dev.icerock.moko.resources.desc.ResourceFormatted
+import dev.icerock.moko.resources.desc.StringDesc
+import dev.icerock.moko.resources.desc.desc
 import com.begoml.bridge.foundation.logger.Logger
 import com.begoml.bridge.foundation.coroutines.safeLaunch
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import bridge.feature.matches.impl.generated.resources.Res
-import bridge.feature.matches.impl.generated.resources.fixture_score
-import bridge.feature.matches.impl.generated.resources.fixture_teams
-import bridge.feature.matches.impl.generated.resources.season_round
 import com.begoml.bridge.core.domain.model.SeasonRound
 import com.begoml.bridge.core.connectivity.Connectivity
 import com.begoml.bridge.core.connectivity.NetworkStatus
@@ -29,7 +32,6 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
-import org.jetbrains.compose.resources.getString
 
 private const val Tag = "Season"
 
@@ -42,16 +44,16 @@ private const val Tag = "Season"
 data class FixtureRowUi(
     val id: String,
     val homeCode: String,
-    val teams: String,
+    val teams: StringDesc,
     val day: String,
-    val trailing: String,
+    val trailing: StringDesc,
     val hasScore: Boolean,
     val highlighted: Boolean,
 )
 
 data class SeasonRoundUi(
     val number: Int,
-    val title: String,
+    val title: StringDesc,
     val matches: ImmutableList<FixtureRowUi>,
 )
 
@@ -107,20 +109,24 @@ internal class SeasonViewModel(
         router.navigateTo(MatchDetailRoute(matchId))
     }
 
-    private suspend fun List<SeasonRound>.toUi(): ImmutableList<SeasonRoundUi> = map { round ->
+    private fun List<SeasonRound>.toUi(): ImmutableList<SeasonRoundUi> = map { round ->
         SeasonRoundUi(
             number = round.number,
-            title = getString(Res.string.season_round, round.number),
+            title = StringDesc.ResourceFormatted(MatchesStrings.strings.season_round, round.number),
             matches = round.matches.map { match ->
                 val score = match.score
                 FixtureRowUi(
                     id = match.id,
                     homeCode = match.home.code,
-                    teams = getString(Res.string.fixture_teams, match.home.name, match.away.name),
+                    teams = StringDesc.ResourceFormatted(
+                        MatchesStrings.strings.fixture_teams,
+                        match.home.name,
+                        match.away.name,
+                    ),
                     day = match.kickoff.formatDay(),
                     trailing = score
-                        ?.let { getString(Res.string.fixture_score, it.home, it.away) }
-                        ?: match.kickoff.formatTime(),
+                        ?.let { StringDesc.ResourceFormatted(MatchesStrings.strings.fixture_score, it.home, it.away) }
+                        ?: match.kickoff.formatTime().desc(),
                     hasScore = score != null,
                     highlighted = TeamNames.matches(match.home.name, club.name) ||
                         TeamNames.matches(match.away.name, club.name),

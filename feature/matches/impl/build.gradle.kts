@@ -1,5 +1,11 @@
 plugins {
     id("bridge.kmp.compose")
+    alias(libs.plugins.mokoResources)
+}
+
+multiplatformResources {
+    resourcesPackage.set("com.begoml.bridge.feature.matches")
+    resourcesClassName.set("MatchesStrings")
 }
 
 kotlin {
@@ -16,12 +22,12 @@ kotlin {
             implementation(projects.core.features.following.api)
             implementation(projects.foundation.tessera)
             implementation(projects.foundation.coroutines)
-            implementation(projects.foundation.strings)
             implementation(projects.core.domain)
             implementation(projects.navigation.core)
             implementation(projects.uikit)
 
-            implementation(libs.compose.components.resources)
+            api(libs.moko.resources)
+            implementation(libs.moko.resources.compose)
             implementation(libs.compose.material3)
             implementation(libs.kotlinx.datetime)
             implementation(libs.koin.core)

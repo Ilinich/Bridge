@@ -23,8 +23,6 @@ import io.ktor.client.HttpClient
 import com.begoml.bridge.core.domain.model.FollowedClub
 import com.begoml.bridge.foundation.coroutines.AppScope
 import com.begoml.bridge.foundation.coroutines.PlatformDispatcherProvider
-import com.begoml.bridge.foundation.strings.ComposeStringResolver
-import com.begoml.bridge.foundation.strings.StringResolver
 import org.koin.core.module.Module
 import org.koin.dsl.module
 import kotlin.time.Clock
@@ -39,7 +37,6 @@ private fun dataModule() = module {
     single<Clock> { Clock.System }
     single { FollowedClub(id = TeamId, name = ClubName) }
     single<DispatcherProvider> { PlatformDispatcherProvider() }
-    single<StringResolver> { ComposeStringResolver(get<DispatcherProvider>().io) }
     single { AppScope(get<DispatcherProvider>().io) }
 
     single<HttpClient> { createHttpClient() }

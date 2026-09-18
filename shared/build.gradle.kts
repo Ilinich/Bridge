@@ -1,5 +1,10 @@
 plugins {
     id("bridge.kmp.compose")
+    alias(libs.plugins.mokoResources)
+}
+
+multiplatformResources {
+    resourcesPackage.set("com.begoml.bridge.shared")
 }
 
 kotlin {
@@ -23,7 +28,6 @@ kotlin {
             implementation(projects.core.analytics.impl)
             implementation(projects.foundation.logger.impl)
             implementation(projects.core.domain)
-            implementation(projects.foundation.strings)
             implementation(projects.core.data)
             implementation(libs.coil.compose)
             implementation(libs.coil.networkKtor)

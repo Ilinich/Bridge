@@ -24,7 +24,6 @@ kotlin {
             api(projects.core.domain)
             implementation(projects.foundation.resource)
             api(projects.foundation.coroutines)
-            implementation(projects.foundation.strings)
 
             implementation(libs.ktor.client.core)
             implementation(libs.ktor.client.contentNegotiation)
