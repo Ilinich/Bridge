@@ -45,6 +45,8 @@ struct TabBar: View {
         // fades into behind it. A floating capsule needs the separation either way.
         .shadow(color: Color.black.opacity(0.45), radius: 16, y: 6)
         .padding(.horizontal, 18)
+        // The page already ends above the home indicator, so the bar only needs the inset the
+        // Compose bar has over its own navigation-bar padding.
         .padding(.bottom, 12)
         .animation(.easeInOut(duration: 0.18), value: selection)
     }

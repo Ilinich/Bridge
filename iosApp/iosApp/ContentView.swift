@@ -6,17 +6,16 @@ struct ContentView: View {
     @StateObject private var navigation = AppNavigation()
 
     var body: some View {
-        ZStack(alignment: .bottom) {
-            TabView(selection: $navigation.tab) {
-                stack(.matchday) { MatchdayScreen() }.tag(Tab.matchday)
-                stack(.season) { SeasonScreen() }.tag(Tab.season)
-                stack(.squad) { SquadScreen() }.tag(Tab.squad)
-                stack(.club) { ClubScreen() }.tag(Tab.club)
-            }
-            .toolbar(.hidden, for: .tabBar)
-
-            TabBar(selection: $navigation.tab)
+        ZStack {
+            // All four pages stay alive, as they do in the Compose pager: switching tabs must not
+            // reset where the user was. A TabView would do that too, but it also reserves a strip
+            // for the bar it is told to hide, and that strip is a dead band under every screen.
+            page(.matchday) { MatchdayScreen() }
+            page(.season) { SeasonScreen() }
+            page(.squad) { SquadScreen() }
+            page(.club) { ClubScreen() }
         }
+        .environmentObject(navigation)
         .background(Color.ground)
         .preferredColorScheme(.dark)
         .tint(.clubBright)
@@ -24,7 +23,7 @@ struct ContentView: View {
 
     /// Each tab keeps its own history, which is what makes leaving a player open and coming back
     /// return to that player rather than to the top of the section.
-    private func stack<Content: View>(_ tab: Tab, @ViewBuilder content: () -> Content) -> some View {
+    private func page<Content: View>(_ tab: Tab, @ViewBuilder content: () -> Content) -> some View {
         NavigationStack(path: navigation.path(for: tab)) {
             content()
                 .navigationDestination(for: Push.self) { screen in
@@ -34,5 +33,8 @@ struct ContentView: View {
                     }
                 }
         }
+        .opacity(navigation.tab == tab ? 1 : 0)
+        .allowsHitTesting(navigation.tab == tab)
+        .zIndex(navigation.tab == tab ? 1 : 0)
     }
 }
