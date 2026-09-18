@@ -1,60 +1,40 @@
 import SwiftUI
 import Shared
 
-/// The Swift half of one screen: it owns the shared state holder and turns its flow into
-/// something SwiftUI redraws on.
-///
-/// The Kotlin side decides *what* the screen says — including which words, as descriptions it does
-/// not resolve. This decides what that looks like.
-@MainActor
-final class MatchdayModel: ObservableObject {
+struct MatchdayScreen: View {
 
-    @Published private(set) var state: ImplMatchdayUiState
-
-    let component: ImplMatchdayComponent
-    private var observation: Task<Void, Never>?
+    @StateObject private var model: ScreenModel<ImplMatchdayUiState>
+    private let component: ImplMatchdayComponent
 
     init() {
         let component = IosBridge.shared.matchday()
         self.component = component
-        self.state = component.state.value
-        observation = Task { [weak self] in
-            for await next in component.state {
-                self?.state = next
-            }
-        }
+        _model = StateObject(
+            wrappedValue: ScreenModel(flow: component.state, close: component.close)
+        )
     }
-
-    func retry() {
-        component.viewModel.retry()
-    }
-
-    /// SwiftUI has no ViewModelStore: whoever holds the component ends its work.
-    deinit {
-        observation?.cancel()
-        component.close()
-    }
-}
-
-struct MatchdayScreen: View {
-
-    @StateObject private var model = MatchdayModel()
 
     var body: some View {
         let state = model.state
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
                 if let next = state.nextMatch {
-                    NextMatchCard(component: model.component, match: next, labels: state.labels)
+                    NextMatchCard(component: component, match: next, labels: state.labels)
                 } else if state.nextMatchFailed {
-                    Text(state.labels.fixtureFailed.localized()).foregroundStyle(.secondary)
-                    Button(action: model.retry) { Text("Retry") }
+                    Panel(title: nil) {
+                        Text(state.labels.fixtureFailed.localized()).foregroundStyle(.secondary)
+                        Button("Retry") { component.viewModel.retry() }
+                    }
                 }
 
                 if !state.following.isEmpty {
                     Panel(title: state.labels.following.localized()) {
                         ForEach(state.following, id: \.id) { player in
-                            Row(leading: "★", title: player.name, trailing: nil)
+                            Button {
+                                component.viewModel.onFollowedPlayerClick(playerId: player.id)
+                            } label: {
+                                Row(leading: "★", title: player.name, trailing: nil)
+                            }
                         }
                     }
                 }
@@ -71,10 +51,14 @@ struct MatchdayScreen: View {
 
                 if let stadium = state.stadium {
                     Panel(title: state.labels.stadium.localized()) {
-                        HStack(alignment: .top, spacing: 18) {
-                            Fact(label: state.labels.arena.localized(), value: stadium.arena)
-                            Fact(label: state.labels.capacity.localized(), value: stadium.capacity)
-                            Fact(label: state.labels.founded.localized(), value: stadium.founded)
+                        Button {
+                            component.viewModel.onStadiumClick()
+                        } label: {
+                            HStack(alignment: .top, spacing: 18) {
+                                Fact(label: state.labels.arena.localized(), value: stadium.arena)
+                                Fact(label: state.labels.capacity.localized(), value: stadium.capacity)
+                                Fact(label: state.labels.founded.localized(), value: stadium.founded)
+                            }
                         }
                     }
                 }
@@ -84,10 +68,9 @@ struct MatchdayScreen: View {
                 }
             }
             .padding(20)
-            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .background(Color(red: 0.04, green: 0.07, blue: 0.14))
-        .preferredColorScheme(.dark)
+        .screenBackground()
+        .navigationTitle("Matchday")
     }
 }
 
@@ -107,9 +90,9 @@ private struct NextMatchCard: View {
                 }
             }
             HStack(spacing: 16) {
-                Badge(url: match.homeBadgeUrl, code: match.homeCode)
+                Badge(url: match.homeBadgeUrl, code: match.homeCode, size: 46)
                 Text("—").foregroundStyle(.secondary)
-                Badge(url: match.awayBadgeUrl, code: match.awayCode)
+                Badge(url: match.awayBadgeUrl, code: match.awayCode, size: 46)
             }
             Text(match.kickoffText).font(.headline).foregroundStyle(.white)
             Text(labels.kickoffLocal.localized()).font(.caption2).foregroundStyle(.secondary)
@@ -117,11 +100,11 @@ private struct NextMatchCard: View {
         }
         .padding(18)
         .frame(maxWidth: .infinity)
-        .background(Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 18))
+        .background(Color.panel, in: RoundedRectangle(cornerRadius: 18))
     }
 }
 
-/// The clock ticks on the Swift side; the shared code only says when kick-off is.
+/// The clock ticks on the Swift side; the shared code only says what a remaining second means.
 private struct Countdown: View {
 
     let component: ImplMatchdayComponent
@@ -158,67 +141,5 @@ private struct Countdown: View {
             .frame(width: 54, height: 54)
             .background(Color.blue.opacity(0.22), in: RoundedRectangle(cornerRadius: 12))
         }
-    }
-}
-
-private struct Panel<Content: View>: View {
-
-    let title: String
-    @ViewBuilder let content: Content
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(title).font(.caption).foregroundStyle(.secondary)
-            VStack(spacing: 8) { content }
-                .padding(14)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 16))
-        }
-    }
-}
-
-private struct Row: View {
-
-    let leading: String
-    let title: String
-    let trailing: String?
-
-    var body: some View {
-        HStack {
-            Text(leading).font(.caption).foregroundStyle(.blue)
-            Text(title).foregroundStyle(.white)
-            Spacer()
-            if let trailing {
-                Text(trailing).font(.system(.body, design: .monospaced)).foregroundStyle(.white)
-            }
-        }
-    }
-}
-
-private struct Fact: View {
-
-    let label: String
-    let value: String
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(label).font(.caption2).foregroundStyle(.secondary)
-            Text(value).foregroundStyle(.white)
-        }
-    }
-}
-
-private struct Badge: View {
-
-    let url: String?
-    let code: String
-
-    var body: some View {
-        AsyncImage(url: url.flatMap(URL.init(string:))) { image in
-            image.resizable().scaledToFit()
-        } placeholder: {
-            Text(code).font(.caption2).foregroundStyle(.secondary)
-        }
-        .frame(width: 46, height: 46)
     }
 }

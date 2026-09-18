@@ -49,7 +49,12 @@ data class ClubLabels(
     val instagram: StringDesc = ClubStrings.strings.club_instagram.desc(),
 )
 
-/** The club as the screen draws it: figures already formatted, colours already parsed. */
+/**
+ * The club as the screen draws it: figures already formatted, colours already parsed.
+ *
+ * The prose is `summary` rather than `description` because Swift already has that name — every
+ * object inherits `description` from NSObject, and a Kotlin field of that name is shadowed by it.
+ */
 data class ClubUi(
     val name: String,
     val code: String,
@@ -57,7 +62,7 @@ data class ClubUi(
     val backdropUrl: String?,
     val nicknames: String?,
     val founded: String?,
-    val description: String?,
+    val summary: String?,
     val colours: ImmutableList<String>,
     val links: ImmutableList<ClubLinkUi>,
 )
@@ -70,7 +75,7 @@ data class GroundUi(
     val capacity: String?,
     val opened: String?,
     val location: String?,
-    val description: String?,
+    val summary: String?,
 )
 
 data class ClubUiState(
@@ -81,7 +86,11 @@ data class ClubUiState(
     val error: Throwable? = null,
 )
 
-internal class ClubViewModel(
+/**
+ * Public because a platform UI is the thing that reads it: on iOS the screen is Swift,
+ * and a Swift view cannot see an internal Kotlin class.
+ */
+class ClubViewModel(
     scope: CoroutineScope,
     private val repository: ClubRepository,
     private val club: FollowedClub,
@@ -143,7 +152,7 @@ internal class ClubViewModel(
         backdropUrl = media.fanartUrls.lastOrNull(),
         nicknames = details.nicknames.takeIf { it.isNotEmpty() }?.joinToString(" · "),
         founded = foundedYear?.toString(),
-        description = description,
+        summary = description,
         colours = listOfNotNull(
             details.colours.primary,
             details.colours.secondary,
@@ -163,7 +172,7 @@ internal class ClubViewModel(
         capacity = capacity?.groupedThousands(),
         opened = openedYear?.toString(),
         location = location,
-        description = description,
+        summary = description,
     )
 
 }

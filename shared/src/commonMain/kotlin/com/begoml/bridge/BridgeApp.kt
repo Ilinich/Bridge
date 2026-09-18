@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -43,7 +42,8 @@ import com.begoml.bridge.analytics.AppOpened
 import com.begoml.bridge.analytics.TabSelected
 import com.begoml.bridge.navigation.BridgeTabPager
 import com.begoml.bridge.navigation.FeatureNavigationEntry
-import com.begoml.bridge.navigation.router.NavigationHost
+import com.begoml.bridge.navigation.apply
+import com.begoml.bridge.navigation.router.AppRouter
 import com.begoml.bridge.navigation.Route
 import com.begoml.bridge.navigation.RouteCodec
 import com.begoml.bridge.navigation.rememberTabbedBackStack
@@ -89,7 +89,7 @@ fun App() {
         val koin = currentKoinScope().getKoin()
         val codecs = remember(koin) { koin.getAll<RouteCodec>().toImmutableList() }
         val entries = remember(koin) { koin.getAll<FeatureNavigationEntry>().toImmutableList() }
-        val host: NavigationHost = koinInject()
+        val router: AppRouter = koinInject()
         val analytics: Analytics = koinInject()
 
         LaunchedEffect(analytics) { analytics.track(AppOpened) }
@@ -100,9 +100,10 @@ fun App() {
             codecs = codecs,
             onUnknownKey = { key -> logger.warn(NavigationTag, "no codec for the saved route $key") },
         )
-        DisposableEffect(backStack) {
-            host.attach(backStack)
-            onDispose { host.detach() }
+        // The host applies the router's decisions to the stack it owns; the router itself owns
+        // nothing, which is what lets a Swift host apply the same decisions to its own stacks.
+        LaunchedEffect(backStack) {
+            router.commands.collect { command -> backStack.apply(command) }
         }
 
         Shell(backStack = backStack, entries = entries, analytics = analytics)

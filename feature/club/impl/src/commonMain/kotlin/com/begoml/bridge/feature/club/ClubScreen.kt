@@ -107,7 +107,7 @@ internal fun ClubScreen(viewModel: ClubViewModel, modifier: Modifier = Modifier)
             ) {
                 with(this@GlassBackdrop) { Header(club = club, labels = labels) }
                 MediaSection(title = labels.media.localized(), onStarted = viewModel::onVideoStarted)
-                club.description?.let { Section(title = labels.about.localized()) { Prose(it) } }
+                club.summary?.let { Section(title = labels.about.localized()) { Prose(it) } }
                 state.ground?.let { GroundSection(ground = it, labels = labels) }
                 LinksSection(club = club, labels = labels)
             }
@@ -244,7 +244,7 @@ private fun GroundSection(ground: GroundUi, labels: ClubLabels) {
                     Fact(labels.location.localized(), it, Modifier.weight(1.6f))
                 }
             }
-            ground.description?.let { Prose(it) }
+            ground.summary?.let { Prose(it) }
         }
     }
 }

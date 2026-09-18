@@ -60,7 +60,11 @@ data class PlayerUiState(
 )
 
 /** The player pager. It reads the squad, writes who is followed, and owns the way back. */
-internal class PlayerViewModel(
+/**
+ * Public because a platform UI is the thing that reads it: on iOS the screen is Swift,
+ * and a Swift view cannot see an internal Kotlin class.
+ */
+class PlayerViewModel(
     scope: CoroutineScope,
     private val repository: SquadRepository,
     private val club: FollowedClub,

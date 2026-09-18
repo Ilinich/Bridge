@@ -73,7 +73,11 @@ data class SeasonUiState(
  * it is the thing that leaks. The scope is handed to [ViewModel], which cancels it when the screen
  * is gone — so the feature ends with the ViewModel without either of them saying so.
  */
-internal class SeasonViewModel(
+/**
+ * Public because a platform UI is the thing that reads it: on iOS the screen is Swift,
+ * and a Swift view cannot see an internal Kotlin class.
+ */
+class SeasonViewModel(
     scope: CoroutineScope,
     private val feature: SeasonFeature,
     private val connectivity: Connectivity,

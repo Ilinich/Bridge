@@ -1,20 +1,14 @@
 package com.begoml.bridge.feature.matches.matchday
 
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.cancel
+import com.begoml.bridge.foundation.tessera.ScreenComponent
 import kotlinx.coroutines.flow.StateFlow
 
-/**
- * What a platform UI holds instead of a ViewModel store.
- *
- * Android has somewhere to put a state holder and something that empties it; SwiftUI has neither,
- * so the thing it holds has to say when it is done. The scope is the same one the state holder
- * runs on, which is why closing this ends its work rather than merely dropping a reference.
- */
+/** What a Swift screen holds: the state holder, its state under a concrete type, and an end. */
 class MatchdayComponent internal constructor(
-    private val scope: CoroutineScope,
+    scope: CoroutineScope,
     val viewModel: MatchdayViewModel,
-) {
+) : ScreenComponent(scope) {
 
     /**
      * The state, as a concrete type.
@@ -35,7 +29,4 @@ class MatchdayComponent internal constructor(
     fun countdown(nowMillis: Long, kickoffMillis: Long): Countdown =
         Countdown.between(nowMillis = nowMillis, kickoffMillis = kickoffMillis)
 
-    fun close() {
-        scope.cancel()
-    }
 }

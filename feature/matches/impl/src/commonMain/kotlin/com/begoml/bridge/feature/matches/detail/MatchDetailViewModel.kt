@@ -79,7 +79,11 @@ data class MatchDetailUiState(
     val isLoading: Boolean = true,
 )
 
-internal class MatchDetailViewModel(
+/**
+ * Public because a platform UI is the thing that reads it: on iOS the screen is Swift,
+ * and a Swift view cannot see an internal Kotlin class.
+ */
+class MatchDetailViewModel(
     matchId: String,
     scope: CoroutineScope,
     private val matchRepository: MatchRepository,

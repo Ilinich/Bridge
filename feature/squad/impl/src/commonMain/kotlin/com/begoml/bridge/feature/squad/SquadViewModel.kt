@@ -51,7 +51,11 @@ data class SquadUiState(
  * Who is followed comes from a feature shared with the rest of the app, and is folded into the
  * cards here so that the grid does not look an id up per item while it composes.
  */
-internal class SquadViewModel(
+/**
+ * Public because a platform UI is the thing that reads it: on iOS the screen is Swift,
+ * and a Swift view cannot see an internal Kotlin class.
+ */
+class SquadViewModel(
     scope: CoroutineScope,
     private val repository: SquadRepository,
     private val club: FollowedClub,
