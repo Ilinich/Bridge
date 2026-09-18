@@ -145,6 +145,10 @@ struct Badge: View {
 
 /// Screen chrome: the backdrop behind the scroll, the same insets the Compose screens use, and
 /// room at the bottom for the floating bar.
+///
+/// The scroll runs into the bottom safe area on purpose. Stopping it above the home indicator left
+/// a dead band under the bar and clipped the last row against it; content is meant to pass beneath
+/// the capsule, which is what the fade over it is for.
 struct Screen<Content: View>: View {
 
     var backdropUrl: String? = nil
@@ -154,10 +158,47 @@ struct Screen<Content: View>: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) { content }
                 .padding(.horizontal, 14)
-                .padding(.vertical, 16)
-                .padding(.bottom, 74)
+                .padding(.top, 16)
+                .padding(.bottom, BarClearance)
         }
+        .scrollIndicators(.hidden)
         .background(Backdrop(url: backdropUrl))
+        .overlay(alignment: .top) { ScrollEdgeFade(edge: .top, height: 96) }
+        .overlay(alignment: .bottom) { ScrollEdgeFade(edge: .bottom) }
+        .ignoresSafeArea(edges: .bottom)
         .toolbarBackground(.hidden, for: .navigationBar)
+    }
+}
+
+/// Bar height, its inset and the home indicator, plus the room a last row needs to clear the bar.
+private let BarClearance: CGFloat = 130
+
+/// A dark band at the end of the scroll, on an eased ramp.
+///
+/// It dims what runs under the bar and nothing more — the same job, and the same 0.88 peak, as the
+/// Compose fade. The ramp is many-stopped because a short gradient on an 8-bit ramp holds one
+/// value long enough to read as a step.
+struct ScrollEdgeFade: View {
+
+    enum Edge { case top, bottom }
+
+    var edge: Edge = .bottom
+    var height: CGFloat = 110
+
+    var body: some View {
+        LinearGradient(
+            stops: (0..<12).map { index in
+                let t = Double(index) / 11
+                let distanceFromEdge = edge == .top ? t : 1 - t
+                let ramp = 1 - distanceFromEdge
+                let eased = ramp * ramp * (3 - 2 * ramp)
+                return .init(color: Color.ground.opacity(0.88 * eased), location: t)
+            },
+            startPoint: .top,
+            endPoint: .bottom
+        )
+        .frame(height: height)
+        .allowsHitTesting(false)
+        .ignoresSafeArea(edges: edge == .top ? .top : .bottom)
     }
 }
