@@ -35,11 +35,15 @@ struct TabBar: View {
         }
         .padding(4)
         // Bars sit over moving content, so they carry far less tint than a panel does — the same
-        // reasoning, and the same 26%, as the Compose bar.
-        .background(Color.ground.opacity(0.26), in: Capsule())
+        // reasoning as the Compose bar. Less than its 26% here, because the material already
+        // darkens what it blurs and the two together hid the blur altogether.
+        .background(Color.ground.opacity(0.14), in: Capsule())
         .background(.ultraThinMaterial, in: Capsule())
         .overlay(Capsule().strokeBorder(Color.white.opacity(0.16), lineWidth: 1))
         .environment(\.colorScheme, .dark)
+        // The Compose bar has no shadow of its own: what reads as one is the dark band the scroll
+        // fades into behind it. A floating capsule needs the separation either way.
+        .shadow(color: Color.black.opacity(0.45), radius: 16, y: 6)
         .padding(.horizontal, 18)
         .padding(.bottom, 12)
         .animation(.easeInOut(duration: 0.18), value: selection)
