@@ -1,16 +1,19 @@
 package com.begoml.bridge.navigation.swipe
 
 import androidx.navigation3.runtime.NavEntry
-import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.scene.Scene
 import androidx.navigation3.scene.SceneStrategy
 import androidx.navigation3.scene.SceneStrategyScope
 
-class SwipeToDismissSceneStrategy : SceneStrategy<NavKey> {
+/**
+ * Generic in the key type, because this module is not allowed to know what a destination is —
+ * it works with whatever the host's back stack holds.
+ */
+class SwipeToDismissSceneStrategy<T : Any> : SceneStrategy<T> {
 
-    override fun SceneStrategyScope<NavKey>.calculateScene(
-        entries: List<NavEntry<NavKey>>,
-    ): Scene<NavKey>? {
+    override fun SceneStrategyScope<T>.calculateScene(
+        entries: List<NavEntry<T>>,
+    ): Scene<T>? {
         if (entries.size < 2) return null
         val currentEntry = entries.last()
         if (currentEntry.metadata[SwipeToDismissEnabledKey] != true) return null

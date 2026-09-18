@@ -5,6 +5,7 @@ plugins {
 kotlin {
     sourceSets {
         commonMain.dependencies {
+            api(projects.navigation.routes)
             api(projects.navigation.swipe)
 
             api(libs.navigation3.ui)

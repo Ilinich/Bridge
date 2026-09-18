@@ -17,7 +17,6 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
@@ -53,7 +52,7 @@ fun BridgeNavDisplay(
     entries: List<FeatureNavigationEntry>,
     modifier: Modifier = Modifier,
 ) {
-    val entryProvider = entryProvider<NavKey> {
+    val entryProvider = entryProvider<Route> {
         entries.forEach { entry -> entry.register(this) }
     }
 
@@ -67,7 +66,7 @@ fun BridgeNavDisplay(
             rememberSaveableStateHolderNavEntryDecorator(),
             rememberViewModelStoreNavEntryDecorator(),
         ),
-        sceneStrategies = listOf(SwipeToDismissSceneStrategy()),
+        sceneStrategies = listOf(SwipeToDismissSceneStrategy<Route>()),
         entryProvider = entryProvider,
         transitionSpec = {
             slideInHorizontally(tween(PushDurationMillis)) { width ->

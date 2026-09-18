@@ -1,7 +1,7 @@
 package com.begoml.bridge.feature.matches
 
 import androidx.navigation3.runtime.EntryProviderScope
-import androidx.navigation3.runtime.NavKey
+import com.begoml.bridge.navigation.Route
 import com.begoml.bridge.feature.matches.api.MatchDetailRoute
 import com.begoml.bridge.feature.matches.api.MatchdayRoute
 import com.begoml.bridge.feature.matches.api.SeasonRoute
@@ -24,7 +24,7 @@ import org.koin.core.parameter.parametersOf
  */
 internal class MatchesNavigationEntry : FeatureNavigationEntry {
 
-    override fun register(scope: EntryProviderScope<NavKey>) {
+    override fun register(scope: EntryProviderScope<Route>) {
         scope.entry<MatchdayRoute> {
             MatchdayScreen(viewModel = koinViewModel<MatchdayViewModel>())
         }

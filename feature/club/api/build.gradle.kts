@@ -5,7 +5,7 @@ plugins {
 kotlin {
     sourceSets {
         commonMain.dependencies {
-            api(projects.navigation.core)
+            api(projects.navigation.routes)
         }
     }
 }

@@ -1,7 +1,6 @@
 package com.begoml.bridge.navigation
 
 import androidx.navigation3.runtime.EntryProviderScope
-import androidx.navigation3.runtime.NavKey
 
 /**
  * A feature's contribution to the navigation graph.
@@ -12,16 +11,5 @@ import androidx.navigation3.runtime.NavKey
  */
 interface FeatureNavigationEntry {
 
-    fun register(scope: EntryProviderScope<NavKey>)
-}
-
-/**
- * Turns a route back into itself after a process death.
- *
- * A bundle carries primitives, so a saved back stack is a list of strings; each feature knows how
- * to read its own and returns null for anything else.
- */
-interface RouteCodec {
-
-    fun decode(key: String): Route?
+    fun register(scope: EntryProviderScope<Route>)
 }
