@@ -11,4 +11,11 @@ class ClubComponent internal constructor(
 ) : ScreenComponent(scope) {
 
     val state: StateFlow<ClubUiState> = viewModel.uiStateFlow
+
+    /** The clip both UIs play; it is the feature's, not a screen's. */
+    val clipUrl: String = ClubClip.Url
+
+    fun onVideoStarted() {
+        viewModel.onVideoStarted()
+    }
 }

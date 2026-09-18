@@ -61,9 +61,6 @@ import com.begoml.bridge.uikit.video.rememberVideoPlayback
 /** Enough to read as moving light over the crest, not enough to hide it. */
 private const val ShaderWashAlpha = 0.55f
 
-private const val ClipUrl =
-    "https://videos.pexels.com/video-files/11918917/11918917-hd_1280_720_60fps.mp4"
-
 @Composable
 internal fun ClubScreen(viewModel: ClubViewModel, modifier: Modifier = Modifier) {
     val uiState = viewModel.collectUiState()
@@ -193,7 +190,7 @@ private fun ColourStrip(club: ClubUi, label: String) {
 @Composable
 private fun MediaSection(title: String, onStarted: () -> Unit) {
     val playback = rememberVideoPlayback(
-        url = ClipUrl,
+        url = ClubClip.Url,
         autoPlay = false,
         loop = false,
         muted = true,

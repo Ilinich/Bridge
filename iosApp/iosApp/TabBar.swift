@@ -8,11 +8,11 @@ struct TabBar: View {
 
     @Binding var selection: Tab
 
-    private let items: [(tab: Tab, icon: String, name: String)] = [
-        (.matchday, "shield.fill", "Matchday"),
-        (.season, "calendar", "Season"),
-        (.squad, "person.2.fill", "Squad"),
-        (.club, "flag.fill", "Club"),
+    private let items: [(tab: Tab, glyph: BridgeGlyph, name: String)] = [
+        (.matchday, .matchday, "Matchday"),
+        (.season, .season, "Season"),
+        (.squad, .squad, "Squad"),
+        (.club, .club, "Club"),
     ]
 
     var body: some View {
@@ -22,21 +22,26 @@ struct TabBar: View {
                     selection = item.tab
                     UIImpactFeedbackGenerator(style: .light).impactOccurred()
                 } label: {
-                    Image(systemName: item.icon)
-                        .font(.system(size: 19, weight: .semibold))
-                        .foregroundStyle(selection == item.tab ? Color.clubBright : Color.textMuted)
+                    BridgeGlyphView(
+                        glyph: item.glyph,
+                        tint: selection == item.tab ? Color.clubBright : Color.textMuted
+                    )
                         .frame(maxWidth: .infinity)
-                        .frame(height: 46)
+                        .frame(height: 38)
                         .contentShape(Capsule())
                 }
                 .accessibilityLabel(item.name)
             }
         }
         .padding(4)
+        // Bars sit over moving content, so they carry far less tint than a panel does — the same
+        // reasoning, and the same 26%, as the Compose bar.
+        .background(Color.ground.opacity(0.26), in: Capsule())
         .background(.ultraThinMaterial, in: Capsule())
         .overlay(Capsule().strokeBorder(Color.white.opacity(0.16), lineWidth: 1))
         .environment(\.colorScheme, .dark)
-        .padding(.horizontal, 16)
+        .padding(.horizontal, 18)
+        .padding(.bottom, 12)
         .animation(.easeInOut(duration: 0.18), value: selection)
     }
 }
