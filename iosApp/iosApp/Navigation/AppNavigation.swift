@@ -24,7 +24,10 @@ final class AppNavigation: ObservableObject {
 
     private var observation: Task<Void, Never>?
 
-    init() {
+    /// `observing: false` builds a host that obeys commands handed to it directly — which is what
+    /// a test does, and the only way to check the stacks without a running graph.
+    init(observing: Bool = true) {
+        guard observing else { return }
         observation = Task { [weak self] in
             for await command in IosBridge.shared.navigation {
                 self?.apply(command)
@@ -43,7 +46,7 @@ final class AppNavigation: ObservableObject {
         )
     }
 
-    private func apply(_ command: IosNavigation) {
+    func apply(_ command: IosNavigation) {
         switch onEnum(of: command) {
         case .matchday: tab = .matchday
         case .season: tab = .season

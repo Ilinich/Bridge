@@ -1,0 +1,46 @@
+# The Swift counterpart of the repository's detekt rules: the same intent, the same strictness.
+#
+# It runs only when the binary is installed — `brew install swiftlint` — and the build phase says
+# so rather than failing a machine that does not have it.
+
+included:
+  - iosApp
+  - iosAppTests
+
+excluded:
+  - iosApp/Preview Content
+
+disabled_rules:
+  # A SwiftUI body is a tree, and the tree is the layout: nesting it is the point.
+  - closure_body_length
+
+line_length:
+  warning: 110
+  error: 130
+
+type_body_length:
+  warning: 200
+
+file_length:
+  warning: 250
+
+identifier_name:
+  min_length: 2
+
+opt_in_rules:
+  - array_init
+  - closure_spacing
+  - empty_count
+  - explicit_init
+  - first_where
+  - force_unwrapping
+  - implicit_return
+  - joined_default_parameter
+  - literal_expression_end_indentation
+  - multiline_arguments
+  - overridden_super_call
+  - redundant_nil_coalescing
+  - toggle_bool
+  - unneeded_parentheses_in_closure_argument
+  - vertical_parameter_alignment_on_call
+  - yoda_condition

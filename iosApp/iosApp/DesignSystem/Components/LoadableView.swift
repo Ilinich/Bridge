@@ -14,12 +14,29 @@ struct LoadableView<Content: View>: View {
     @ViewBuilder let content: Content
 
     var body: some View {
+        switch LoadableState(isLoading: isLoading, hasFailed: hasFailed) {
+        case .failed: Failure(onRetry: onRetry)
+        case .loading: Loading()
+        case .content: content
+        }
+    }
+}
+
+/// Which of the three a screen is in. A separate type because it is the part worth a test: the
+/// order of the questions is the behaviour, and it is easy to reverse by accident.
+enum LoadableState: Equatable {
+
+    case loading
+    case failed
+    case content
+
+    init(isLoading: Bool, hasFailed: Bool) {
         if hasFailed {
-            Failure(onRetry: onRetry)
+            self = .failed
         } else if isLoading {
-            Loading()
+            self = .loading
         } else {
-            content
+            self = .content
         }
     }
 }
