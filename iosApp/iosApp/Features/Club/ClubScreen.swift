@@ -10,6 +10,13 @@ struct ClubScreen: View {
         close: { $0.close() }
     )
 
+    /// One player for the life of the screen.
+    ///
+    /// It used to be a computed property, which means SwiftUI built a new AVPlayer on every pass
+    /// over the body: a fresh download each time and a position that could never be kept. The
+    /// url came from the shared code through a force unwrap, too.
+    @State private var player = ClipPlayer()
+
     var body: some View {
         let state = model.state
         let labels = state.labels
@@ -41,10 +48,13 @@ struct ClubScreen: View {
 
             Section(title: labels.media.localized()) {
                 VStack(spacing: 10) {
-                    VideoPlayer(player: player)
+                    VideoPlayer(player: player.avPlayer)
                         .frame(height: 180)
                         .clipShape(RoundedRectangle(cornerRadius: 12))
-                        .onAppear { model.component.onVideoStarted() }
+                        .onAppear {
+                            player.load(model.component.clipUrl)
+                            model.component.onVideoStarted()
+                        }
                 }
             }
 
@@ -108,13 +118,7 @@ struct ClubScreen: View {
         }
     }
 
-    /// The same clip the Compose screen plays, muted and waiting — a video the user is meant to
-    /// drive should not start on its own.
-    private var player: AVPlayer {
-        let player = AVPlayer(url: URL(string: model.component.clipUrl)!)
-        player.isMuted = true
-        return player
-    }
+
 }
 
 private struct Colours: View {

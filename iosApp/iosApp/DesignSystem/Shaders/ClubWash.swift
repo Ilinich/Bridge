@@ -11,14 +11,19 @@ struct ClubWash: View {
     /// A clock to share. A grid of cards runs off one timeline; a screen-sized wash keeps its own.
     var time: Double?
 
+    @Environment(\.isOnScreen) private var isOnScreen
+
     var body: some View {
         if let time {
             wash(at: time)
-        } else {
+        } else if isOnScreen {
             TimelineView(.animation) { context in
                 wash(at: context.date.timeIntervalSinceReferenceDate)
             }
             .ignoresSafeArea()
+        } else {
+            // A tab that is alive but not in view keeps its state, not its frame rate.
+            wash(at: 0).ignoresSafeArea()
         }
     }
 

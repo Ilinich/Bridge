@@ -36,5 +36,6 @@ struct ContentView: View {
         .opacity(navigation.tab == tab ? 1 : 0)
         .allowsHitTesting(navigation.tab == tab)
         .zIndex(navigation.tab == tab ? 1 : 0)
+        .environment(\.isOnScreen, navigation.tab == tab)
     }
 }
