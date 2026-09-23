@@ -20,7 +20,7 @@ struct Backdrop: View {
                 stops: [
                     .init(color: .clear, location: 0),
                     .init(color: Color.ground.opacity(0.65), location: 0.45),
-                    .init(color: Color.ground, location: 1),
+                    .init(color: Color.ground, location: 1)
                 ],
                 startPoint: .top,
                 endPoint: .bottom

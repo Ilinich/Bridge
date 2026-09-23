@@ -8,7 +8,7 @@ import SwiftUI
 /// the capsule, which is what the fade over it is for.
 struct Screen<Content: View>: View {
 
-    var backdropUrl: String? = nil
+    var backdropUrl: String?
     @ViewBuilder let content: Content
 
     @EnvironmentObject private var navigation: AppNavigation
@@ -18,7 +18,7 @@ struct Screen<Content: View>: View {
             VStack(alignment: .leading, spacing: 12) { content }
                 .padding(.horizontal, 14)
                 .padding(.top, 16)
-                .padding(.bottom, BarClearance)
+                .padding(.bottom, barClearance)
         }
         .scrollIndicators(.hidden)
         .background(Backdrop(url: backdropUrl))
@@ -37,4 +37,4 @@ struct Screen<Content: View>: View {
 }
 
 /// Bar height, its inset and the home indicator, plus the room a last row needs to clear the bar.
-private let BarClearance: CGFloat = 96
+private let barClearance: CGFloat = 96

@@ -11,16 +11,24 @@ struct TabBar: View {
 
     /// The names come from the shared bundle, not from a literal here: the Compose bar reads the
     /// same four keys, so a tab is translated once for both apps.
-    private let items: [(tab: Tab, glyph: BridgeGlyph, name: any ResourcesStringDesc)] = [
-        (.matchday, .matchday, IosStrings.shared.tabMatchday),
-        (.season, .season, IosStrings.shared.tabSeason),
-        (.squad, .squad, IosStrings.shared.tabSquad),
-        (.club, .club, IosStrings.shared.tabClub),
+    private let items: [Item] = [
+        Item(tab: .matchday, glyph: .matchday, name: IosStrings.shared.tabMatchday),
+        Item(tab: .season, glyph: .season, name: IosStrings.shared.tabSeason),
+        Item(tab: .squad, glyph: .squad, name: IosStrings.shared.tabSquad),
+        Item(tab: .club, glyph: .club, name: IosStrings.shared.tabClub)
     ]
+
+    private struct Item: Identifiable {
+        let tab: Tab
+        let glyph: BridgeGlyph
+        let name: any ResourcesStringDesc
+
+        var id: Tab { tab }
+    }
 
     var body: some View {
         HStack(spacing: 3) {
-            ForEach(items, id: \.tab) { item in
+            ForEach(items) { item in
                 Button {
                     selection = item.tab
                     UIImpactFeedbackGenerator(style: .light).impactOccurred()

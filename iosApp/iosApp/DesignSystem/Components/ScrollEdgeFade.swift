@@ -15,11 +15,11 @@ struct ScrollEdgeFade: View {
     var body: some View {
         LinearGradient(
             stops: (0..<12).map { index in
-                let t = Double(index) / 11
-                let distanceFromEdge = edge == .top ? t : 1 - t
+                let stop = Double(index) / 11
+                let distanceFromEdge = edge == .top ? stop : 1 - stop
                 let ramp = 1 - distanceFromEdge
                 let eased = ramp * ramp * (3 - 2 * ramp)
-                return .init(color: Color.ground.opacity(0.88 * eased), location: t)
+                return .init(color: Color.ground.opacity(0.88 * eased), location: stop)
             },
             startPoint: .top,
             endPoint: .bottom

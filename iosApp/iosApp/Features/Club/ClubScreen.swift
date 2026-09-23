@@ -24,8 +24,8 @@ struct ClubScreen: View {
             LoadableView(
                 isLoading: state.isLoading && state.club == nil,
                 hasFailed: state.error != nil && state.club == nil,
-                onRetry: { model.component.viewModel.retry() }
-            ) {
+                onRetry: { model.component.viewModel.retry() },
+                content: {
             if let club = state.club {
                 GlassPanel {
                     VStack(spacing: 9) {
@@ -114,10 +114,10 @@ struct ClubScreen: View {
                     }
                 }
             }
-            }
+                }
+            )
         }
     }
-
 
 }
 

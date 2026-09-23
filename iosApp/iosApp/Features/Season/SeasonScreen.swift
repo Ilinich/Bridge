@@ -18,8 +18,8 @@ struct SeasonScreen: View {
             LoadableView(
                 isLoading: state.isLoading && state.rounds.isEmpty,
                 hasFailed: state.error != nil && state.rounds.isEmpty,
-                onRetry: { model.component.viewModel.retry() }
-            ) {
+                onRetry: { model.component.viewModel.retry() },
+                content: {
                 LazyVStack(alignment: .leading, spacing: 18) {
                     ForEach(state.rounds, id: \.number) { round in
                         Section(title: round.title.localized()) {
@@ -36,7 +36,8 @@ struct SeasonScreen: View {
                         }
                     }
                 }
-            }
+                }
+            )
         }
     }
 }

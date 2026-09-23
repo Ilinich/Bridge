@@ -3,7 +3,6 @@ import Shared
 
 struct MatchdayScreen: View {
 
-
     @StateObject private var model = ScreenModel(
         component: IosBridge.shared.matchday(),
         state: { $0.state },
@@ -18,8 +17,8 @@ struct MatchdayScreen: View {
             LoadableView(
                 isLoading: state.isLoading && !state.hasClub,
                 hasFailed: state.error != nil && !state.hasClub,
-                onRetry: { model.component.viewModel.retry() }
-            ) {
+                onRetry: { model.component.viewModel.retry() },
+                content: {
             HeroCard(component: model.component, state: state)
 
             if !state.following.isEmpty {
@@ -91,7 +90,8 @@ struct MatchdayScreen: View {
             if state.isOffline {
                 OfflineNotice()
             }
-            }
+                }
+            )
         }
     }
 }

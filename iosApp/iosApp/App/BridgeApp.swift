@@ -2,7 +2,7 @@ import SwiftUI
 import Shared
 
 @main
-struct iOSApp: App {
+struct BridgeApp: App {
 
     /// The graph starts before any screen asks it for anything — a native UI has no single entry
     /// point that could do it lazily, and BGTaskScheduler wants its registration this early.

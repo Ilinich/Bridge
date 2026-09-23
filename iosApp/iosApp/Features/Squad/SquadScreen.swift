@@ -11,7 +11,7 @@ struct SquadScreen: View {
 
     private let columns = [
         GridItem(.flexible(), spacing: 9),
-        GridItem(.flexible(), spacing: 9),
+        GridItem(.flexible(), spacing: 9)
     ]
 
     @Environment(\.isOnScreen) private var isOnScreen
@@ -22,8 +22,8 @@ struct SquadScreen: View {
             LoadableView(
                 isLoading: state.isLoading && state.players.isEmpty,
                 hasFailed: state.error != nil && state.players.isEmpty,
-                onRetry: { model.component.viewModel.retry() }
-            ) {
+                onRetry: { model.component.viewModel.retry() },
+                content: {
                 // One clock for the whole grid: the Compose cards share a single compiled program
                 // and a single animation, and a card per timeline would be N animations for one
                 // effect. The clock runs only while this is the page in view — all four tabs stay
@@ -35,7 +35,8 @@ struct SquadScreen: View {
                 } else {
                     grid(state: state, time: 0)
                 }
-            }
+                }
+            )
         }
     }
 

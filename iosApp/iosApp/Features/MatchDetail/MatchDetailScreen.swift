@@ -3,7 +3,6 @@ import Shared
 
 struct MatchDetailScreen: View {
 
-
     @StateObject private var model: ScreenModel<ImplMatchDetailComponent, ImplMatchDetailUiState>
 
     init(matchId: String) {
@@ -24,13 +23,13 @@ struct MatchDetailScreen: View {
                 if let match = state.match {
                     GlassPanel {
                         HStack {
-                            Text(match.homeName).font(.system(size: 17, weight: .semibold)).foregroundStyle(Color.textPrimary)
+                            TeamName(match.homeName)
                             Spacer()
                             Text(match.scoreline.localized())
                                 .font(.figure)
                                 .foregroundStyle(Color.textPrimary)
                             Spacer()
-                            Text(match.awayName).font(.system(size: 17, weight: .semibold)).foregroundStyle(Color.textPrimary)
+                            TeamName(match.awayName)
                         }
                         Fact(label: labels.kickoff.localized(), value: match.kickoff)
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -45,5 +44,20 @@ struct MatchDetailScreen: View {
         .background(Backdrop(url: nil))
         .navigationTitle(labels.title.localized())
         .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+private struct TeamName: View {
+
+    let name: String
+
+    init(_ name: String) {
+        self.name = name
+    }
+
+    var body: some View {
+        Text(name)
+            .font(.system(size: 17, weight: .semibold))
+            .foregroundStyle(Color.textPrimary)
     }
 }

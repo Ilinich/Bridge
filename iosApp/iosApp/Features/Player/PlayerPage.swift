@@ -3,8 +3,8 @@ import Shared
 
 /// How far the cutout slides against the page, and how much it fades on the way out — the same
 /// numbers the Compose pager uses.
-private let CutoutParallax: CGFloat = 40
-private let PageFadeStrength: CGFloat = 0.4
+private let cutoutParallax: CGFloat = 40
+private let pageFadeStrength: CGFloat = 0.4
 
 struct PlayerPage: View {
 
@@ -28,8 +28,8 @@ struct PlayerPage: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .padding(.top, 70)
                 .padding(.bottom, 190)
-                .offset(x: fraction * CutoutParallax)
-                .opacity(1 - min(abs(fraction), 1) * PageFadeStrength)
+                .offset(x: fraction * cutoutParallax)
+                .opacity(1 - min(abs(fraction), 1) * pageFadeStrength)
 
                 GlassPanel {
                     PlayerFacts(player: player, labels: labels, onFollow: onFollow)
