@@ -6,18 +6,21 @@ import SwiftUI
 ///
 /// Without this every screen showed an empty dark page when the network was gone: the state had
 /// `error` and `retry()` all along and nothing read them.
-struct LoadableView<Content: View>: View {
+extension View {
 
-    let isLoading: Bool
-    let hasFailed: Bool
-    let onRetry: () -> Void
-    @ViewBuilder let content: Content
-
-    var body: some View {
+    /// Shows this view only when there is something to show, and the loading or failure state
+    /// otherwise. A modifier rather than a container so a screen's body stays a flat list of
+    /// sections instead of gaining a level of nesting for a question asked once at the top.
+    @ViewBuilder
+    func loadable(
+        isLoading: Bool,
+        hasFailed: Bool,
+        onRetry: @escaping () -> Void
+    ) -> some View {
         switch LoadableState(isLoading: isLoading, hasFailed: hasFailed) {
-        case .failed: Failure(onRetry: onRetry)
-        case .loading: Loading()
-        case .content: content
+        case .failed: RetryPrompt(onRetry: onRetry)
+        case .loading: LoadingIndicator()
+        case .content: self
         }
     }
 }
@@ -41,7 +44,7 @@ enum LoadableState: Equatable {
     }
 }
 
-private struct Loading: View {
+private struct LoadingIndicator: View {
 
     var body: some View {
         ProgressView()
@@ -51,22 +54,22 @@ private struct Loading: View {
     }
 }
 
-private struct Failure: View {
+private struct RetryPrompt: View {
 
     let onRetry: () -> Void
 
     var body: some View {
         VStack(spacing: 10) {
             Text("loadable.error.title")
-                .font(.system(size: 17, weight: .semibold))
+                .font(.subheading)
                 .foregroundStyle(Color.textPrimary)
             Text("loadable.error.body")
-                .font(.system(size: 14))
+                .font(.prose)
                 .foregroundStyle(Color.textMuted)
                 .multilineTextAlignment(.center)
             Button(action: onRetry) {
                 Text("loadable.retry")
-                    .font(.labelLarge)
+                    .font(.label)
                     .foregroundStyle(Color.clubBright)
                     .padding(.horizontal, 18)
                     .padding(.vertical, 10)
@@ -89,4 +92,15 @@ struct OfflineNotice: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.bottom, 2)
     }
+}
+
+#Preview("States") {
+    VStack(spacing: 40) {
+        Color.clear.frame(height: 0).loadable(isLoading: true, hasFailed: false, onRetry: {})
+        Color.clear.frame(height: 0).loadable(isLoading: false, hasFailed: true, onRetry: {})
+        OfflineNotice()
+    }
+    .padding(.horizontal, 14)
+    .frame(maxHeight: .infinity)
+    .background(Color.ground)
 }

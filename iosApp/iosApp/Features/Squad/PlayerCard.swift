@@ -13,7 +13,7 @@ struct PlayerCard: View {
 
             if let number = player.shirtNumber {
                 Text(number)
-                    .font(.system(size: 32, weight: .bold, design: .monospaced))
+                    .font(.shirtNumber)
                     .foregroundStyle(Color.textPrimary.opacity(0.12))
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
                     .padding(.horizontal, 8)
@@ -30,7 +30,7 @@ struct PlayerCard: View {
 
             if player.followed {
                 Image(systemName: "star.fill")
-                    .font(.system(size: 13))
+                    .font(.glyphSmall)
                     .foregroundStyle(Color.clubBright)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                     .padding(8)
@@ -38,7 +38,7 @@ struct PlayerCard: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(player.name)
-                    .font(.labelLarge)
+                    .font(.label)
                     .foregroundStyle(Color.textPrimary)
                     .lineLimit(1)
                 if let position = player.position {

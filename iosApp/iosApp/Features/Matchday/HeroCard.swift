@@ -22,7 +22,7 @@ struct HeroCard: View {
                 Versus(match: match, versus: state.labels.versus.localized())
                 VStack(spacing: 3) {
                     Text(match.kickoffText)
-                        .font(.titleSmall)
+                        .font(.label)
                         .foregroundStyle(Color.textPrimary)
                     Text(state.labels.kickoffLocal.localized()).labelStyle()
                 }
@@ -33,7 +33,7 @@ struct HeroCard: View {
                 )
             } else {
                 Text(fallback)
-                    .font(.labelLarge)
+                    .font(.label)
                     .foregroundStyle(Color.textMuted)
                     .frame(maxWidth: .infinity)
             }
@@ -70,7 +70,7 @@ struct Versus: View {
             VStack(spacing: 6) {
                 Badge(url: badge, code: code, size: 36)
                 Text(name)
-                    .font(.labelLarge)
+                    .font(.label)
                     .foregroundStyle(Color.textPrimary)
                     .multilineTextAlignment(.center)
             }

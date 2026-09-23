@@ -11,23 +11,20 @@ struct SeasonScreen: View {
 
     var body: some View {
         let state = model.state
+        let actions = model.component.viewModel
+
         Screen {
-            if state.isOffline {
-                OfflineNotice()
-            }
-            LoadableView(
-                isLoading: state.isLoading && state.rounds.isEmpty,
-                hasFailed: state.error != nil && state.rounds.isEmpty,
-                onRetry: { model.component.viewModel.retry() },
-                content: {
+            Group {
+                if state.isOffline {
+                    OfflineNotice()
+                }
+
                 LazyVStack(alignment: .leading, spacing: 18) {
                     ForEach(state.rounds, id: \.number) { round in
                         Section(title: round.title.localized()) {
                             VStack(spacing: 6) {
                                 ForEach(round.matches, id: \.id) { match in
-                                    Button {
-                                        model.component.viewModel.onMatchClick(matchId: match.id)
-                                    } label: {
+                                    Button { actions.onMatchClick(matchId: match.id) } label: {
                                         FixtureRow(match: match)
                                     }
                                     .buttonStyle(.plain)
@@ -36,7 +33,11 @@ struct SeasonScreen: View {
                         }
                     }
                 }
-                }
+            }
+            .loadable(
+                isLoading: state.isLoading && state.rounds.isEmpty,
+                hasFailed: state.error != nil && state.rounds.isEmpty,
+                onRetry: { actions.retry() }
             )
         }
     }
@@ -50,7 +51,7 @@ private struct FixtureRow: View {
         SurfaceRow {
             VStack(alignment: .leading, spacing: 2) {
                 Text(match.teams.localized())
-                    .font(.labelLarge)
+                    .font(.label)
                     .foregroundStyle(match.highlighted ? Color.textPrimary : Color.textMuted)
                     .lineLimit(1)
                 Text(match.day).labelStyle()

@@ -1,7 +1,7 @@
 import SwiftUI
 import Shared
 
-struct ContentView: View {
+struct RootView: View {
 
     @StateObject private var navigation = AppNavigation()
 

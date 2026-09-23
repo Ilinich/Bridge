@@ -57,7 +57,7 @@ private struct TeamName: View {
 
     var body: some View {
         Text(name)
-            .font(.system(size: 17, weight: .semibold))
+            .font(.subheading)
             .foregroundStyle(Color.textPrimary)
     }
 }

@@ -20,3 +20,15 @@ struct GlassPanel<Content: View>: View {
             .environment(\.colorScheme, .dark)
     }
 }
+
+#Preview {
+    ZStack {
+        ClubWash()
+        GlassPanel {
+            Text("Stamford Bridge").font(.display).foregroundStyle(Color.textPrimary)
+            Text("The Blues").labelStyle()
+        }
+        .padding(14)
+    }
+    .background(Color.ground)
+}

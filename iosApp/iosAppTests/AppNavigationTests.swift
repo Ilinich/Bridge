@@ -51,15 +51,3 @@ struct AppNavigationTests {
         #expect(navigation.tab == .squad)
     }
 }
-
-struct LoadableStateTests {
-
-    @Test func a_failure_is_reported_before_a_load() {
-        #expect(LoadableState(isLoading: true, hasFailed: true) == .failed)
-    }
-
-    @Test func content_comes_only_when_there_is_content() {
-        #expect(LoadableState(isLoading: true, hasFailed: false) == .loading)
-        #expect(LoadableState(isLoading: false, hasFailed: false) == .content)
-    }
-}

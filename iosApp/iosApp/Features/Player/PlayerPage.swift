@@ -51,12 +51,12 @@ struct PlayerFacts: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .firstTextBaseline) {
                 Text(player.name)
-                    .font(.system(size: 22, weight: .heavy))
+                    .font(.heading)
                     .foregroundStyle(Color.textPrimary)
                 Spacer(minLength: 8)
                 Button { onFollow(player.id) } label: {
                     Image(systemName: player.followed ? "star.fill" : "star")
-                        .font(.system(size: 17))
+                        .font(.glyph)
                         .foregroundStyle(player.followed ? Color.clubBright : Color.textMuted)
                 }
                 .buttonStyle(.plain)

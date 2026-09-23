@@ -20,34 +20,15 @@ struct ClubScreen: View {
     var body: some View {
         let state = model.state
         let labels = state.labels
-        Screen(backdropUrl: state.club?.backdropUrl) {
-            LoadableView(
-                isLoading: state.isLoading && state.club == nil,
-                hasFailed: state.error != nil && state.club == nil,
-                onRetry: { model.component.viewModel.retry() },
-                content: {
-            if let club = state.club {
-                GlassPanel {
-                    VStack(spacing: 9) {
-                        Badge(url: club.badgeUrl, code: club.code, size: 68)
-                        Text(club.name)
-                            .font(.system(size: 28, weight: .heavy))
-                            .foregroundStyle(Color.textPrimary)
-                        if let nicknames = club.nicknames {
-                            Text(nicknames).labelStyle().multilineTextAlignment(.center)
-                        }
-                        HStack(alignment: .top, spacing: 18) {
-                            if let founded = club.founded {
-                                Fact(label: labels.founded.localized(), value: founded)
-                            }
-                            Colours(club: club, label: labels.colours.localized())
-                        }
-                    }
-                }
-            }
+        let actions = model.component.viewModel
 
-            Section(title: labels.media.localized()) {
-                VStack(spacing: 10) {
+        Screen(backdropUrl: state.club?.backdropUrl) {
+            Group {
+                if let club = state.club {
+                    ClubHeader(club: club, labels: labels)
+                }
+
+                Section(title: labels.media.localized()) {
                     VideoPlayer(player: player.avPlayer)
                         .frame(height: 180)
                         .clipShape(RoundedRectangle(cornerRadius: 12))
@@ -56,83 +37,130 @@ struct ClubScreen: View {
                             model.component.onVideoStarted()
                         }
                 }
-            }
 
-            if let summary = state.club?.summary {
-                Section(title: labels.about.localized()) {
-                    SurfaceRow {
-                        Text(summary)
-                            .font(.system(size: 14))
-                            .foregroundStyle(Color.textMuted)
-                            .lineSpacing(3)
-                    }
-                }
-            }
-
-            if let ground = state.ground {
-                Section(title: labels.ground.localized()) {
-                    VStack(alignment: .leading, spacing: 6) {
+                if let summary = state.club?.summary {
+                    Section(title: labels.about.localized()) {
                         SurfaceRow {
-                            Text(ground.name)
-                                .font(.labelLarge)
-                                .foregroundStyle(Color.textPrimary)
-                            Spacer(minLength: 0)
-                        }
-                        SurfaceRow(spacing: 6) {
-                            if let capacity = ground.capacity {
-                                Fact(label: labels.capacity.localized(), value: capacity)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                            }
-                            if let opened = ground.opened {
-                                Fact(label: labels.opened.localized(), value: opened)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                            }
-                            if let location = ground.location {
-                                Fact(label: labels.location.localized(), value: location)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                            }
+                            Text(summary)
+                                .font(.prose)
+                                .foregroundStyle(Color.textMuted)
+                                .lineSpacing(3)
                         }
                     }
                 }
-            }
 
-            if let club = state.club, !club.links.isEmpty {
-                Section(title: labels.links.localized()) {
-                    VStack(spacing: 6) {
-                        ForEach(club.links, id: \.url) { link in
-                            if let url = URL(string: link.url) {
-                                Link(destination: url) {
-                                    SurfaceRow {
-                                        Text(link.label.localized())
-                                            .font(.labelLarge)
-                                            .foregroundStyle(Color.clubBright)
-                                        Spacer(minLength: 0)
-                                    }
-                                }
-                            }
-                        }
+                if let ground = state.ground {
+                    Section(title: labels.ground.localized()) {
+                        Ground(ground: ground, labels: labels)
+                    }
+                }
+
+                if let links = state.club?.links, !links.isEmpty {
+                    Section(title: labels.links.localized()) {
+                        Links(links: links)
                     }
                 }
             }
-                }
+            .loadable(
+                isLoading: state.isLoading && state.club == nil,
+                hasFailed: state.error != nil && state.club == nil,
+                onRetry: { actions.retry() }
             )
         }
     }
+}
 
+private struct ClubHeader: View {
+
+    let club: ImplClubUi
+    let labels: ImplClubLabels
+
+    var body: some View {
+        GlassPanel {
+            VStack(spacing: 9) {
+                Badge(url: club.badgeUrl, code: club.code, size: 68)
+                Text(club.name)
+                    .font(.display)
+                    .foregroundStyle(Color.textPrimary)
+                if let nicknames = club.nicknames {
+                    Text(nicknames).labelStyle().multilineTextAlignment(.center)
+                }
+                HStack(alignment: .top, spacing: 18) {
+                    if let founded = club.founded {
+                        Fact(label: labels.founded.localized(), value: founded)
+                    }
+                    Colours(colours: club.colours, label: labels.colours.localized())
+                }
+            }
+        }
+    }
+}
+
+private struct Ground: View {
+
+    let ground: ImplGroundUi
+    let labels: ImplClubLabels
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            SurfaceRow {
+                Text(ground.name)
+                    .font(.label)
+                    .foregroundStyle(Color.textPrimary)
+                Spacer(minLength: 0)
+            }
+            SurfaceRow(spacing: 6) {
+                if let capacity = ground.capacity {
+                    Fact(label: labels.capacity.localized(), value: capacity)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                if let opened = ground.opened {
+                    Fact(label: labels.opened.localized(), value: opened)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                if let location = ground.location {
+                    Fact(label: labels.location.localized(), value: location)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
+        }
+    }
+}
+
+private struct Links: View {
+
+    let links: [ImplClubLinkUi]
+
+    var body: some View {
+        VStack(spacing: 6) {
+            ForEach(links, id: \.url) { link in
+                if let url = URL(string: link.url) {
+                    Link(destination: url) {
+                        SurfaceRow {
+                            Text(link.label.localized())
+                                .font(.label)
+                                .foregroundStyle(Color.clubBright)
+                            Spacer(minLength: 0)
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 private struct Colours: View {
 
-    let club: ImplClubUi
+    let colours: [String]
     let label: String
 
     var body: some View {
-        let colours = club.colours.compactMap(Color.init(hex:))
-        if !colours.isEmpty {
+        let parsed = colours.compactMap(Color.init(hex:))
+        if !parsed.isEmpty {
             VStack(alignment: .leading, spacing: 4) {
                 Text(label).labelStyle()
                 HStack(spacing: 6) {
-                    ForEach(Array(colours.enumerated()), id: \.offset) { _, colour in
+                    ForEach(Array(parsed.enumerated()), id: \.offset) { _, colour in
                         Circle()
                             .fill(colour)
                             .frame(width: 18, height: 18)

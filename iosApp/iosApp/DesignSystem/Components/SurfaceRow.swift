@@ -13,3 +13,24 @@ struct SurfaceRow<Content: View>: View {
             .background(Color.surface, in: RoundedRectangle(cornerRadius: 12))
     }
 }
+
+#Preview {
+    VStack(spacing: 6) {
+        SurfaceRow {
+            Text("Cole Palmer")
+                .font(.label)
+                .foregroundStyle(Color.textPrimary)
+            Spacer(minLength: 0)
+        }
+        SurfaceRow {
+            Badge(url: nil, code: "ARS", size: 22)
+            Text("Chelsea v Arsenal")
+                .font(.label)
+                .foregroundStyle(Color.textPrimary)
+            Spacer(minLength: 8)
+            Text("2 - 1").font(.figure).foregroundStyle(Color.textPrimary)
+        }
+    }
+    .padding(14)
+    .background(Color.ground)
+}

@@ -13,3 +13,16 @@ struct Section<Content: View>: View {
         }
     }
 }
+
+#Preview {
+    Section(title: "RECENT") {
+        SurfaceRow {
+            Text("Chelsea v Arsenal")
+                .font(.label)
+                .foregroundStyle(Color.textPrimary)
+            Spacer(minLength: 0)
+        }
+    }
+    .padding(14)
+    .background(Color.ground)
+}
