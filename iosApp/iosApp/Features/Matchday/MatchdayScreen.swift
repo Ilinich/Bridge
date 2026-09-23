@@ -13,6 +13,13 @@ struct MatchdayScreen: View {
     var body: some View {
         let state = model.state
         Screen(backdropUrl: state.backdropUrl) {
+            // The club is what the screen is about; a fixture that failed is the hero card's own
+            // message, the way it is on the Compose side.
+            LoadableView(
+                isLoading: state.isLoading && !state.hasClub,
+                hasFailed: state.error != nil && !state.hasClub,
+                onRetry: { model.component.viewModel.retry() }
+            ) {
             HeroCard(component: model.component, state: state)
 
             if !state.following.isEmpty {
@@ -82,7 +89,8 @@ struct MatchdayScreen: View {
             }
 
             if state.isOffline {
-                Text("Offline").labelStyle()
+                OfflineNotice()
+            }
             }
         }
     }

@@ -1,0 +1,11 @@
+/* The chrome this UI draws around shared content: loading, failure, offline.
+
+   These are the iOS app's own words, not the app's shared vocabulary. Anything a screen *says* —
+   a label, a score, a round number — travels in the state as a StringDesc and is resolved from the
+   shared bundle; what the chrome says about loading or failing belongs to whoever draws the
+   chrome, and the two UIs draw different ones. */
+
+"loadable.error.title" = "Could not load";
+"loadable.error.body" = "Check the connection and try again.";
+"loadable.retry" = "Try again";
+"offline.notice" = "Offline — showing what was cached";

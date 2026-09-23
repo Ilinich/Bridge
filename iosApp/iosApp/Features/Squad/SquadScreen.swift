@@ -15,19 +15,29 @@ struct SquadScreen: View {
     ]
 
     var body: some View {
-        // One clock for the whole grid: the Compose cards share a single compiled program and a
-        // single animation, and a card per timeline would be N animations for one effect.
-        TimelineView(.animation) { context in
-            let time = context.date.timeIntervalSinceReferenceDate
-            Screen {
-                LazyVGrid(columns: columns, spacing: 9) {
-                    ForEach(model.state.players, id: \.id) { player in
-                        Button {
-                            model.component.viewModel.onPlayerClick(playerId: player.id)
-                        } label: {
-                            PlayerCard(player: player, time: time)
+        let state = model.state
+        Screen {
+            LoadableView(
+                isLoading: state.isLoading && state.players.isEmpty,
+                hasFailed: state.error != nil && state.players.isEmpty,
+                onRetry: { model.component.viewModel.retry() }
+            ) {
+                // One clock for the whole grid: the Compose cards share a single compiled program
+                // and a single animation, and a card per timeline would be N animations for one
+                // effect.
+                TimelineView(.animation) { context in
+                    LazyVGrid(columns: columns, spacing: 9) {
+                        ForEach(state.players, id: \.id) { player in
+                            Button {
+                                model.component.viewModel.onPlayerClick(playerId: player.id)
+                            } label: {
+                                PlayerCard(
+                                    player: player,
+                                    time: context.date.timeIntervalSinceReferenceDate
+                                )
+                            }
+                            .buttonStyle(.plain)
                         }
-                        .buttonStyle(.plain)
                     }
                 }
             }

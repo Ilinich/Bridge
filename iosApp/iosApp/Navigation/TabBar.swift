@@ -1,4 +1,5 @@
 import SwiftUI
+import Shared
 
 /// The floating tab capsule, icon-only, frosted over whatever scrolls beneath it.
 ///
@@ -8,11 +9,13 @@ struct TabBar: View {
 
     @Binding var selection: Tab
 
-    private let items: [(tab: Tab, glyph: BridgeGlyph, name: String)] = [
-        (.matchday, .matchday, "Matchday"),
-        (.season, .season, "Season"),
-        (.squad, .squad, "Squad"),
-        (.club, .club, "Club"),
+    /// The names come from the shared bundle, not from a literal here: the Compose bar reads the
+    /// same four keys, so a tab is translated once for both apps.
+    private let items: [(tab: Tab, glyph: BridgeGlyph, name: any ResourcesStringDesc)] = [
+        (.matchday, .matchday, IosStrings.shared.tabMatchday),
+        (.season, .season, IosStrings.shared.tabSeason),
+        (.squad, .squad, IosStrings.shared.tabSquad),
+        (.club, .club, IosStrings.shared.tabClub),
     ]
 
     var body: some View {
@@ -30,7 +33,7 @@ struct TabBar: View {
                         .frame(height: 38)
                         .contentShape(Capsule())
                 }
-                .accessibilityLabel(item.name)
+                .accessibilityLabel(item.name.localized())
             }
         }
         .padding(4)
