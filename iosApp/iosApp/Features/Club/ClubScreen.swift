@@ -10,6 +10,26 @@ struct ClubScreen: View {
         close: { $0.close() }
     )
 
+    var body: some View {
+        let component = model.component
+        ClubContent(
+            state: model.state,
+            clipUrl: component.clipUrl,
+            onVideoStarted: { component.onVideoStarted() },
+            onRetry: { component.viewModel.retry() }
+        )
+    }
+}
+
+/// Everything this screen draws, and nothing about where the state came from — which is what lets
+/// a preview draw it from `IosPreviews` without a graph behind it.
+struct ClubContent: View {
+
+    let state: ImplClubUiState
+    let clipUrl: String
+    let onVideoStarted: () -> Void
+    let onRetry: () -> Void
+
     /// One player for the life of the screen.
     ///
     /// It used to be a computed property, which means SwiftUI built a new AVPlayer on every pass
@@ -18,9 +38,7 @@ struct ClubScreen: View {
     @State private var player = ClipPlayer()
 
     var body: some View {
-        let state = model.state
         let labels = state.labels
-        let actions = model.component.viewModel
 
         Screen(backdropUrl: state.club?.backdropUrl) {
             Group {
@@ -33,8 +51,8 @@ struct ClubScreen: View {
                         .frame(height: 180)
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                         .onAppear {
-                            player.load(model.component.clipUrl)
-                            model.component.onVideoStarted()
+                            player.load(clipUrl)
+                            onVideoStarted()
                         }
                 }
 
@@ -64,7 +82,7 @@ struct ClubScreen: View {
             .loadable(
                 isLoading: state.isLoading && state.club == nil,
                 hasFailed: state.error != nil && state.club == nil,
-                onRetry: { actions.retry() }
+                onRetry: onRetry
             )
         }
     }
@@ -182,6 +200,17 @@ extension Color {
             red: Double((number >> 16) & 0xFF) / 255,
             green: Double((number >> 8) & 0xFF) / 255,
             blue: Double(number & 0xFF) / 255
+        )
+    }
+}
+
+#Preview("Club") {
+    PreviewHost {
+        ClubContent(
+            state: IosPreviews.shared.club(),
+            clipUrl: "",
+            onVideoStarted: {},
+            onRetry: {}
         )
     }
 }

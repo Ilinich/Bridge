@@ -16,8 +16,19 @@ struct MatchDetailScreen: View {
     }
 
     var body: some View {
-        let state = model.state
+        MatchDetailContent(state: model.state)
+    }
+}
+
+/// Everything this screen draws, and nothing about where the state came from — which is what lets
+/// a preview draw it from `IosPreviews` without a graph behind it.
+struct MatchDetailContent: View {
+
+    let state: ImplMatchDetailUiState
+
+    var body: some View {
         let labels = state.labels
+
         ScrollView {
             VStack(spacing: 18) {
                 if let match = state.match {
@@ -59,5 +70,13 @@ private struct TeamName: View {
         Text(name)
             .font(.subheading)
             .foregroundStyle(Color.textPrimary)
+    }
+}
+
+#Preview("Match detail") {
+    PreviewHost {
+        NavigationStack {
+            MatchDetailContent(state: IosPreviews.shared.matchDetail())
+        }
     }
 }

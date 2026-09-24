@@ -1,16 +1,16 @@
 import SwiftUI
 import Shared
 
+/// The clock ticks on the Swift side; `remaining` is the shared code saying what a remaining
+/// second means. A closure rather than the component itself, so the view draws in a preview too.
 struct Countdown: View {
 
-    let component: ImplMatchdayComponent
-    let kickoffMillis: Int64
     let labels: ImplMatchdayLabels
+    let remaining: (Int64) -> ImplCountdown
 
     var body: some View {
         TimelineView(.periodic(from: .now, by: 1)) { context in
-            let now = Int64(context.date.timeIntervalSince1970 * 1000)
-            let left = component.countdown(nowMillis: now, kickoffMillis: kickoffMillis)
+            let left = remaining(Int64(context.date.timeIntervalSince1970 * 1000))
             HStack(spacing: 6) {
                 Cell(value: left.days, unit: labels.days.localized())
                 Cell(value: left.hours, unit: labels.hours.localized())

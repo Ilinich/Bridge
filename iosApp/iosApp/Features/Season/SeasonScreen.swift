@@ -10,9 +10,24 @@ struct SeasonScreen: View {
     )
 
     var body: some View {
-        let state = model.state
         let actions = model.component.viewModel
+        SeasonContent(
+            state: model.state,
+            onMatch: { actions.onMatchClick(matchId: $0) },
+            onRetry: { actions.retry() }
+        )
+    }
+}
 
+/// Everything this screen draws, and nothing about where the state came from — which is what lets
+/// a preview draw it from `IosPreviews` without a graph behind it.
+struct SeasonContent: View {
+
+    let state: ImplSeasonUiState
+    let onMatch: (String) -> Void
+    let onRetry: () -> Void
+
+    var body: some View {
         Screen {
             Group {
                 if state.isOffline {
@@ -24,7 +39,7 @@ struct SeasonScreen: View {
                         Section(title: round.title.localized()) {
                             VStack(spacing: 6) {
                                 ForEach(round.matches, id: \.id) { match in
-                                    Button { actions.onMatchClick(matchId: match.id) } label: {
+                                    Button { onMatch(match.id) } label: {
                                         FixtureRow(match: match)
                                     }
                                     .buttonStyle(.plain)
@@ -37,7 +52,7 @@ struct SeasonScreen: View {
             .loadable(
                 isLoading: state.isLoading && state.rounds.isEmpty,
                 hasFailed: state.error != nil && state.rounds.isEmpty,
-                onRetry: { actions.retry() }
+                onRetry: onRetry
             )
         }
     }
@@ -61,5 +76,11 @@ private struct FixtureRow: View {
                 .font(.figure)
                 .foregroundStyle(match.hasScore ? Color.textPrimary : Color.textMuted)
         }
+    }
+}
+
+#Preview("Season") {
+    PreviewHost {
+        SeasonContent(state: IosPreviews.shared.season(), onMatch: { _ in }, onRetry: {})
     }
 }

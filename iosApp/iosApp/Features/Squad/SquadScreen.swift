@@ -9,6 +9,24 @@ struct SquadScreen: View {
         close: { $0.close() }
     )
 
+    var body: some View {
+        let actions = model.component.viewModel
+        SquadContent(
+            state: model.state,
+            onPlayer: { actions.onPlayerClick(playerId: $0) },
+            onRetry: { actions.retry() }
+        )
+    }
+}
+
+/// Everything this screen draws, and nothing about where the state came from — which is what lets
+/// a preview draw it from `IosPreviews` without a graph behind it.
+struct SquadContent: View {
+
+    let state: ImplSquadUiState
+    let onPlayer: (String) -> Void
+    let onRetry: () -> Void
+
     @Environment(\.isOnScreen) private var isOnScreen
 
     private let columns = [
@@ -17,9 +35,6 @@ struct SquadScreen: View {
     ]
 
     var body: some View {
-        let state = model.state
-        let actions = model.component.viewModel
-
         Screen {
             // One clock for the whole grid: the Compose cards share a single compiled program and
             // a single animation, and a card per timeline would be N animations for one effect.
@@ -28,32 +43,46 @@ struct SquadScreen: View {
             Group {
                 if isOnScreen {
                     TimelineView(.animation) { context in
-                        grid(state, at: context.date.timeIntervalSinceReferenceDate, actions: actions)
+                        grid(at: context.date.timeIntervalSinceReferenceDate)
                     }
                 } else {
-                    grid(state, at: 0, actions: actions)
+                    grid(at: 0)
                 }
             }
             .loadable(
                 isLoading: state.isLoading && state.players.isEmpty,
                 hasFailed: state.error != nil && state.players.isEmpty,
-                onRetry: { actions.retry() }
+                onRetry: onRetry
             )
         }
     }
 
-    private func grid(
-        _ state: ImplSquadUiState,
-        at time: Double,
-        actions: ImplSquadViewModel
-    ) -> some View {
+    private func grid(at time: Double) -> some View {
         LazyVGrid(columns: columns, spacing: 9) {
             ForEach(state.players, id: \.id) { player in
-                Button { actions.onPlayerClick(playerId: player.id) } label: {
+                Button { onPlayer(player.id) } label: {
                     PlayerCard(player: player, time: time)
                 }
                 .buttonStyle(.plain)
             }
         }
+    }
+}
+
+#Preview("Squad") {
+    PreviewHost {
+        SquadContent(state: IosPreviews.shared.squad(), onPlayer: { _ in }, onRetry: {})
+    }
+}
+
+#Preview("Squad, first load") {
+    PreviewHost {
+        SquadContent(state: IosPreviews.shared.squadLoading(), onPlayer: { _ in }, onRetry: {})
+    }
+}
+
+#Preview("Squad, nothing loaded") {
+    PreviewHost {
+        SquadContent(state: IosPreviews.shared.squadFailed(), onPlayer: { _ in }, onRetry: {})
     }
 }

@@ -3,8 +3,8 @@ import Shared
 
 struct HeroCard: View {
 
-    let component: ImplMatchdayComponent
     let state: ImplMatchdayUiState
+    let remaining: (Int64) -> ImplCountdown
 
     var body: some View {
         GlassPanel {
@@ -26,11 +26,7 @@ struct HeroCard: View {
                         .foregroundStyle(Color.textPrimary)
                     Text(state.labels.kickoffLocal.localized()).labelStyle()
                 }
-                Countdown(
-                    component: component,
-                    kickoffMillis: match.kickoffMillis,
-                    labels: state.labels
-                )
+                Countdown(labels: state.labels, remaining: remaining)
             } else {
                 Text(fallback)
                     .font(.label)
@@ -78,5 +74,3 @@ struct Versus: View {
         }
     }
 }
-
-/// The clock ticks on the Swift side; the shared code only says what a remaining second means.
