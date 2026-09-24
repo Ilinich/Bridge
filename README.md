@@ -53,6 +53,29 @@ Kotlin 2.4.10, Gradle 9.1, AGP 9.0, JDK 21, minSdk 26. Static analysis is detekt
 written for this repository; performance has a Macrobenchmark module and a recorded baseline
 profile.
 
+## The same app with native UI — [`feature/native-ui`](https://github.com/Ilinich/Bridge/tree/feature/native-ui)
+
+The table above answers one question — how much can a shared UI carry? The branch answers the
+other one: keep the sharing, give each platform its own UI. Android stays on Compose; iOS is
+SwiftUI, drawn on the very same state holders, and the seam moves from "above the screen" to
+"above the view".
+
+What had to change for a screen to be written twice:
+
+- **A route stopped being a Compose type.** `NavKey` came from Navigation3, so every module that
+  named a destination pulled a UI toolkit in with it. Routes moved to `navigation:routes`, which
+  is plain Kotlin, and the router became a stream of decisions that owns no stack — SwiftUI's
+  `NavigationStack` and Compose's `NavDisplay` each obey it with their own.
+- **A string stopped being resolved by the host.** Features hand over `StringDesc` values
+  (moko-resources) and the platform says the words, so a tab is translated once for both apps.
+- **Compose left the iOS framework entirely** — not fewer dependencies, none: the framework links
+  no Compose runtime at all.
+
+Everything below the view is untouched: the same ViewModels, repositories, Room database, Ktor
+clients, cache and tests. The iOS app is structured as a production app would be — design-system
+tokens, a preview state per screen, SwiftLint, unit tests for the navigation host — and the branch
+has its own README describing the trade.
+
 ## What is interesting here
 
 **One shader source, two runtimes.** Two runtime shaders drive the app's surfaces: a club-blue
