@@ -1,4 +1,3 @@
-import AVKit
 import SwiftUI
 import Shared
 
@@ -30,13 +29,6 @@ struct ClubContent: View {
     let onVideoStarted: () -> Void
     let onRetry: () -> Void
 
-    /// One player for the life of the screen.
-    ///
-    /// It used to be a computed property, which means SwiftUI built a new AVPlayer on every pass
-    /// over the body: a fresh download each time and a position that could never be kept. The
-    /// url came from the shared code through a force unwrap, too.
-    @State private var player = ClipPlayer()
-
     var body: some View {
         let labels = state.labels
 
@@ -47,13 +39,7 @@ struct ClubContent: View {
                 }
 
                 Section(title: labels.media.localized()) {
-                    VideoPlayer(player: player.avPlayer)
-                        .frame(height: 180)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                        .onAppear {
-                            player.load(clipUrl)
-                            onVideoStarted()
-                        }
+                    Clip(url: clipUrl, onStarted: onVideoStarted)
                 }
 
                 if let summary = state.club?.summary {
@@ -208,7 +194,7 @@ extension Color {
     PreviewHost {
         ClubContent(
             state: IosPreviews.shared.club(),
-            clipUrl: "",
+            clipUrl: IosPreviews.shared.clipUrl(),
             onVideoStarted: {},
             onRetry: {}
         )

@@ -19,14 +19,10 @@ struct PlayerCard: View {
                     .padding(.horizontal, 8)
             }
 
-            AsyncImage(url: player.cutoutUrl.flatMap(URL.init(string:))) { image in
-                image.resizable().scaledToFit()
-            } placeholder: {
-                Color.clear
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .padding(.top, 10)
-            .padding(.bottom, 46)
+            Cutout(url: player.cutoutUrl)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .padding(.top, 10)
+                .padding(.bottom, 46)
 
             if player.followed {
                 Image(systemName: "star.fill")

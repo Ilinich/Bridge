@@ -13,6 +13,7 @@ struct PreviewHost<Content: View>: View {
     var body: some View {
         content
             .environmentObject(AppNavigation(observing: false))
+            .environment(\.usesBundledImages, true)
             .background(Color.ground)
             .preferredColorScheme(.dark)
             .tint(.clubBright)

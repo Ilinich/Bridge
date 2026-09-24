@@ -1,5 +1,6 @@
 package com.begoml.bridge
 
+import com.begoml.bridge.feature.club.ClubClip
 import com.begoml.bridge.feature.club.ClubLinkUi
 import com.begoml.bridge.feature.club.ClubUi
 import com.begoml.bridge.feature.club.ClubUiState
@@ -38,7 +39,7 @@ import kotlinx.collections.immutable.persistentListOf
 object IosPreviews {
 
     fun matchday(): MatchdayUiState = MatchdayUiState(
-        backdropUrl = null,
+        backdropUrl = Fanart,
         hasClub = true,
         isLoading = false,
         nextMatchLoaded = true,
@@ -49,16 +50,16 @@ object IosPreviews {
             kickoffMillis = KickoffMillis,
             homeName = "Chelsea",
             homeCode = "CHE",
-            homeBadgeUrl = null,
+            homeBadgeUrl = ChelseaBadge,
             awayName = "Arsenal",
             awayCode = "ARS",
-            awayBadgeUrl = null,
+            awayBadgeUrl = ArsenalBadge,
         ),
         recent = RecentMatchUi(
             teams = StringDesc.Raw("Chelsea — Hull City"),
             competition = "English Premier League",
             score = StringDesc.Raw("2 : 2"),
-            awayBadgeUrl = null,
+            awayBadgeUrl = HullBadge,
             awayCode = "HUL",
         ),
         stadium = StadiumUi(arena = "Stamford Bridge", capacity = "40,343", founded = "1905"),
@@ -99,10 +100,10 @@ object IosPreviews {
     fun squad(): SquadUiState = SquadUiState(
         isLoading = false,
         players = persistentListOf(
-            card(id = "10", name = "Cole Palmer", position = "Attacking Midfield", number = "10", followed = true),
-            card(id = "1", name = "Robert Sánchez", position = "Goalkeeper", number = "1"),
-            card(id = "24", name = "Reece James", position = "Right-Back", number = "24"),
-            card(id = "8", name = "Enzo Fernández", position = "Central Midfield", number = "8"),
+            card("10", "Cole Palmer", "Attacking Midfield", "$Cutout/q6nnho1787689956.png", followed = true),
+            card("30", "Aarón Anselmino", "Centre-Back", "$Cutout/g74uos1787690344.png"),
+            card("18", "Danny Welbeck", "Centre-Forward", "$Cutout/mjo6g31787690678.png"),
+            card("41", "Estêvão", "Right Winger", "$Cutout/gfgv301787727867.png"),
         ),
     )
 
@@ -123,17 +124,17 @@ object IosPreviews {
                 position = "Attacking Midfield",
                 nationality = "England",
                 height = "189cm / 6'2\"",
-                cutoutUrl = null,
+                cutoutUrl = "$Cutout/q6nnho1787689956.png",
                 followed = true,
             ),
             PlayerPageUi(
-                id = "24",
-                name = "Reece James",
-                shirtNumber = "24",
-                position = "Right-Back",
+                id = "18",
+                name = "Danny Welbeck",
+                shirtNumber = "18",
+                position = "Centre-Forward",
                 nationality = "England",
-                height = "182cm / 6'0\"",
-                cutoutUrl = null,
+                height = "185cm / 6'1\"",
+                cutoutUrl = "$Cutout/mjo6g31787690678.png",
                 followed = false,
             ),
         ),
@@ -144,8 +145,8 @@ object IosPreviews {
         club = ClubUi(
             name = "Chelsea",
             code = "CHE",
-            badgeUrl = null,
-            backdropUrl = null,
+            badgeUrl = ChelseaBadge,
+            backdropUrl = Fanart,
             nicknames = "The Blues · The Pensioners",
             founded = "1905",
             summary = "Chelsea Football Club are a professional football club based in Fulham, London.",
@@ -164,6 +165,9 @@ object IosPreviews {
             summary = null,
         ),
     )
+
+    /** The clip the real screen plays, so the media section is not an empty black box. */
+    fun clipUrl(): String = ClubClip.Url
 
     fun matchDetail(): MatchDetailUiState = MatchDetailUiState(
         isLoading = false,
@@ -197,19 +201,30 @@ object IosPreviews {
     )
 
     private fun card(
-        id: String,
+        number: String,
         name: String,
         position: String,
-        number: String,
+        cutoutUrl: String,
         followed: Boolean = false,
     ): PlayerCardUi = PlayerCardUi(
-        id = id,
+        id = number,
         name = name,
         position = position,
         shirtNumber = number,
-        cutoutUrl = null,
+        cutoutUrl = cutoutUrl,
         followed = followed,
     )
 
     private const val KickoffMillis = 1_760_112_000_000L
+
+    /**
+     * The same CDN the app reads from, so a preview draws the pictures a screen really carries.
+     * A canvas with no network falls back to the placeholders, which is a state worth seeing too.
+     */
+    private const val Media = "https://r2.thesportsdb.com/images/media"
+    private const val Cutout = "$Media/player/cutout"
+    private const val ChelseaBadge = "$Media/team/badge/pbf4ul1782638263.png"
+    private const val ArsenalBadge = "$Media/team/badge/uyhbfe1612467038.png"
+    private const val HullBadge = "$Media/team/badge/fbqqda1601726113.png"
+    private const val Fanart = "$Media/team/fanart/v2gwen1731827710.jpg"
 }

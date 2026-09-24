@@ -20,16 +20,12 @@ struct PlayerPage: View {
             let fraction = width == 0 ? 0 : -page.frame(in: .scrollView).minX / width
 
             ZStack(alignment: .bottom) {
-                AsyncImage(url: player.cutoutUrl.flatMap(URL.init(string:))) { image in
-                    image.resizable().scaledToFit()
-                } placeholder: {
-                    Color.clear
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .padding(.top, 70)
-                .padding(.bottom, 190)
-                .offset(x: fraction * cutoutParallax)
-                .opacity(1 - min(abs(fraction), 1) * pageFadeStrength)
+                Cutout(url: player.cutoutUrl)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .padding(.top, 70)
+                    .padding(.bottom, 190)
+                    .offset(x: fraction * cutoutParallax)
+                    .opacity(1 - min(abs(fraction), 1) * pageFadeStrength)
 
                 GlassPanel {
                     PlayerFacts(player: player, labels: labels, onFollow: onFollow)
