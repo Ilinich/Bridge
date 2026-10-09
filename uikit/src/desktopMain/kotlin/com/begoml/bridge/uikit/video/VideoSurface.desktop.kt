@@ -34,6 +34,12 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.ReceiveChannel
+import kotlinx.coroutines.channels.SendChannel
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -51,8 +57,12 @@ import java.net.URI
 import java.security.MessageDigest
 
 private const val MillisPerSecond = 1000.0
-private const val DefaultFrameMillis = 33L
+private const val DefaultFrameNanos = 33_000_000L
+private const val NanosPerSecond = 1_000_000_000.0
 private const val NanosPerMilli = 1_000_000L
+
+/** Deep enough to cover an expensive frame, short enough that a pause is felt at once. */
+private const val QueuedFrames = 3
 
 /**
  * The clip decoded in the JVM and drawn by Compose.
@@ -140,63 +150,88 @@ private class JvmPlayback(
     }
 
     /**
-     * Shows every frame, sleeping only what is left of its interval after the work.
+     * Decodes ahead of the picture and shows frames on an even cadence.
      *
-     * Two earlier versions were wrong in opposite ways. The first waited a whole frame interval
-     * *after* decoding one, so the cost of decoding was counted twice and a sixty-frame second
-     * played at thirty, wobbling with the cost of each frame — an I-frame and the frames that
-     * follow it are not the same work. The second paced against the wall clock and dropped frames
-     * that were late, which is what a player with hardware decoding does; here it threw away all
-     * but one frame in twenty, because dropping a frame does not make the next one cheaper when
-     * the decoder itself is the limit.
+     * Three versions of this were wrong before this one, and each was wrong for a reason worth
+     * keeping in mind. The first waited a whole frame interval *after* decoding one, counting the
+     * decode twice: sixty frames a second played at thirty, wobbling with the cost of each frame,
+     * because an I-frame and the frames that follow it are not the same work. The second paced
+     * against the wall clock and dropped frames that were late — what a player with hardware
+     * decoding does — and threw away nineteen frames in twenty, because dropping a frame does not
+     * make the next one cheaper when the decoder is the limit. The third showed every frame and
+     * slept the remainder, which was even but slow: fifty-four frames a second, and a rate that
+     * does not divide into the display's own leaves visible judder.
      *
-     * Software H.264 is the limit — around fifty frames a second for this clip — so the honest
-     * behaviour is to show what was decoded and sleep only the remainder. A clip that cannot keep
-     * up runs a little slow rather than unevenly, and the readout stays truthful because it
-     * counts the clip's own frames rather than the time on the wall.
+     * Decoding a frame costs around twelve milliseconds and a frame is due every seventeen, so
+     * the work fits — it just has to happen while the previous frame is on screen rather than
+     * after it. A short queue does that: one coroutine decodes into it, the other shows what is
+     * there against a clock that does not drift, and the queue absorbs the difference between a
+     * cheap frame and an expensive one. Pausing needs no flag of its own — nothing is taken from
+     * the queue, it fills, and the decoder stops at the far end.
      */
-    private suspend fun play(decoder: ClipDecoder) {
-        var shownMillis = 0L
-        while (scope.isActive) {
-            val seekTo = seekToSeconds
-            shownMillis = when {
-                seekTo != null -> {
-                    seekToSeconds = null
-                    decoder.seek(seekTo)
-                    (seekTo * MillisPerSecond).toLong()
-                }
+    private suspend fun play(decoder: ClipDecoder) = coroutineScope {
+        while (isActive) {
+            val fromSeconds = seekToSeconds ?: 0.0
+            seekToSeconds = null
+            decoder.seek(fromSeconds)
 
-                isPlaying -> showNext(decoder, shownMillis)
+            val frames = Channel<ImageBitmap>(capacity = QueuedFrames)
+            val producer = launch(Dispatchers.Default) { fill(decoder, frames) }
+            show(decoder, frames, (fromSeconds * MillisPerSecond).toLong())
+            producer.cancelAndJoin()
+            frames.cancel()
+        }
+    }
 
+    /** Decodes until the queue is full, the clip ends, or a seek starts a new one. */
+    private suspend fun fill(decoder: ClipDecoder, frames: SendChannel<ImageBitmap>) {
+        while (currentCoroutineContext().isActive) {
+            val picture = decoder.next()
+            when {
+                picture != null -> frames.send(decoder.convert(picture))
+                loop -> decoder.seek(0.0)
                 else -> {
-                    delay(decoder.frameMillis)
-                    shownMillis
+                    frames.close()
+                    return
                 }
             }
         }
     }
 
-    /** Decodes, draws and then sleeps whatever is left of the frame's own interval. */
-    private suspend fun showNext(decoder: ClipDecoder, shownMillis: Long): Long {
-        val startedAt = System.nanoTime()
-        val picture = decoder.next()
-        if (picture == null) {
-            if (!loop) isPlaying = false
-            decoder.seek(0.0)
-            withContext(Dispatchers.Main) { positionMillis = 0L }
-            return 0L
-        }
+    /** Shows what has been decoded, one frame every interval, until a seek or the end. */
+    private suspend fun show(
+        decoder: ClipDecoder,
+        frames: ReceiveChannel<ImageBitmap>,
+        fromMillis: Long,
+    ) {
+        var index = 0L
+        var dueAt = System.nanoTime()
 
-        val bitmap = decoder.convert(picture)
-        val next = shownMillis + decoder.frameMillis
-        withContext(Dispatchers.Main) {
-            frame = bitmap
-            positionMillis = next
-        }
+        while (scope.isActive && seekToSeconds == null) {
+            if (!isPlaying) {
+                delay(decoder.frameNanos / NanosPerMilli)
+                dueAt = System.nanoTime()
+                continue
+            }
 
-        val workMillis = (System.nanoTime() - startedAt) / NanosPerMilli
-        delay((decoder.frameMillis - workMillis).coerceAtLeast(0L))
-        return next
+            val bitmap = frames.receiveCatching().getOrNull()
+            if (bitmap == null) {
+                isPlaying = false
+                withContext(Dispatchers.Main) { positionMillis = 0L }
+                return
+            }
+
+            index++
+            withContext(Dispatchers.Main) {
+                frame = bitmap
+                // Counted from the index rather than added up frame by frame: a rounded interval
+                // added a thousand times is a readout that disagrees with the picture.
+                positionMillis = fromMillis + index * decoder.frameNanos / NanosPerMilli
+            }
+
+            dueAt += decoder.frameNanos
+            delay(((dueAt - System.nanoTime()) / NanosPerMilli).coerceAtLeast(0L))
+        }
     }
 
     /**
@@ -225,7 +260,14 @@ private class JvmPlayback(
 private class ClipDecoder private constructor(
     private val channel: SeekableByteChannel,
     private val grab: FrameGrab,
-    val frameMillis: Long,
+    /**
+     * How long one frame lasts, in nanoseconds.
+     *
+     * Not milliseconds: sixty frames a second is 16.67 of them, and the rounded 16 ran the clip
+     * four percent fast — which on a display refreshing at its own rate is exactly the kind of
+     * mismatch that reads as judder.
+     */
+    val frameNanos: Long,
     val durationMillis: Long,
 ) {
 
@@ -263,10 +305,10 @@ private class ClipDecoder private constructor(
             ClipDecoder(
                 channel = channel,
                 grab = grab,
-                frameMillis = if (frames > 0) {
-                    (meta.totalDuration * MillisPerSecond / frames).toLong()
+                frameNanos = if (frames > 0) {
+                    (meta.totalDuration * NanosPerSecond / frames).toLong()
                 } else {
-                    DefaultFrameMillis
+                    DefaultFrameNanos
                 },
                 durationMillis = (meta.totalDuration * MillisPerSecond).toLong(),
             )
@@ -350,11 +392,14 @@ private fun Picture.toImageBitmap(): ImageBitmap {
     var out = 0
     for (row in 0 until height) {
         val lumaRow = row * Step * lumaStride
-        val chromaRow = row / 2 * chromaStride
+        // The chroma planes are already half size, and the output is too: one output pixel is one
+        // chroma sample. Halving the index again — as the first version did — stretched the colour
+        // of the top-left quarter over the whole picture, which is why the grass came out pink.
+        val chromaRow = row * chromaStride
         for (column in 0 until width) {
             val y = (luma[lumaRow + column * Step] + Bias) shl FixedShift
-            val u = blueChroma[chromaRow + column / 2].toInt()
-            val v = redChroma[chromaRow + column / 2].toInt()
+            val u = blueChroma[chromaRow + column].toInt()
+            val v = redChroma[chromaRow + column].toInt()
 
             pixels[out] = clamp(y + RedV * v)
             pixels[out + 1] = clamp(y - GreenU * u - GreenV * v)
