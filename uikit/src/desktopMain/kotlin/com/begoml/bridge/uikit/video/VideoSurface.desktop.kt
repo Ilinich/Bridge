@@ -15,12 +15,14 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.RememberObserver
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -34,13 +36,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.ReceiveChannel
-import kotlinx.coroutines.channels.SendChannel
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -63,6 +59,9 @@ private const val NanosPerMilli = 1_000_000L
 
 /** Deep enough to cover an expensive frame, short enough that a pause is felt at once. */
 private const val QueuedFrames = 3
+
+/** How far behind the clip may fall before it stops catching up and resynchronises instead. */
+private const val MaxCatchUp = 2
 
 /**
  * The clip decoded in the JVM and drawn by Compose.
@@ -104,6 +103,59 @@ private class JvmPlayback(
     override val hasAudio = false
 
     private var seekToSeconds: Double? = null
+    private val frames = Channel<ImageBitmap>(capacity = QueuedFrames)
+    private var frameNanos = 0L
+    private var shownIndex = 0L
+    private var anchorNanos = 0L
+
+    /**
+     * Takes the clip one step on, called once per *display* frame.
+     *
+     * This is the part three earlier versions got wrong, each in a smaller way than the last.
+     * They all drove the picture from a timer of their own — and a timer that runs at the clip's
+     * rate is never in phase with the screen's. At sixty-one frames a second against a sixty-hertz
+     * display, two frames land in one refresh about once a second and one of them is never seen:
+     * the motion hitches, however even the numbers look from inside the player. Asking the
+     * composition for its frame time instead means one decoded frame is chosen per refresh, by
+     * when it is due rather than by when it was ready.
+     *
+     * A starved queue keeps the picture it has. Showing nothing would be a flash, and the clip
+     * catches up on the next frame that arrives.
+     */
+    fun step(frameTimeNanos: Long) {
+        if (frameNanos == 0L) return
+        if (!isPlaying) {
+            anchorNanos = frameTimeNanos - shownIndex * frameNanos
+            return
+        }
+        if (anchorNanos == 0L) anchorNanos = frameTimeNanos - shownIndex * frameNanos
+
+        val due = (frameTimeNanos - anchorNanos) / frameNanos
+        if (due - shownIndex > MaxCatchUp) {
+            // The composition stopped drawing for a while — the window went behind another, or a
+            // frame was simply missed. Catching up would mean emptying the queue in one refresh
+            // and then starving for several, which is a jump followed by a freeze. Resynchronise
+            // instead: the clip carries on from where the picture is.
+            anchorNanos = frameTimeNanos - shownIndex * frameNanos
+            return
+        }
+
+        var taken: ImageBitmap? = null
+        var starved = false
+        while (shownIndex < due && !starved) {
+            val next = frames.tryReceive().getOrNull()
+            if (next == null) {
+                starved = true
+            } else {
+                taken = next
+                shownIndex++
+            }
+        }
+        if (taken != null) {
+            frame = taken
+            positionMillis = shownIndex * frameNanos / NanosPerMilli
+        }
+    }
 
     override fun play() {
         isPlaying = true
@@ -136,9 +188,10 @@ private class JvmPlayback(
     private suspend fun run() {
         val decoder = open() ?: return
         durationMillis = decoder.durationMillis
+        frameNanos = decoder.frameNanos
         isBuffering = false
         try {
-            play(decoder)
+            produce(decoder)
         } finally {
             decoder.close()
         }
@@ -150,87 +203,30 @@ private class JvmPlayback(
     }
 
     /**
-     * Decodes ahead of the picture and shows frames on an even cadence.
+     * Decodes ahead into a short queue, and stops when it is full.
      *
-     * Three versions of this were wrong before this one, and each was wrong for a reason worth
-     * keeping in mind. The first waited a whole frame interval *after* decoding one, counting the
-     * decode twice: sixty frames a second played at thirty, wobbling with the cost of each frame,
-     * because an I-frame and the frames that follow it are not the same work. The second paced
-     * against the wall clock and dropped frames that were late — what a player with hardware
-     * decoding does — and threw away nineteen frames in twenty, because dropping a frame does not
-     * make the next one cheaper when the decoder is the limit. The third showed every frame and
-     * slept the remainder, which was even but slow: fifty-four frames a second, and a rate that
-     * does not divide into the display's own leaves visible judder.
-     *
-     * Decoding a frame costs around twelve milliseconds and a frame is due every seventeen, so
-     * the work fits — it just has to happen while the previous frame is on screen rather than
-     * after it. A short queue does that: one coroutine decodes into it, the other shows what is
-     * there against a clock that does not drift, and the queue absorbs the difference between a
-     * cheap frame and an expensive one. Pausing needs no flag of its own — nothing is taken from
-     * the queue, it fills, and the decoder stops at the far end.
+     * Pausing needs no flag of its own: nothing is taken from the queue, so it fills and the
+     * decoder waits at the far end of it.
      */
-    private suspend fun play(decoder: ClipDecoder) = coroutineScope {
-        while (isActive) {
-            val fromSeconds = seekToSeconds ?: 0.0
-            seekToSeconds = null
-            decoder.seek(fromSeconds)
+    private suspend fun produce(decoder: ClipDecoder) {
+        while (scope.isActive) {
+            val seekTo = seekToSeconds
+            if (seekTo != null) {
+                seekToSeconds = null
+                decoder.seek(seekTo)
+                while (frames.tryReceive().isSuccess) Unit
+                shownIndex = (seekTo * MillisPerSecond * NanosPerMilli / frameNanos).toLong()
+            }
 
-            val frames = Channel<ImageBitmap>(capacity = QueuedFrames)
-            val producer = launch(Dispatchers.Default) { fill(decoder, frames) }
-            show(decoder, frames, (fromSeconds * MillisPerSecond).toLong())
-            producer.cancelAndJoin()
-            frames.cancel()
-        }
-    }
-
-    /** Decodes until the queue is full, the clip ends, or a seek starts a new one. */
-    private suspend fun fill(decoder: ClipDecoder, frames: SendChannel<ImageBitmap>) {
-        while (currentCoroutineContext().isActive) {
             val picture = decoder.next()
             when {
                 picture != null -> frames.send(decoder.convert(picture))
                 loop -> decoder.seek(0.0)
                 else -> {
-                    frames.close()
+                    isPlaying = false
                     return
                 }
             }
-        }
-    }
-
-    /** Shows what has been decoded, one frame every interval, until a seek or the end. */
-    private suspend fun show(
-        decoder: ClipDecoder,
-        frames: ReceiveChannel<ImageBitmap>,
-        fromMillis: Long,
-    ) {
-        var index = 0L
-        var dueAt = System.nanoTime()
-
-        while (scope.isActive && seekToSeconds == null) {
-            if (!isPlaying) {
-                delay(decoder.frameNanos / NanosPerMilli)
-                dueAt = System.nanoTime()
-                continue
-            }
-
-            val bitmap = frames.receiveCatching().getOrNull()
-            if (bitmap == null) {
-                isPlaying = false
-                withContext(Dispatchers.Main) { positionMillis = 0L }
-                return
-            }
-
-            index++
-            withContext(Dispatchers.Main) {
-                frame = bitmap
-                // Counted from the index rather than added up frame by frame: a rounded interval
-                // added a thousand times is a readout that disagrees with the picture.
-                positionMillis = fromMillis + index * decoder.frameNanos / NanosPerMilli
-            }
-
-            dueAt += decoder.frameNanos
-            delay(((dueAt - System.nanoTime()) / NanosPerMilli).coerceAtLeast(0L))
         }
     }
 
@@ -343,6 +339,14 @@ actual fun rememberVideoPlayback(
 actual fun VideoSurface(playback: VideoPlayback, modifier: Modifier) {
     val jvm = playback as JvmPlayback
     val frame = jvm.frame
+
+    // The clip advances on the composition's own frame clock, so a decoded frame is chosen per
+    // refresh rather than per tick of a timer that is never quite in phase with the screen.
+    LaunchedEffect(jvm) {
+        while (true) {
+            withFrameNanos { frameTimeNanos -> jvm.step(frameTimeNanos) }
+        }
+    }
 
     Box(
         // The surface is a play control as well as a picture, the way a player on a page is.
