@@ -49,8 +49,20 @@ fun main(args: Array<String>) = runBlocking {
                 scene.sendPointerEvent(PointerEventType.Press, at)
                 scene.sendPointerEvent(PointerEventType.Release, at)
             }
-            settle(scene, frames = 180)
+            settle(scene, frames = 300)
             shoot(scene, "$name$suffix")
+
+            // The club screen does not auto-play, so the clip is started here: a still of the
+            // poster would not say whether anything decodes.
+            if (name == "club") {
+                withContext(Dispatchers.Swing) {
+                    val at = Offset(width / 2f * Scale, MediaPanelY * Scale)
+                    scene.sendPointerEvent(PointerEventType.Press, at)
+                    scene.sendPointerEvent(PointerEventType.Release, at)
+                }
+                settle(scene, frames = 180)
+                shoot(scene, "club-playing$suffix")
+            }
         }
     } finally {
         withContext(Dispatchers.Swing) { scene.close() }
@@ -96,3 +108,4 @@ private val TabNames = listOf("season", "squad", "club")
 private const val TabCount = 4f
 private const val BarWidth = 420f
 private const val TabCentreY = 835f
+private const val MediaPanelY = 300f

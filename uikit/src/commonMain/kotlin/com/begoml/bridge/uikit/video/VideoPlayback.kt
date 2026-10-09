@@ -24,6 +24,15 @@ interface VideoPlayback {
 
     val isMuted: Boolean
 
+    /**
+     * Whether this clip has sound to turn off.
+     *
+     * False where the platform plays the picture and not the track — the desktop decodes H.264 in
+     * the JVM and has no AAC to go with it. The controls hide the mute button rather than offer
+     * one that does nothing.
+     */
+    val hasAudio: Boolean get() = true
+
     fun play()
 
     fun pause()

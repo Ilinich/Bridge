@@ -69,11 +69,16 @@ is the server's, so the web build asks its own origin for `/media/...` and whate
 rewrites that to the CDN — one line in `webpack.config.d` for the dev server, and the same one
 line on whatever hosts a deployed build.
 
-**The JVM decodes no video.** The browser gets a real `<video>` element positioned over the canvas
-from the layout Compose reports, which is the only way: a cross-origin frame cannot be handed to
-WebGL. The desktop keeps the panel the design asks for and hands the clip to the system player,
-because every alternative — VLC on the machine, tens of megabytes of JavaFX natives in a Swing
-panel — costs more than a supporter app should pay to play one clip.
+**Video is decoded differently on every platform, and only one of them was interesting.** The
+browser gets a real `<video>` element positioned over the canvas from the layout Compose reports,
+which is the only way there: a cross-origin frame cannot be handed to WebGL. The desktop decodes
+H.264 in the JVM with jcodec and draws each frame as an `ImageBitmap` — deliberately, instead of
+JavaFX in a Swing panel or VLC through JNA, because an interop surface sits *over* the window and
+would not clip to the scroll, round its corners or stay under the tab bar. A decoded frame is a
+bitmap like any other, so the panel behaves like the rest of the page. It measures around fifty
+frames a second for this clip and carries no sound — there is no AAC decoder in that library,
+which is why `VideoPlayback.hasAudio` exists and the transport drops its mute button where it is
+false.
 
 A window can be any width, so the host measures it once and the rest of the app reads the answer:
 past a readable measure the column stops growing and the room left over goes to the squad grid,

@@ -103,7 +103,9 @@ fun VideoControls(
             color = BridgeColors.TextMuted,
             modifier = Modifier.testTag(VideoControlsTags.Duration),
         )
-        MuteButton(muted = playback.isMuted, onClick = { playback.mute(!playback.isMuted) })
+        if (playback.hasAudio) {
+            MuteButton(muted = playback.isMuted, onClick = { playback.mute(!playback.isMuted) })
+        }
     }
 }
 
