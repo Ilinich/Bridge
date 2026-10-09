@@ -25,8 +25,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asComposeImageBitmap
 import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import com.begoml.bridge.uikit.theme.BridgeColors
@@ -41,13 +41,18 @@ import kotlinx.coroutines.withContext
 import org.jcodec.api.FrameGrab
 import org.jcodec.common.io.NIOUtils
 import org.jcodec.common.io.SeekableByteChannel
-import org.jcodec.scale.AWTUtil
+import org.jcodec.common.model.Picture
+import org.jetbrains.skia.Bitmap
+import org.jetbrains.skia.ColorAlphaType
+import org.jetbrains.skia.ColorType
+import org.jetbrains.skia.ImageInfo
 import java.io.File
 import java.net.URI
 import java.security.MessageDigest
 
 private const val MillisPerSecond = 1000.0
 private const val DefaultFrameMillis = 33L
+private const val NanosPerMilli = 1_000_000L
 
 /**
  * The clip decoded in the JVM and drawn by Compose.
@@ -134,35 +139,63 @@ private class JvmPlayback(
         return file?.let { cached -> runCatching { ClipDecoder.open(cached) }.getOrNull() }
     }
 
+    /**
+     * Shows every frame, sleeping only what is left of its interval after the work.
+     *
+     * Two earlier versions were wrong in opposite ways. The first waited a whole frame interval
+     * *after* decoding one, so the cost of decoding was counted twice and a sixty-frame second
+     * played at thirty, wobbling with the cost of each frame — an I-frame and the frames that
+     * follow it are not the same work. The second paced against the wall clock and dropped frames
+     * that were late, which is what a player with hardware decoding does; here it threw away all
+     * but one frame in twenty, because dropping a frame does not make the next one cheaper when
+     * the decoder itself is the limit.
+     *
+     * Software H.264 is the limit — around fifty frames a second for this clip — so the honest
+     * behaviour is to show what was decoded and sleep only the remainder. A clip that cannot keep
+     * up runs a little slow rather than unevenly, and the readout stays truthful because it
+     * counts the clip's own frames rather than the time on the wall.
+     */
     private suspend fun play(decoder: ClipDecoder) {
-        var shown = 0L
+        var shownMillis = 0L
         while (scope.isActive) {
-            seekToSeconds?.let { seconds ->
-                seekToSeconds = null
-                decoder.seek(seconds)
-                shown = (seconds * MillisPerSecond).toLong()
+            val seekTo = seekToSeconds
+            shownMillis = when {
+                seekTo != null -> {
+                    seekToSeconds = null
+                    decoder.seek(seekTo)
+                    (seekTo * MillisPerSecond).toLong()
+                }
+
+                isPlaying -> showNext(decoder, shownMillis)
+
+                else -> {
+                    delay(decoder.frameMillis)
+                    shownMillis
+                }
             }
-            if (isPlaying) {
-                shown = advance(decoder, shown)
-            }
-            delay(decoder.frameMillis)
         }
     }
 
-    /** One frame on, or back to the start — and, for a clip that does not loop, a stop with it. */
-    private suspend fun advance(decoder: ClipDecoder, shown: Long): Long {
-        val bitmap = decoder.next()
-        if (bitmap == null) {
+    /** Decodes, draws and then sleeps whatever is left of the frame's own interval. */
+    private suspend fun showNext(decoder: ClipDecoder, shownMillis: Long): Long {
+        val startedAt = System.nanoTime()
+        val picture = decoder.next()
+        if (picture == null) {
             if (!loop) isPlaying = false
             decoder.seek(0.0)
             withContext(Dispatchers.Main) { positionMillis = 0L }
             return 0L
         }
-        val next = shown + decoder.frameMillis
+
+        val bitmap = decoder.convert(picture)
+        val next = shownMillis + decoder.frameMillis
         withContext(Dispatchers.Main) {
             frame = bitmap
             positionMillis = next
         }
+
+        val workMillis = (System.nanoTime() - startedAt) / NanosPerMilli
+        delay((decoder.frameMillis - workMillis).coerceAtLeast(0L))
         return next
     }
 
@@ -196,10 +229,20 @@ private class ClipDecoder private constructor(
     val durationMillis: Long,
 ) {
 
-    /** The next picture, or null at the end of the stream. */
-    suspend fun next(): ImageBitmap? = withContext(Dispatchers.Default) {
-        val picture = runCatching { grab.nativeFrame }.getOrNull()
-        picture?.let { decoded -> AWTUtil.toBufferedImage(decoded).toComposeImageBitmap() }
+    /** The next picture, still in the decoder's own colour space, or null at the end. */
+    suspend fun next(): Picture? = withContext(Dispatchers.Default) {
+        runCatching { grab.nativeFrame }.getOrNull()
+    }
+
+    /**
+     * Turns a decoded picture into something Compose can draw.
+     *
+     * Separate from [next] because it is the half worth skipping: a frame the clock has already
+     * passed is thrown away before this runs, and this is where the colour conversion and the
+     * bitmap allocation happen.
+     */
+    suspend fun convert(picture: Picture): ImageBitmap = withContext(Dispatchers.Default) {
+        picture.toImageBitmap()
     }
 
     suspend fun seek(seconds: Double) {
@@ -280,3 +323,70 @@ private fun PlayMark() {
         drawPath(path = path, color = BridgeColors.TextPrimary.copy(alpha = 0.82f))
     }
 }
+
+/**
+ * Turns a decoded picture into a bitmap, at half the width and half the height.
+ *
+ * Both halves of that sentence are the point. Going straight from the decoder's YUV to the bytes
+ * Skia wants skips a `BufferedImage` and a second pass over every pixel — the library route
+ * measured around fourteen milliseconds a frame, which is most of a frame's budget spent on
+ * copying. And the panel is a hundred and eighty points tall, so a seven-hundred-and-twenty-line
+ * picture is four times the pixels anything will ever show; dropping every other row and column
+ * is free here, because the samples are simply not read.
+ *
+ * The arithmetic is BT.601 in fixed point. jcodec hands samples back already biased by -128,
+ * which is why luma is `+ 128` and the two chroma terms are used as they arrive.
+ */
+private fun Picture.toImageBitmap(): ImageBitmap {
+    val width = getPlaneWidth(0) / Step
+    val height = getPlaneHeight(0) / Step
+    val lumaStride = getPlaneWidth(0)
+    val chromaStride = getPlaneWidth(1)
+    val luma = getPlaneData(0)
+    val blueChroma = getPlaneData(1)
+    val redChroma = getPlaneData(2)
+
+    val pixels = ByteArray(width * height * BytesPerPixel)
+    var out = 0
+    for (row in 0 until height) {
+        val lumaRow = row * Step * lumaStride
+        val chromaRow = row / 2 * chromaStride
+        for (column in 0 until width) {
+            val y = (luma[lumaRow + column * Step] + Bias) shl FixedShift
+            val u = blueChroma[chromaRow + column / 2].toInt()
+            val v = redChroma[chromaRow + column / 2].toInt()
+
+            pixels[out] = clamp(y + RedV * v)
+            pixels[out + 1] = clamp(y - GreenU * u - GreenV * v)
+            pixels[out + 2] = clamp(y + BlueU * u)
+            pixels[out + 3] = Opaque
+            out += BytesPerPixel
+        }
+    }
+
+    val bitmap = Bitmap()
+    bitmap.allocPixels(ImageInfo(width, height, ColorType.RGBA_8888, ColorAlphaType.OPAQUE))
+    bitmap.installPixels(pixels)
+    return bitmap.asComposeImageBitmap()
+}
+
+private fun clamp(fixed: Int): Byte {
+    val value = fixed shr FixedShift
+    return when {
+        value < 0 -> 0
+        value > MaxSample -> MaxSample.toByte()
+        else -> value.toByte()
+    }
+}
+
+/** Half the width and half the height: the panel cannot show more. */
+private const val Step = 2
+private const val BytesPerPixel = 4
+private const val Bias = 128
+private const val Opaque: Byte = -1
+private const val MaxSample = 255
+private const val FixedShift = 10
+private const val RedV = 1436
+private const val GreenU = 352
+private const val GreenV = 731
+private const val BlueU = 1815
