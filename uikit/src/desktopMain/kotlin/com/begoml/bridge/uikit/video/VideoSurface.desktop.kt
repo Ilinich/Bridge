@@ -25,7 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.asComposeImageBitmap
+import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
@@ -48,9 +48,9 @@ import org.jcodec.api.FrameGrab
 import org.jcodec.common.io.NIOUtils
 import org.jcodec.common.io.SeekableByteChannel
 import org.jcodec.common.model.Picture
-import org.jetbrains.skia.Bitmap
 import org.jetbrains.skia.ColorAlphaType
 import org.jetbrains.skia.ColorType
+import org.jetbrains.skia.Image
 import org.jetbrains.skia.ImageInfo
 import java.io.File
 import java.net.URI
@@ -271,20 +271,35 @@ private class ClipDecoder private constructor(
     val durationMillis: Long,
 ) {
 
+    private var scratch = ByteArray(0)
+
     /** The next picture, still in the decoder's own colour space, or null at the end. */
     suspend fun next(): Picture? = withContext(Dispatchers.Default) {
         runCatching { grab.nativeFrame }.getOrNull()
     }
 
     /**
-     * Turns a decoded picture into something Compose can draw.
+     * Turns a decoded picture into something Compose can draw, at half width and half height.
      *
-     * Separate from [next] because it is the half worth skipping: a frame the clock has already
-     * passed is thrown away before this runs, and this is where the colour conversion and the
-     * bitmap allocation happen.
+     * Separate from [next] so the two can be timed apart, and the one place a frame's pixels are
+     * touched. The panel is a hundred and eighty points tall, so a seven-hundred-and-twenty-line
+     * picture is four times what anything will show; the dropped rows and columns are never read.
+     *
+     * The byte buffer is reused across frames. A fresh one would be nine hundred kilobytes sixty
+     * times a second, and the collector answering that is what the shaking was: a pause past a
+     * hundred milliseconds every few frames. Only this coroutine writes it, and `makeRaster`
+     * copies out of it, so the frame already on screen is nobody's business but Skia's.
      */
     suspend fun convert(picture: Picture): ImageBitmap = withContext(Dispatchers.Default) {
-        picture.toImageBitmap()
+        val width = picture.getPlaneWidth(0) / Step
+        val height = picture.getPlaneHeight(0) / Step
+        val needed = width * height * BytesPerPixel
+        if (scratch.size != needed) scratch = ByteArray(needed)
+
+        picture.writeRgba(scratch, width, height)
+
+        val info = ImageInfo(width, height, ColorType.RGBA_8888, ColorAlphaType.OPAQUE)
+        Image.makeRaster(info, scratch, width * BytesPerPixel).toComposeImageBitmap()
     }
 
     suspend fun seek(seconds: Double) {
@@ -367,52 +382,48 @@ private fun PlayMark() {
 }
 
 /**
- * Turns a decoded picture into a bitmap, at half the width and half the height.
+ * Writes the picture into [out] as RGBA at half size, averaging each 2×2 block of luma.
  *
- * Both halves of that sentence are the point. Going straight from the decoder's YUV to the bytes
- * Skia wants skips a `BufferedImage` and a second pass over every pixel — the library route
- * measured around fourteen milliseconds a frame, which is most of a frame's budget spent on
- * copying. And the panel is a hundred and eighty points tall, so a seven-hundred-and-twenty-line
- * picture is four times the pixels anything will ever show; dropping every other row and column
- * is free here, because the samples are simply not read.
+ * The averaging is the difference between a downscale and a decimation. Taking every other pixel
+ * instead — which is what the first version did — throws away the detail rather than folding it
+ * in, and on a crowd it aliases: the pattern crawls from frame to frame and reads as the picture
+ * shaking, even though the timing is even. Four reads instead of one is nothing next to decoding.
  *
- * The arithmetic is BT.601 in fixed point. jcodec hands samples back already biased by -128,
- * which is why luma is `+ 128` and the two chroma terms are used as they arrive.
+ * The chroma planes are already half size and so is the output, so one output pixel is one chroma
+ * sample; halving that index again stretched the colour of the top-left quarter over the whole
+ * picture and turned the grass pink. The arithmetic is BT.601 in fixed point — jcodec hands
+ * samples back already biased by -128, which is why luma is `+ 128` and the chroma terms are
+ * used exactly as they arrive.
  */
-private fun Picture.toImageBitmap(): ImageBitmap {
-    val width = getPlaneWidth(0) / Step
-    val height = getPlaneHeight(0) / Step
+private fun Picture.writeRgba(out: ByteArray, width: Int, height: Int) {
     val lumaStride = getPlaneWidth(0)
     val chromaStride = getPlaneWidth(1)
     val luma = getPlaneData(0)
     val blueChroma = getPlaneData(1)
     val redChroma = getPlaneData(2)
 
-    val pixels = ByteArray(width * height * BytesPerPixel)
-    var out = 0
+    var at = 0
     for (row in 0 until height) {
-        val lumaRow = row * Step * lumaStride
-        // The chroma planes are already half size, and the output is too: one output pixel is one
-        // chroma sample. Halving the index again — as the first version did — stretched the colour
-        // of the top-left quarter over the whole picture, which is why the grass came out pink.
+        val topRow = row * Step * lumaStride
+        val bottomRow = topRow + lumaStride
         val chromaRow = row * chromaStride
         for (column in 0 until width) {
-            val y = (luma[lumaRow + column * Step] + Bias) shl FixedShift
+            val left = column * Step
+            val averaged = (
+                luma[topRow + left] + luma[topRow + left + 1] +
+                    luma[bottomRow + left] + luma[bottomRow + left + 1]
+                ) / Samples
+            val y = (averaged + Bias) shl FixedShift
             val u = blueChroma[chromaRow + column].toInt()
             val v = redChroma[chromaRow + column].toInt()
 
-            pixels[out] = clamp(y + RedV * v)
-            pixels[out + 1] = clamp(y - GreenU * u - GreenV * v)
-            pixels[out + 2] = clamp(y + BlueU * u)
-            pixels[out + 3] = Opaque
-            out += BytesPerPixel
+            out[at] = clamp(y + RedV * v)
+            out[at + 1] = clamp(y - GreenU * u - GreenV * v)
+            out[at + 2] = clamp(y + BlueU * u)
+            out[at + 3] = Opaque
+            at += BytesPerPixel
         }
     }
-
-    val bitmap = Bitmap()
-    bitmap.allocPixels(ImageInfo(width, height, ColorType.RGBA_8888, ColorAlphaType.OPAQUE))
-    bitmap.installPixels(pixels)
-    return bitmap.asComposeImageBitmap()
 }
 
 private fun clamp(fixed: Int): Byte {
@@ -426,6 +437,9 @@ private fun clamp(fixed: Int): Byte {
 
 /** Half the width and half the height: the panel cannot show more. */
 private const val Step = 2
+
+/** The luma samples folded into one output pixel. */
+private const val Samples = 4
 private const val BytesPerPixel = 4
 private const val Bias = 128
 private const val Opaque: Byte = -1
