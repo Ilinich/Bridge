@@ -44,6 +44,12 @@ kotlin {
             implementation(libs.koin.core)
             implementation(libs.koin.compose)
         }
+        getByName("wasmJsMain").dependencies {
+            implementation(libs.kotlinx.browser)
+            // Coil fetches through Ktor, and Ktor picks its engine off the classpath. Without one
+            // here the loader builds, takes every request and quietly answers none of them.
+            implementation(libs.ktor.client.js)
+        }
         androidMain.dependencies {
             implementation(libs.compose.uiTooling)
             implementation(libs.compose.uiToolingPreview)

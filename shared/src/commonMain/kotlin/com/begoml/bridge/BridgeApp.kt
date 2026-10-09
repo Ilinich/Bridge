@@ -8,13 +8,16 @@ import com.begoml.bridge.navigation.TabbedBackStack
 import com.begoml.bridge.di.StringsGate
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
@@ -22,8 +25,10 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import bridge.shared.generated.resources.Res
 import bridge.shared.generated.resources.tab_club
@@ -51,7 +56,9 @@ import com.begoml.bridge.navigation.RouteCodec
 import com.begoml.bridge.navigation.rememberTabbedBackStack
 import com.begoml.bridge.navigation.swipe.LocalSwipeDismissSignal
 import com.begoml.bridge.navigation.swipe.rememberSwipeDismissSignal
+import com.begoml.bridge.uikit.BridgeWindowSize
 import com.begoml.bridge.uikit.LocalScreenPadding
+import com.begoml.bridge.uikit.LocalWindowSize
 import com.begoml.bridge.uikit.component.BridgeIcon
 import com.begoml.bridge.uikit.component.BridgeTab
 import com.begoml.bridge.uikit.component.BridgeTabBar
@@ -64,6 +71,9 @@ import org.koin.compose.koinInject
 
 /** Tab-bar height plus the gap above and below it; screens scroll behind all of it. */
 private val TabBarInset = 70.dp
+
+/** What the status bar gives a phone for free, and what a window has to be told to leave. */
+private val MinimumTopPadding = 18.dp
 private const val CrossfadeMillis = 150
 private const val NavigationTag = "Navigation"
 
@@ -80,6 +90,7 @@ fun App() {
     setSingletonImageLoaderFactory { context ->
         ImageLoader.Builder(context)
             .components { add(KtorNetworkFetcherFactory()) }
+            .platformImages()
             .crossfade(CrossfadeMillis)
             .build()
     }
@@ -117,7 +128,31 @@ fun App() {
             return@BridgeTheme
         }
 
-        Shell(backStack = backStack, entries = entries, analytics = analytics)
+        Window { Shell(backStack = backStack, entries = entries, analytics = analytics) }
+    }
+}
+
+/**
+ * Measures the window once and holds the app to what that width can carry.
+ *
+ * A phone is the Compact case and this is one layout node doing nothing. A desktop window or a
+ * browser tab is the other two: the column stops growing at a readable measure and the room left
+ * over goes to the grid, which reads [LocalWindowSize] for how many columns it may use. Letting
+ * the text run the full width instead would be adaptive in the sense that nothing is cropped,
+ * and unreadable in the sense that matters.
+ */
+@Composable
+private fun Window(content: @Composable () -> Unit) {
+    BoxWithConstraints(
+        modifier = Modifier.fillMaxSize().background(BridgeColors.Ground),
+        contentAlignment = Alignment.TopCenter,
+    ) {
+        val size = BridgeWindowSize.of(maxWidth)
+        val width = size.contentWidth.takeIf { it != Dp.Unspecified } ?: maxWidth
+
+        CompositionLocalProvider(LocalWindowSize provides size) {
+            Box(modifier = Modifier.width(width).fillMaxHeight()) { content() }
+        }
     }
 }
 
@@ -174,7 +209,7 @@ private fun screenPadding(): PaddingValues {
     val insets = WindowInsets.safeDrawing.asPaddingValues()
     val layoutDirection = LocalLayoutDirection.current
     return PaddingValues(
-        top = insets.calculateTopPadding(),
+        top = maxOf(insets.calculateTopPadding(), MinimumTopPadding),
         bottom = insets.calculateBottomPadding() + TabBarInset,
         start = insets.calculateStartPadding(layoutDirection),
         end = insets.calculateEndPadding(layoutDirection),

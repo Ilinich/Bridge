@@ -30,6 +30,7 @@ import com.begoml.bridge.feature.squad.PlayerCardUi
 import com.begoml.bridge.foundation.tessera.collectUiState
 import com.begoml.bridge.feature.squad.SquadViewModel
 import com.begoml.bridge.uikit.LocalScreenPadding
+import com.begoml.bridge.uikit.LocalWindowSize
 import com.begoml.bridge.uikit.component.CutoutImage
 import com.begoml.bridge.uikit.component.FollowStar
 import com.begoml.bridge.uikit.component.LoadableContent
@@ -45,7 +46,6 @@ import com.begoml.bridge.uikit.theme.BridgeColors
 import com.begoml.bridge.uikit.theme.FigureStyle
 import com.begoml.bridge.uikit.theme.LabelStyle
 
-private const val GridColumns = 2
 private val ScreenGutter = 14.dp
 
 
@@ -67,7 +67,7 @@ internal fun SquadScreen(viewModel: SquadViewModel, modifier: Modifier = Modifie
             modifier = Modifier.fillMaxSize().background(BridgeColors.Ground),
         ) {
             LazyVerticalGrid(
-                columns = GridCells.Fixed(GridColumns),
+                columns = GridCells.Fixed(LocalWindowSize.current.gridColumns),
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(
                     // The screen inset carries the cutout in landscape; a bare gutter would put

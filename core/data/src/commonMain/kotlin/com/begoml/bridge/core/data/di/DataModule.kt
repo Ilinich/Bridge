@@ -1,15 +1,8 @@
 package com.begoml.bridge.core.data.di
 
 import com.begoml.bridge.foundation.coroutines.DispatcherProvider
-import com.begoml.bridge.core.data.db.BridgeDatabase
-import com.begoml.bridge.core.data.db.ClubDao
-import com.begoml.bridge.core.data.db.DatabaseFactory
-import com.begoml.bridge.core.data.db.FreshnessDao
-import com.begoml.bridge.core.data.db.PlayerDao
-import com.begoml.bridge.core.data.db.SeasonDao
-import com.begoml.bridge.core.data.db.VenueDao
 import com.begoml.bridge.core.data.db.Syncer
-import com.begoml.bridge.core.data.db.platformDatabaseModule
+import com.begoml.bridge.core.data.db.platformStoreModule
 import com.begoml.bridge.core.data.remote.createHttpClient
 import com.begoml.bridge.core.data.remote.openfootball.SeasonApi
 import com.begoml.bridge.core.domain.repository.ClubRepository
@@ -33,7 +26,7 @@ import kotlin.time.Clock
 private const val TeamId = "133610"
 private const val ClubName = "Chelsea"
 
-fun dataModules(): List<Module> = listOf(platformDatabaseModule(), dataModule())
+fun dataModules(): List<Module> = listOf(platformStoreModule(), dataModule())
 
 private fun dataModule() = module {
     single<Clock> { Clock.System }
@@ -46,12 +39,6 @@ private fun dataModule() = module {
     single { SportsDbApi(get()) }
     single { SeasonApi(get()) }
 
-    single<BridgeDatabase> { get<DatabaseFactory>().create() }
-    single<ClubDao> { get<BridgeDatabase>().clubDao() }
-    single<VenueDao> { get<BridgeDatabase>().venueDao() }
-    single<PlayerDao> { get<BridgeDatabase>().playerDao() }
-    single<SeasonDao> { get<BridgeDatabase>().seasonDao() }
-    single<FreshnessDao> { get<BridgeDatabase>().freshnessDao() }
     single {
         Syncer(
             freshness = get(),
@@ -63,15 +50,15 @@ private fun dataModule() = module {
     single<ClubRepository> {
         ClubRepositoryImpl(
             api = get(),
-            dao = get(),
-            venueDao = get(),
+            store = get(),
+            venueStore = get(),
             syncer = get(),
             dispatcher = get<DispatcherProvider>().io,
         )
     }
     single<SquadRepository> { SquadRepositoryImpl(
             api = get(),
-            dao = get(),
+            store = get(),
             syncer = get(),
             dispatcher = get<DispatcherProvider>().io,
         ) }
@@ -79,7 +66,7 @@ private fun dataModule() = module {
         MatchRepositoryImpl(
             sportsDb = get(),
             seasonApi = get(),
-            seasonDao = get(),
+            seasonStore = get(),
             syncer = get(),
             dispatcher = get<DispatcherProvider>().io,
             backgroundScope = get<AppScope>(),

@@ -7,9 +7,7 @@ import com.begoml.bridge.core.domain.model.ClubLinks
 import com.begoml.bridge.core.domain.model.ClubMedia
 import com.begoml.bridge.core.domain.model.MatchScore
 import com.begoml.bridge.core.domain.model.Player
-import com.begoml.bridge.core.domain.model.Season
 import com.begoml.bridge.core.domain.model.SeasonMatch
-import com.begoml.bridge.core.domain.model.SeasonRound
 import com.begoml.bridge.core.domain.model.TeamRef
 import com.begoml.bridge.core.domain.model.Venue
 import kotlin.time.Instant
@@ -125,15 +123,6 @@ internal fun SeasonMatch.toEntity(seasonId: String) = SeasonMatchEntity(
     awayCode = away.code,
     homeGoals = score?.home,
     awayGoals = score?.away,
-)
-
-internal fun List<SeasonMatchEntity>.toSeason(name: String): Season = Season(
-    name = name,
-    rounds = groupBy { it.round }
-        .map { (number, rows) ->
-            SeasonRound(number = number, matches = rows.map { it.toSeasonMatch() })
-        }
-        .sortedBy { it.number },
 )
 
 internal fun SeasonMatchEntity.toSeasonMatch() = SeasonMatch(

@@ -6,7 +6,6 @@ import androidx.room.Room
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import kotlinx.coroutines.CoroutineDispatcher
 import org.koin.core.module.Module
-import org.koin.dsl.module
 
 internal class AndroidDatabaseFactory(
     private val context: Context,
@@ -26,7 +25,7 @@ internal class AndroidDatabaseFactory(
             .build()
 }
 
-actual fun platformDatabaseModule(): Module = module {
+actual fun platformStoreModule(): Module = roomStoreModule {
     single<DatabaseFactory> {
         AndroidDatabaseFactory(context = get<Context>(), queryDispatcher = get<DispatcherProvider>().io)
     }

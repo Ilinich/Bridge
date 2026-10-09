@@ -1,6 +1,6 @@
 # Bridge
 
-**A worked example of a Kotlin Multiplatform app.** One codebase, two platforms, and a real
+**A worked example of a Kotlin Multiplatform app.** One codebase, four platforms, and a real
 feature set rather than a template: networking, a database, navigation with its own gesture,
 runtime shaders, a video player, background work and tests that run on both platforms.
 
@@ -41,13 +41,43 @@ Every screen, every state holder, every repository and every test below is writt
 | DI | Koin 4.2 | Android `Context` binding |
 | Network | Ktor 3.5, kotlinx.serialization | OkHttp / Darwin engines |
 | Database | Room 2.8 KMP, bundled SQLite | database file location |
-| Images | coil3 | — |
+| Images | coil3 | engine per target; the web adds a same-origin rewrite |
 | Blur | Haze 2.0 | — |
-| Runtime shaders | one source in a dialect both accept | AGSL / SkSL runtime |
-| Video | playback contract, transport controls | ExoPlayer / AVPlayer |
-| Logging | levels, tags, the debug gate | `Log` / `NSLog` |
-| Background refresh | what to refresh | WorkManager / `BGTaskScheduler` |
-| Tests | unit tests and a Compose UI test in `commonTest` | run natively on iOS, on a device on Android |
+| Runtime shaders | one source in a dialect both accept | AGSL on Android, SkSL on the other three |
+| Video | playback contract, transport controls | ExoPlayer / AVPlayer / `<video>` / system player |
+| Logging | levels, tags, the debug gate | `Log` / `NSLog` / stderr / console |
+| Background refresh | what to refresh | WorkManager / `BGTaskScheduler`; none on a desktop or a tab |
+| Tests | unit tests and a Compose UI test in `commonTest` | run natively on iOS, on the JVM for Android and the desktop |
+
+### Four platforms, and what each one costs
+
+Android and iOS share every screen. The desktop and the browser were added afterwards, which is
+the interesting part: the diff that added them is almost entirely `actual` declarations, because
+the shared half had nowhere left to leak. Three things did need a real decision.
+
+**The browser has no SQLite, so it has no Room.** The repositories stopped speaking in rows and
+started speaking in domain models: `ClubStore`, `PlayerStore`, `SeasonStore` and a freshness store
+are plain interfaces in `commonMain`, implemented over Room on the three targets that have a
+filesystem and over IndexedDB in the browser. The web implementation mirrors every store in a
+`MutableStateFlow` and writes through, because IndexedDB has no change notification — a `Flow`
+over it has to be driven by whoever writes. The cache policy, the per-key mutex and the
+time-to-live arithmetic never moved: they are the same `Syncer` on all four.
+
+**The image CDN refuses a browser.** It answers a native client and sends no
+`Access-Control-Allow-Origin`, so every picture the other three load is blocked in a tab. The rule
+is the server's, so the web build asks its own origin for `/media/...` and whatever serves the app
+rewrites that to the CDN — one line in `webpack.config.d` for the dev server, and the same one
+line on whatever hosts a deployed build.
+
+**The JVM decodes no video.** The browser gets a real `<video>` element positioned over the canvas
+from the layout Compose reports, which is the only way: a cross-origin frame cannot be handed to
+WebGL. The desktop keeps the panel the design asks for and hands the clip to the system player,
+because every alternative — VLC on the machine, tens of megabytes of JavaFX natives in a Swing
+panel — costs more than a supporter app should pay to play one clip.
+
+A window can be any width, so the host measures it once and the rest of the app reads the answer:
+past a readable measure the column stops growing and the room left over goes to the squad grid,
+which runs two, three or four cards across.
 
 Kotlin 2.4.10, Gradle 9.1, AGP 9.0, JDK 21, minSdk 26. Static analysis is detekt with a rule
 written for this repository; performance has a Macrobenchmark module and a recorded baseline
@@ -218,7 +248,7 @@ intention, and the right half follows one screen from a tap to the network. The 
 | `detekt-rules` | the custom static-analysis rule |
 | `benchmark` | baseline-profile generator and startup / scroll benchmarks |
 | `shared` | dependency graph, navigation host, iOS framework |
-| `androidApp` / `iosApp` | platform shells |
+| `androidApp` / `iosApp` / `desktopApp` / `webApp` | platform shells |
 
 Feature modules never depend on each other. Each is split in two: `api` holds the destinations it
 owns, `impl` holds its screens, state holders and wiring. Only the composition root may depend on
@@ -244,11 +274,18 @@ Requires JDK 21 and an Android SDK; Gradle provisions its own toolchain.
 ```bash
 ./gradlew :androidApp:assembleDebug                      # Android
 ./gradlew :shared:linkDebugFrameworkIosSimulatorArm64    # iOS framework
+./gradlew :desktopApp:run                                # desktop: macOS, Windows, Linux
+./gradlew :webApp:wasmJsBrowserDevelopmentRun            # browser, on localhost:8080
 ./gradlew detekt                                         # static analysis, every module
 ./gradlew allTests                                       # unit tests, every module
 ```
 
 For iOS, open `iosApp/iosApp.xcodeproj` in Xcode and run.
+
+`./gradlew :desktopApp:packageDistributionForCurrentOS` builds a `.dmg`, `.msi` or `.deb` —
+`jpackage` cannot cross-build, so each one is made on its own operating system.
+`./gradlew :desktopApp:shots` renders every tab off screen into `desktopApp/build/shots`, which is
+how the desktop layout is checked without a window.
 
 ## License
 

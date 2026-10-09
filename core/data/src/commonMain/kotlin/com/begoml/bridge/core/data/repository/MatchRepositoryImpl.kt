@@ -4,11 +4,8 @@ import com.begoml.bridge.foundation.resource.persistedResource
 import com.begoml.bridge.foundation.resource.cachedResource
 import com.begoml.bridge.core.domain.repository.MatchRepository
 
-import com.begoml.bridge.core.data.db.SeasonDao
+import com.begoml.bridge.core.data.db.SeasonStore
 import com.begoml.bridge.core.data.db.Syncer
-import com.begoml.bridge.core.data.db.toEntity
-import com.begoml.bridge.core.data.db.SeasonMatchEntity
-import com.begoml.bridge.core.data.db.toSeasonMatch
 import com.begoml.bridge.core.data.db.toSeason
 import com.begoml.bridge.foundation.resource.Loadable
 import com.begoml.bridge.core.domain.model.Match
@@ -41,7 +38,7 @@ import kotlin.time.Duration.Companion.seconds
 internal class MatchRepositoryImpl(
     sportsDb: SportsDbApi,
     private val seasonApi: SeasonApi,
-    private val seasonDao: SeasonDao,
+    private val seasonStore: SeasonStore,
     private val syncer: Syncer,
     private val dispatcher: CoroutineDispatcher,
     private val backgroundScope: CoroutineScope,
@@ -82,7 +79,7 @@ internal class MatchRepositoryImpl(
         backgroundScope.launch { runCatching { cacheFinishedSeason(previousSeasonId(seasonId)) } }
 
         // A season is 380 fixtures: grouping and sorting them belongs off the collector's context.
-        val stored = seasonDao.observeSeason(seasonId)
+        val stored = seasonStore.observeSeason(seasonId)
             .map { rows -> rows.takeIf { it.isNotEmpty() }?.toSeason(seasonId) }
 
         emitAll(
@@ -107,10 +104,8 @@ internal class MatchRepositoryImpl(
         lastResultCache.invalidateAll()
     }
 
-    override fun match(id: String): Flow<Loadable<SeasonMatch?>> = seasonDao.observeMatch(id)
-        .map<SeasonMatchEntity?, Loadable<SeasonMatch?>> { entity ->
-            Loadable.Content(entity?.toSeasonMatch())
-        }
+    override fun match(id: String): Flow<Loadable<SeasonMatch?>> = seasonStore.observeMatch(id)
+        .map<SeasonMatch?, Loadable<SeasonMatch?>> { match -> Loadable.Content(match) }
         .onStart { emit(Loadable.Loading) }
         .flowOn(dispatcher)
 
@@ -128,15 +123,13 @@ internal class MatchRepositoryImpl(
         runCatching {
             syncer.sync(key = seasonKey(current), ttl = CurrentSeasonTtl) { fetch(current) }
         }
-        return if (seasonDao.count(current) > 0) current else previousSeasonId(current)
+        return if (seasonStore.count(current) > 0) current else previousSeasonId(current)
     }
 
     private suspend fun fetch(seasonId: String) {
         val envelope = seasonApi.season(seasonId) ?: return
-        val matches = envelope.toSeason(seasonId).rounds
-            .flatMap { round -> round.matches }
-            .map { match -> match.toEntity(seasonId) }
-        if (matches.isNotEmpty()) seasonDao.replaceSeason(seasonId, matches)
+        val matches = envelope.toSeason(seasonId).rounds.flatMap { round -> round.matches }
+        if (matches.isNotEmpty()) seasonStore.replaceSeason(seasonId, matches)
     }
 
     private fun ttlFor(seasonId: String): Duration? =

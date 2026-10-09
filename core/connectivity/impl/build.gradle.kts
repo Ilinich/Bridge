@@ -4,6 +4,10 @@ plugins {
 
 kotlin {
     sourceSets {
+        getByName("wasmJsMain").dependencies {
+            implementation(libs.kotlinx.browser)
+        }
+
         commonMain.dependencies {
             api(projects.core.connectivity.api)
             implementation(projects.foundation.tessera)
