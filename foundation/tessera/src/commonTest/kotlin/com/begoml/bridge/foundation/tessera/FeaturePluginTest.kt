@@ -65,7 +65,7 @@ class FeaturePluginTest {
     }
 
     @Test
-    fun `actions reach the plugin, and start is reported once`() = runTest {
+    fun `actions reach the plugin and start is reported once`() = runTest {
         val plugin = RecordingPlugin()
         val feature = feature<CountState, CountAction>(
             initialState = CountState(),

@@ -1,4 +1,5 @@
 import io.gitlab.arturbosch.detekt.Detekt
+import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -19,6 +20,20 @@ kotlin {
 
     iosArm64()
     iosSimulatorArm64()
+
+    jvm("desktop")
+
+    @OptIn(ExperimentalWasmDsl::class)
+    wasmJs {
+        browser {
+            // The shared tests do not run in a browser, and the reason is packaging rather than
+            // principle: a module that reaches Compose resources drags skiko's JS glue into its
+            // Karma bundle, which the test bundle has no copy of, and the run dies resolving
+            // `skiko.mjs`. The same `commonTest` sources run on Android, iOS and the desktop, so
+            // what a browser run would add is wasm codegen — worth having the day it packages.
+            testTask { enabled = false }
+        }
+    }
 
     android {
         namespace = "com.begoml.bridge" + project.path.replace(":", ".").replace("-", "")

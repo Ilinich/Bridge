@@ -14,7 +14,7 @@ private class PrefixCodec(private val prefix: String) : RouteCodec {
 class RestoreStacksTest {
 
     @Test
-    fun `keys come back as routes, in the order and the tab they were saved in`() {
+    fun `keys come back as routes in the order and the tab they were saved in`() {
         val saved = listOf(listOf("home"), listOf("squad", "player:7"))
 
         val restored = restoreStacks(
@@ -27,7 +27,7 @@ class RestoreStacksTest {
     }
 
     @Test
-    fun `a key no codec knows is reported, not silently dropped`() {
+    fun `a key no codec knows is reported not silently dropped`() {
         val unknown = mutableListOf<String>()
 
         val restored = restoreStacks(

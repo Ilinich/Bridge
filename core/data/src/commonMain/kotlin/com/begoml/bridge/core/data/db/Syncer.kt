@@ -19,7 +19,7 @@ import kotlin.time.Duration
  * requests; it is held across the fetch on purpose.
  */
 internal class Syncer(
-    private val freshness: FreshnessDao,
+    private val freshness: FreshnessStore,
     private val clock: Clock,
     private val dispatcher: CoroutineDispatcher,
 ) {
@@ -31,7 +31,7 @@ internal class Syncer(
         lockFor(key).withLock {
             if (!force && !isDue(key, ttl)) return
             withContext(dispatcher) { fetch() }
-            freshness.stamp(FreshnessEntity(key = key, fetchedAtMillis = clock.now().toEpochMilliseconds()))
+            freshness.stamp(key = key, fetchedAtMillis = clock.now().toEpochMilliseconds())
         }
     }
 

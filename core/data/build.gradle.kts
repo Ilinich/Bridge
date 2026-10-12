@@ -15,11 +15,27 @@ dependencies {
         "kspAndroid",
         "kspIosArm64",
         "kspIosSimulatorArm64",
+        "kspDesktop",
     ).forEach { add(it, libs.room.compiler) }
 }
 
 kotlin {
+    // Room covers every target but the browser, which has no SQLite to talk to and stores the
+    // same data in IndexedDB instead. The shared half of the module never sees either.
+    applyDefaultHierarchyTemplate()
+
     sourceSets {
+        val roomMain = create("roomMain") {
+            dependsOn(getByName("commonMain"))
+            dependencies {
+                implementation(libs.room.runtime)
+                implementation(libs.sqlite.bundled)
+            }
+        }
+        getByName("androidMain").dependsOn(roomMain)
+        getByName("iosMain").dependsOn(roomMain)
+        getByName("desktopMain").dependsOn(roomMain)
+
         commonMain.dependencies {
             api(projects.core.domain)
             implementation(projects.foundation.resource)
@@ -33,14 +49,18 @@ kotlin {
             implementation(libs.kotlinx.datetime)
             implementation(libs.kotlinx.collections.immutable)
             implementation(libs.koin.core)
-            implementation(libs.room.runtime)
-            implementation(libs.sqlite.bundled)
         }
         androidMain.dependencies {
             implementation(libs.ktor.client.okhttp)
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)
+        }
+        getByName("desktopMain").dependencies {
+            implementation(libs.ktor.client.okhttp)
+        }
+        getByName("wasmJsMain").dependencies {
+            implementation(libs.ktor.client.js)
         }
     }
 }

@@ -3,12 +3,9 @@ package com.begoml.bridge.core.data.repository
 import com.begoml.bridge.foundation.resource.persistedResource
 import com.begoml.bridge.core.domain.repository.ClubRepository
 
-import com.begoml.bridge.core.data.db.ClubDao
+import com.begoml.bridge.core.data.db.ClubStore
 import com.begoml.bridge.core.data.db.Syncer
-import com.begoml.bridge.core.data.db.VenueDao
-import com.begoml.bridge.core.data.db.toClub
-import com.begoml.bridge.core.data.db.toEntity
-import com.begoml.bridge.core.data.db.toVenue
+import com.begoml.bridge.core.data.db.VenueStore
 import com.begoml.bridge.core.domain.model.Club
 import com.begoml.bridge.foundation.resource.Loadable
 import com.begoml.bridge.core.domain.model.Venue
@@ -29,8 +26,8 @@ import kotlin.time.Duration.Companion.days
 
 internal class ClubRepositoryImpl(
     private val api: SportsDbApi,
-    private val dao: ClubDao,
-    private val venueDao: VenueDao,
+    private val store: ClubStore,
+    private val venueStore: VenueStore,
     private val syncer: Syncer,
     private val dispatcher: CoroutineDispatcher,
 ) : ClubRepository {
@@ -39,7 +36,7 @@ internal class ClubRepositoryImpl(
     // flow, the mapping, the fetch that persistedResource starts — belongs off the collector's
     // context, and a repository that inherited it would behave differently per caller.
     override fun club(teamId: String): Flow<Loadable<Club>> = persistedResource(
-        stored = dao.observe(teamId).map { entity -> entity?.toClub() },
+        stored = store.observe(teamId),
     ) {
         syncer.sync(key = clubKey(teamId), ttl = ClubTtl) { fetchClub(teamId) }
     }.flowOn(dispatcher)
@@ -59,7 +56,7 @@ internal class ClubRepositoryImpl(
             if (venueId == null) return@flatMapLatest flowOf(Loadable.Loading)
 
             persistedResource(
-                stored = venueDao.observe(venueId).map { it?.toVenue() },
+                stored = venueStore.observe(venueId),
             ) {
                 syncer.sync(key = "venue:$venueId", ttl = ClubTtl) { fetchVenue(venueId) }
             }
@@ -68,18 +65,18 @@ internal class ClubRepositoryImpl(
 
     override suspend fun refresh(teamId: String) = withContext(dispatcher) {
         syncer.sync(key = clubKey(teamId), ttl = null, force = true) { fetchClub(teamId) }
-        val venueId = dao.observe(teamId).first()?.venueId ?: return@withContext
+        val venueId = store.observe(teamId).first()?.details?.venueId ?: return@withContext
         syncer.sync(key = "venue:$venueId", ttl = null, force = true) { fetchVenue(venueId) }
     }
 
     private suspend fun fetchClub(teamId: String) {
         val club = api.team(teamId)?.toClub() ?: return
-        dao.upsert(club.toEntity())
+        store.put(club)
     }
 
     private suspend fun fetchVenue(venueId: String) {
         val venue = api.venue(venueId)?.toVenue() ?: return
-        venueDao.upsert(venue.toEntity())
+        venueStore.put(venue)
     }
 
     private fun clubKey(teamId: String) = "club:$teamId"

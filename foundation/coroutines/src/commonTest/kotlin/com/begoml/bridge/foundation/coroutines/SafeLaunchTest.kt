@@ -67,7 +67,7 @@ class SafeLaunchTest {
     }
 
     @Test
-    fun `the work runs on the dispatcher it was handed, not the caller's`() = runTest {
+    fun `the work runs on the dispatcher it was handed rather than the caller's`() = runTest {
         val logger = RecordingLogger()
         val handed = StandardTestDispatcher(testScheduler)
         val scope = CoroutineScope(SupervisorJob() + StandardTestDispatcher(testScheduler))

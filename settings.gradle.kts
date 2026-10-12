@@ -32,6 +32,8 @@ dependencyResolutionManagement {
 
 include(":detekt-rules")
 include(":androidApp")
+include(":desktopApp")
+include(":webApp")
 include(":benchmark")
 include(":shared")
 

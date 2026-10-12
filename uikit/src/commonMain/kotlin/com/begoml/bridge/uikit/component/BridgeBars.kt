@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -41,6 +42,7 @@ private val BarBottomInset = 12.dp
 /** Bars sit over moving content, so they carry far less tint than a panel does. */
 private const val BarTintAlpha = 0.26f
 private val TabIconSize = 21.dp
+private val BarMaxWidth = 420.dp
 
 /**
  * The floating tab capsule.
@@ -61,6 +63,9 @@ fun GlassScope.BridgeTabBar(
             .navigationBarsPadding()
             .padding(start = BarInset, end = BarInset, bottom = BarBottomInset)
             .fillMaxWidth()
+            // A capsule the width of a desktop window is a toolbar, not a floating bar; past the
+            // measure a thumb can cross it stops growing and stays in the middle.
+            .widthIn(max = BarMaxWidth)
             .height(BarHeight)
             .then(
                 Modifier.glass(

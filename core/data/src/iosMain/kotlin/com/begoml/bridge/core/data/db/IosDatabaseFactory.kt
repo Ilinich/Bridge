@@ -5,7 +5,6 @@ import androidx.room.Room
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import kotlinx.coroutines.CoroutineDispatcher
 import org.koin.core.module.Module
-import org.koin.dsl.module
 import platform.Foundation.NSDocumentDirectory
 import platform.Foundation.NSFileManager
 import platform.Foundation.NSURL
@@ -35,6 +34,6 @@ internal class IosDatabaseFactory(private val queryDispatcher: CoroutineDispatch
     }
 }
 
-actual fun platformDatabaseModule(): Module = module {
+actual fun platformStoreModule(): Module = roomStoreModule {
     single<DatabaseFactory> { IosDatabaseFactory(queryDispatcher = get<DispatcherProvider>().io) }
 }
